@@ -36,7 +36,7 @@
 ### Установка
 
 1. **Закройте игру и создайте резервную копию сохранений.**
-2. Скачайте и распакуйте архив версии 2.1 (добавляется в Releases) в каталог, где находится `Game.exe`.
+2. Скачайте и распакуйте [архив версии 2.1](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases) в каталог, где находится `Game.exe`.
 3. В Windows запустите `Install_Windows.cmd`. В Linux запустите `bash Install_Linux.sh` (требуется Python 3).
 4. Убедитесь, что создано **одно** подключение `Cheat_Menu.js` в `js/plugins` или `www/js/plugins`.
 5. Запустите игру и проверьте меню на отдельном сохранении.
@@ -74,7 +74,7 @@ The integrated menu combines features without a duplicate "extra cheats" section
 ### Installation
 
 1. **Close the game and back up your save files.**
-2. Download and extract the v2.1 release ZIP (to be attached in Releases) into the folder containing `Game.exe`.
+2. Download and extract the [v2.1 release ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases) into the folder containing `Game.exe`.
 3. On Windows, run `Install_Windows.cmd`. On Linux, run `bash Install_Linux.sh` (requires Python 3).
 4. Confirm that only one `Cheat_Menu.js` is enabled under `js/plugins` or `www/js/plugins`.
 5. Launch the game and test with a separate save slot.
@@ -89,8 +89,8 @@ Compatibility varies across game-specific plugins. Encrypted games or heavily mo
 
 ### Project files / Файлы проекта
 
-- `Cheat_Menu.js` (pending upload) — combined plugin / объединённый плагин.
-- `dist/` (pending upload) — release archive / архив сборки.
+- [`Cheat_Menu.js`](Cheat_Menu.js) — combined plugin / объединённый плагин.
+- [Releases](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases) — downloadable ZIP / архив для скачивания.
 - [`CHANGELOG.md`](CHANGELOG.md) — version history / история изменений.
 - [`CREDITS.md`](CREDITS.md) — authorship and redistribution notes / авторство и условия распространения.
 
