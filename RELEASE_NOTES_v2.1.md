@@ -2,7 +2,7 @@
 
 **RPG Maker MV / MZ · Windows / Linux**
 
-[Download v2.1 ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.1/Cheat_Menu_Integrated_MV_MZ_v2.1.zip) · [Source code](Cheat_Menu.js) · [Changelog](CHANGELOG.md)
+[Download v2.1 ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.1/Cheat_Menu_Integrated_MV_MZ_v2.1.zip) · [Source code](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/blob/main/Cheat_Menu.js) · [Changelog](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/blob/main/CHANGELOG.md)
 
 ## 🇷🇺 Русский
 
@@ -58,4 +58,4 @@ An integrated cheat mod for single-player RPG Maker MV/MZ games. One `Cheat_Menu
 
 ---
 
-**Credits and redistribution / Авторы и распространение:** See [CREDITS.md](CREDITS.md). The original projects do not supply an explicit redistribution license in their repository roots; attribution alone is not permission to redistribute derived code.
+**Credits and redistribution / Авторы и распространение:** See [CREDITS.md](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/blob/main/CREDITS.md). The original projects do not supply an explicit redistribution license in their repository roots; attribution alone is not permission to redistribute derived code.
