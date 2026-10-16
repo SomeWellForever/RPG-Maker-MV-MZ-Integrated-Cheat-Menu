@@ -43,7 +43,7 @@
 4. Убедитесь, что создано **одно** подключение `SWF_CheatMenu.js` в `js/plugins` или `www/js/plugins`.
 5. Запустите игру и проверьте меню на отдельном сохранении.
 
-**Xenolauncher:** отключите его встроенное `Enable Cheat Menu`. Наш плагин использует имя `SWF_CheatMenu.js`; установщик переносит распознаваемые подключения прежней объединённой версии и сохраняет резервные копии изменённых файлов.
+**Xenolauncher:** отключите его встроенное `Enable Cheat Menu`. Плагин использует имя `SWF_CheatMenu.js`; установщик переносит распознаваемые подключения прежней объединённой версии и сохраняет резервные копии изменённых файлов.
 
 **Удаление:** закройте игру и запустите `Remove_Windows.cmd`, `Remove_macOS.command` или `bash Remove_Linux.sh`. Резервные копии установщика находятся в `SWF_CheatMenu_Backup/`.
 
@@ -87,7 +87,7 @@ The integrated menu combines features without a duplicate "extra cheats" section
 4. Confirm that only one `SWF_CheatMenu.js` is enabled under `js/plugins` or `www/js/plugins`.
 5. Launch the game and test with a separate save slot.
 
-**Xenolauncher:** keep its built-in `Enable Cheat Menu` disabled. Our plugin uses the separate filename `SWF_CheatMenu.js`; the installer migrates recognized previous integrated-menu registrations and backs up any overwritten files.
+**Xenolauncher:** keep its built-in `Enable Cheat Menu` disabled. The plugin uses the separate filename `SWF_CheatMenu.js`; the installer migrates recognized previous integrated-menu registrations and backs up any overwritten files.
 
 **Uninstall:** close the game and run `Remove_Windows.cmd`, `Remove_macOS.command` or `bash Remove_Linux.sh`. Backups are stored in `SWF_CheatMenu_Backup/`.
 
