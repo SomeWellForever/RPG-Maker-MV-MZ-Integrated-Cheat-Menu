@@ -1,0 +1,42 @@
+name: Publish SWF Cheat Menu v2.2.0
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'SWF_CheatMenu.js'
+      - 'Setup.py'
+      - 'Install_*'
+      - 'Remove_*'
+      - 'scripts/build_release.py'
+      - 'tests/**'
+      - 'README.md'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify plugin and installer
+        run: |
+          node --check SWF_CheatMenu.js
+          python3 -m py_compile Setup.py
+          python3 -m unittest discover -s tests -v
+      - name: Package
+        run: python3 scripts/build_release.py
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v2.2.0 >/dev/null 2>&1; then
+            gh release upload v2.2.0 SWF_CheatMenu_MV_MZ_v2.2.0.zip --clobber
+          else
+            gh release create v2.2.0 SWF_CheatMenu_MV_MZ_v2.2.0.zip --title "SWF Cheat Menu v2.2.0" --notes "Integrated RPG Maker MV/MZ cheat menu. Windows, macOS, Linux installers. Compatible with Xenolauncher when its built-in Cheat Menu is disabled. See README and CREDITS."
+          fi
+      - name: Remove superseded release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete v2.1 --yes --cleanup-tag || true

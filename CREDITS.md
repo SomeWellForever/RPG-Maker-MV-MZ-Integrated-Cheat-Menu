@@ -4,7 +4,7 @@ This repository contains a modified/extended version of an existing RPG Maker ch
 
 - **Original Cheat Menu:** [emerladCoder / RPG-Maker-MV-Cheat-Menu-Plugin](https://github.com/emerladCoder/RPG-Maker-MV-Cheat-Menu-Plugin)
 - **MV/MZ adaptation:** [NamelessMagician / RPG-Maker-MV-MZ-Cheat-Menu-Plugin](https://github.com/NamelessMagician/RPG-Maker-MV-MZ-Cheat-Menu-Plugin)
-- **Integrated changes (v2.0–v2.1):** unified control item and menu, inventory-limit controls, support for the in-battle menu, installers, and documentation.
+- **Integrated changes:** unified control item and menu, inventory-limit controls, support for the in-battle menu, installers, and documentation.
 
 **Important:** At preparation time the source repositories did not present an explicit license file on their root GitHub listings. A public GitHub repository is not automatically a grant of a general redistribution or relicensing right. Before publicly distributing the combined source as a new repository or release, confirm the upstream license/author permission, or use an appropriate GitHub fork and preserve attribution/terms. No new blanket license has been asserted for third-party code.
 

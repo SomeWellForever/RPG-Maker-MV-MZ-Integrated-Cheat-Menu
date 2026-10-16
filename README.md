@@ -1,11 +1,11 @@
 # RPG Maker MV/MZ — Integrated Cheat Menu
 
 **[Русский](#-русский) · [English](#-english)**  
-**Version 2.1 · RPG Maker MV / MZ · Windows / Linux**
+**Version 2.2.0 · RPG Maker MV / MZ · Windows / macOS / Linux**
 
-[![Release](https://img.shields.io/github/v/release/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu?label=Release)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/tag/v2.1) [![Platform](https://img.shields.io/badge/RPG%20Maker-MV%20%2F%20MZ-blue)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu) [![Issues](https://img.shields.io/github/issues/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/issues)
+[![Release](https://img.shields.io/github/v/release/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu?label=Release)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/tag/v2.2.0) [![Platform](https://img.shields.io/badge/RPG%20Maker-MV%20%2F%20MZ-blue)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu) [![Issues](https://img.shields.io/github/issues/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/issues)
 
- > **Latest release / Последняя версия:** [v2.1 — Download ZIP / Скачать ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.1/Cheat_Menu_Integrated_MV_MZ_v2.1.zip).
+ > **Latest release / Последняя версия:** [v2.2.0 — Download ZIP / Скачать ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.2.0/SWF_CheatMenu_MV_MZ_v2.2.0.zip).
 
 > An integrated cheat menu for single-player games made with RPG Maker MV and MZ. One JavaScript plugin, one in-game key item, and a quick overlay accessible in and out of battle.
 >
@@ -38,12 +38,12 @@
 ### Установка
 
 1. **Закройте игру и создайте резервную копию сохранений.**
-2. Скачайте и распакуйте [архив версии 2.1](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.1/Cheat_Menu_Integrated_MV_MZ_v2.1.zip) в каталог, где находится `Game.exe`.
-3. В Windows запустите `Install_Windows.cmd`. В Linux запустите `bash Install_Linux.sh` (требуется Python 3).
-4. Убедитесь, что создано **одно** подключение `Cheat_Menu.js` в `js/plugins` или `www/js/plugins`.
+2. Скачайте и распакуйте [архив версии 2.1](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.2.0/SWF_CheatMenu_MV_MZ_v2.2.0.zip) в каталог, где находится `Game.exe`.
+3. В Windows запустите `Install_Windows.cmd`, в macOS — `Install_macOS.command`, в Linux — `bash Install_Linux.sh` (требуется Python 3). В macOS выберите папку игры в появившемся окне.
+4. Убедитесь, что создано **одно** подключение `SWF_CheatMenu.js` в `js/plugins` или `www/js/plugins`.
 5. Запустите игру и проверьте меню на отдельном сохранении.
 
-**Удаление:** закройте игру и запустите `Remove_Windows.cmd` или `bash Remove_Linux.sh`. Резервные копии установщика находятся в `Cheat_Menu_Backup/`.
+**Удаление:** закройте игру и запустите `Remove_Windows.cmd`, `Remove_macOS.command` или `bash Remove_Linux.sh`. Резервные копии установщика находятся в `SWF_CheatMenu_Backup/`.
 
 ### Ошибки и предложения
 
@@ -80,12 +80,12 @@ The integrated menu combines features without a duplicate "extra cheats" section
 ### Installation
 
 1. **Close the game and back up your save files.**
-2. Download and extract the [v2.1 release ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.1/Cheat_Menu_Integrated_MV_MZ_v2.1.zip) into the folder containing `Game.exe`.
-3. On Windows, run `Install_Windows.cmd`. On Linux, run `bash Install_Linux.sh` (requires Python 3).
-4. Confirm that only one `Cheat_Menu.js` is enabled under `js/plugins` or `www/js/plugins`.
+2. Download and extract the [v2.2.0 release ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.2.0/SWF_CheatMenu_MV_MZ_v2.2.0.zip) into the folder containing `Game.exe`.
+3. On Windows, run `Install_Windows.cmd`; on macOS, run `Install_macOS.command`; on Linux, run `bash Install_Linux.sh` (Python 3 required). On macOS, select the game folder when prompted.
+4. Confirm that only one `SWF_CheatMenu.js` is enabled under `js/plugins` or `www/js/plugins`.
 5. Launch the game and test with a separate save slot.
 
-**Uninstall:** close the game and run `Remove_Windows.cmd` or `bash Remove_Linux.sh`. Backups are stored in `Cheat_Menu_Backup/`.
+**Uninstall:** close the game and run `Remove_Windows.cmd`, `Remove_macOS.command` or `bash Remove_Linux.sh`. Backups are stored in `SWF_CheatMenu_Backup/`.
 
 ### Bug reports and suggestions
 
@@ -99,10 +99,8 @@ Compatibility varies across game-specific plugins. Encrypted games or heavily mo
 
 ### Project files / Файлы проекта
 
-- [`Cheat_Menu.js`](Cheat_Menu.js) — combined plugin / объединённый плагин.
+- [`SWF_CheatMenu.js`](SWF_CheatMenu.js) — combined plugin / объединённый плагин.
 - [Releases](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases) — downloadable ZIP / архив для скачивания.
-- [`RELEASE_NOTES_v2.1.md`](RELEASE_NOTES_v2.1.md) — bilingual release notes / описание выпуска на двух языках.
-- [`CHANGELOG.md`](CHANGELOG.md) — version history / история изменений.
 - [`CREDITS.md`](CREDITS.md) — authorship and redistribution notes / авторство и условия распространения.
 
 ### Credits / Благодарности
