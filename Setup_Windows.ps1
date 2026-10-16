@@ -19,8 +19,8 @@ function Test-GameFolder([string]$Folder) {
 }
 
 try {
-    if (-not (Test-Path -LiteralPath (Join-Path $releaseFolder 'Setup.py') -PathType Leaf) -or
-        ($Action -eq 'install' -and -not (Test-Path -LiteralPath (Join-Path $releaseFolder 'SWF_CheatMenu.js') -PathType Leaf))) {
+    if ($Action -eq 'install' -and
+        -not (Test-Path -LiteralPath (Join-Path $releaseFolder 'SWF_CheatMenu.js') -PathType Leaf)) {
         throw 'The archive is incomplete. Extract all files together, then launch the installer.'
     }
 
