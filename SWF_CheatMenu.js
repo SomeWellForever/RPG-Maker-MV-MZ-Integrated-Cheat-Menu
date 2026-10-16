@@ -2,7 +2,8 @@
  * @target MV MZ
  * @plugindesc SWF Cheat Menu Integrated 2.2.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author Community Cheat Menu + integrated local patch
- * @help In-game key item 'Меню управления' or F7 opens the integrated menu.
+ * @help Use the key item 'Control Menu' / 'Меню управления' or F7.
+ * Menu language: Auto / Русский / English (select inside the menu).
  * Key 1 on map or in battle opens the legacy quick overlay.
  * The key item is usable in battle without consuming a turn.
  * Contains original Cheat_Menu features plus RPG Maker MV/MZ control menu.
@@ -1818,6 +1819,212 @@ var MAPS = [];
 var BASE_COUNTS = {};
 var mapCache = {};
 var IS_MZ = Utils.RPGMAKER_NAME === 'MZ';
+
+var SWF_EN_STRINGS = {
+    'стандартный': "default",
+    'Меню управления': "Control Menu",
+    'Управление персонажами, инвентарём и игрой. Доступен в бою.\nF7 — полное меню, 1 — быстрые читы.': "Manage characters, inventory, and game settings. Available in battle.\nF7 — full menu, 1 — quick cheats.",
+    'Enter — выбрать · Esc / правая кнопка — назад · PageUp / PageDown — листать': "Enter — select · Esc / right-click — back · PageUp / PageDown — scroll",
+    'Операция не выполнена: ': "Operation failed: ",
+    '\nВозможно, нужна адаптация под плагины этой игры.': "\nThis game may require a plugin-specific compatibility fix.",
+    'Применить': "Apply",
+    'Отмена': "Cancel",
+    'Введи целое число от ': "Enter an integer between ",
+    ' до ': " and ",
+    'Допустимый диапазон: ': "Allowed range: ",
+    'Подтвердить': "Confirm",
+    'Телепорт: посещённые карты': "Teleport: visited maps",
+    'Телепортация не выполняет сюжетные события.': "Teleportation does not trigger story events.",
+    'Телепорт: все карты игры': "Teleport: all game maps",
+    'Включая тестовые и служебные карты. Сохрани игру отдельно.': "Includes test and unused maps. Save to a separate slot first.",
+    'Возврат после телепорта': "Return from teleport",
+    'Карта #': "Map #",
+    'Точка возврата пока не записана.': "No return position has been recorded.",
+    'Возврат': "Return",
+    'Сюжетные события не откатываются.': "Story events are not reversed.",
+    'Точки быстрого перемещения (3 слота)': "Fast travel points (3 slots)",
+    'Противники: установить HP = 1': "Enemies: set HP to 1",
+    'У живых противников осталось 1 HP.': "Living enemies now have 1 HP.",
+    'Победить всех противников': "Defeat all enemies",
+    'Мгновенно устанавливает HP всех живых врагов в 0 и завершает бой через штатную обработку победы.': "Sets every living enemy's HP to 0 and finishes the battle through the normal victory system.",
+    'Победить всех противников?': "Defeat all enemies?",
+    'У всех оставшихся врагов будет 0 HP.': "Every remaining enemy will have 0 HP.",
+    'Персонажи: уровни, навыки, параметры, читы': "Characters: levels, skills, stats, cheats",
+    'HP / MP / TP всей группы': "Party HP / MP / TP",
+    'Пополнить ресурсы, обнулить их или снять все состояния.': "Restore, reduce, or clear party resources and states.",
+    'Получить предмет / оружие / броню': "Get item / weapon / armor",
+    'Лимит предметов: ': "Item stack limit: ",
+    'Золото: ': "Gold: ",
+    'Установить золото': "Set gold",
+    'Игровые переключатели': "Game switches",
+    'Игровые переменные': "Game variables",
+    'ВКЛ': "ON",
+    'ВЫКЛ': "OFF",
+    'Проход сквозь стены: ': "Walk through walls: ",
+    'Скорость движения: ': "Movement speed: ",
+    'Скорость (0.5–6.0, шаг 0.5)': "Speed (0.5–6.0, increments of 0.5)",
+    'Введите число от 0.5 до 6.0, шаг 0.5.': "Enter a number from 0.5 to 6.0 in steps of 0.5.",
+    'Зафиксировать скорость: ': "Lock movement speed: ",
+    'Вернуть предмет в инвентарь': "Restore control item to inventory",
+    'Подготовить удаление мода': "Prepare to remove the mod",
+    'Удалить служебный предмет?': "Remove the control item?",
+    'Перед удалением верни лимит предметов к обычному и сохрани игру в другой слот.': "Reset the item stack limit to the game's default and save to another slot first.",
+    'Закрыть меню и продолжить бой': "Close menu and resume battle",
+    'Закрыть меню': "Close menu",
+    'Меню управления · ': "Control Menu · ",
+    ' · БОЙ': " · BATTLE",
+    'Слот ': "Slot ",
+    'пусто': "empty",
+    ' · сохранить текущую точку': " · save current position",
+    'Перезапишет слот. ': "Overwrite this slot. ",
+    ' · переместиться · ': " · travel · ",
+    'Переместиться в сохранённую точку. Не изменяет сюжетные флаги.': "Travel to saved position. Story flags are not changed.",
+    'Переместиться в ': "Travel to ",
+    'Карта ': "Map ",
+    'Сохранённые точки': "Saved positions",
+    'Ресурсы группы изменены.': "Party resources updated.",
+    'Полностью восстановить всю группу': "Fully restore the entire party",
+    'Группа восстановлена.': "Party restored.",
+    'Восстановить ': "Restore ",
+    ' до максимума': " to maximum",
+    'Установить ': "Set party ",
+    ' группы на 1': " to 1",
+    ' группы на 0': " to 0",
+    'Снять все состояния с группы': "Remove all party states",
+    'Состояния группы очищены.': "Party states cleared.",
+    'HP / MP / TP группы': "Party HP / MP / TP",
+    'Стандартный (как в игре)': "Default (game setting)",
+    '99 штук': "99 items",
+    '999 штук': "999 items",
+    '9999 штук': "9999 items",
+    'Используется оригинальный предел игры. Уже накопленные большие стопки защищены от удаления при следующей выдаче.': "Use the game's original stack limit. Existing larger stacks will not be deleted when more items are added.",
+    'Ограничение для обычных предметов, оружия и брони.\nНе затрагивает уникальные экземпляры и распознанные специальные ограничения.': "Applies to normal items, weapons, and armor.\nUnique instances and detected special limits remain unchanged.",
+    'Лимит: ': "Limit: ",
+    '. Изменение сохраняется при следующем сохранении игры.\nБольшие существующие стопки не уменьшаются автоматически.': ". The change is saved with your next game save.\nExisting larger stacks are not automatically reduced.",
+    'Лимит инвентаря · ': "Inventory stack limit · ",
+    'Не удалось прочитать карту': "Could not read the map",
+    'Поиск по названию или ID': "Search by name or ID",
+    'Название карты или ID (пусто — показать все)': "Map name or ID (blank — show all)",
+    'Название карты из базы игры. Список может включать служебные карты.\nДанные и координаты будут прочитаны после выбора.\nПеред телепортом сохранись отдельно.': "Map names come from the game's database, including unused maps.\nMap data and coordinates are read after selection.\nSave separately before teleporting.",
+    'Телепорт · найдено ': "Teleport · found ",
+    'Читаю карту #': "Reading map #",
+    'Карта не прочитана: ': "Map could not be read: ",
+    '. Возможно, игра использует особый формат данных.': ". This game may use a nonstandard map format.",
+    'Перейти в подобранную точку': "Travel to suggested landing point",
+    'Проходимость рассчитывается по стандартным тайлам.\nПри наличии известных входов выбирается клетка рядом с ними.\nСобытия и нестандартные плагины коллизий могут влиять на переход.': "Passability uses the game's standard map tiles.\nIf known entrances exist, a nearby tile is preferred.\nEvents and nonstandard collision plugins may affect teleporting.",
+    'Телепорт: ': "Teleport: ",
+    'Перед переходом сохранись в отдельный слот.\nДля возвращения открой это меню через F7.\nТелепорт не устанавливает сюжетные флаги.': "Save to a separate slot before teleporting.\nUse this menu via F7 to return.\nTeleporting does not set story flags.",
+    'Указать координаты вручную': "Enter coordinates manually",
+    'Без автоматического смещения. Можно попасть в стену или на событие.': "No automatic adjustment. You may appear in a wall or on an event.",
+    'Координаты X,Y (X: 0–': "Coordinates X,Y (X: 0–",
+    'Неверные координаты. Введи X,Y в границах карты.': "Invalid coordinates. Enter X,Y within the map boundaries.",
+    'Ручной телепорт': "Manual teleport",
+    'В указанной клетке может быть стена или событие.\nF7 → возврат позволит вернуться, если игра продолжает работать.': "The destination may contain a wall or event.\nF7 → Return may help if the game is still running.",
+    'Сначала выйди из транспорта.': "Leave the vehicle first.",
+    ' · уровень ': " · level ",
+    'Персонаж из текущего отряда, включая резерв.\nНастройка уровня не меняет сюжетные флаги.': "Current party member, including reserves.\nChanging levels does not update story flags.",
+    'В отряде нет персонажей': "There are no characters in the party",
+    'Персонажи отряда': "Party members",
+    'Установить уровень: ': "Set level: ",
+    'Опыт выставляется на начало выбранного уровня; классовые навыки сохраняются.': "EXP is set to the beginning of the selected level; learned class skills are retained.",
+    'Уровень: ': "Level: ",
+    'Добавить опыт': "Add EXP",
+    'Бессмертие: ': "God mode: ",
+    'Бессмертие старого Cheat_Menu. После загрузки сохранения его может потребоваться включить снова.': "Legacy Cheat_Menu god mode. You may need to enable it again after loading a save.",
+    'Установить HP: ': "Set HP: ",
+    'Установить MP: ': "Set MP: ",
+    'Установить TP: ': "Set TP: ",
+    'Полностью восстановить': "Fully restore",
+    'Снять все состояния': "Remove all states",
+    'Изменить бонусы характеристик': "Edit stat bonuses",
+    'Изучить навык': "Learn a skill",
+    'Забыть изученный навык': "Forget a learned skill",
+    'Поиск по названию / ID': "Search by name / ID",
+    'Навык или ID (пусто — все)': "Skill name or ID (blank — all)",
+    ' [изучен]': " [learned]",
+    'Удалить из изученных навыков.': "Remove from learned skills.",
+    'Изучить напрямую, без траты очков дерева навыков.': "Learn directly without spending skill-tree points.",
+    '\nСюжетные, классовые и экипировочные условия использования сохраняются.': "\nStory, class, and equipment restrictions on using skills still apply.",
+    'Забыть: ': "Forget: ",
+    'Изучить: ': "Learn: ",
+    'Персонаж: ': "Character: ",
+    'Навык удалён из изученных.': "Skill removed from learned skills.",
+    'Навык изучен. Для применения могут требоваться класс, оружие или ресурсы.': "Skill learned. Its use may still require the right class, weapon, or resources.",
+    'Забыть': "Forget",
+    'Изучить': "Learn",
+    'Выдача предметов': "Get items",
+    'Обычные предметы': "Normal items",
+    'Оружие': "Weapons",
+    'Броня и аксессуары': "Armor and accessories",
+    'Ключевые и скрытые предметы': "Key and hidden items",
+    'Могут участвовать в квестовых проверках. Выдача не завершает квест.': "These items may affect quests. Adding them does not complete a quest.",
+    'Все записи базы предметов (включая пустые)': "All database item entries (including empty)",
+    'Служебные записи могут не иметь назначения. Для обычной игры используй другие категории.': "Unused entries may have no purpose. Use another category during normal play.",
+    'Название или ID (пусто — все)': "Name or ID (blank — all)",
+    '[без названия]': "[unnamed]",
+    '\nВыдача через игровую систему предметов. Лимит: ': "\nItem given through the game's inventory system. Limit: ",
+    '. Уникальные экземпляры и спецлимиты не меняются.': ". Unique instances and special stack limits remain unchanged.",
+    'Предметы · найдено ': "Items · found ",
+    'У этой игры нестандартная система экземпляров предметов. Нужна отдельная адаптация.': "This game uses nonstandard independent items and needs a compatibility fix.",
+    'Не удалось определить лимит предмета: нестандартный плагин инвентаря.': "Cannot determine the item limit because of a nonstandard inventory plugin.",
+    'Достигнут лимит этого предмета или категории экипировки.': "The limit for this item or equipment category has been reached.",
+    'Сколько выдать: ': "Amount to give: ",
+    'Выдать ': "Give ",
+    'Квестовые и служебные предметы могут менять результаты проверок.\nПредметы не заменяют прохождение соответствующих событий.': "Quest and system items can change conditions checked by the game.\nGiving items does not complete their events.",
+    'Добавлено: ': "Added: ",
+    'Макс. HP': "Max HP",
+    'Макс. MP': "Max MP",
+    'Атака': "Attack",
+    'Защита': "Defense",
+    'Маг. атака': "Magic attack",
+    'Маг. защита': "Magic defense",
+    'Ловкость': "Agility",
+    'Удача': "Luck",
+    ' · бонус ': " · bonus ",
+    'Бонус параметра ': "Stat bonus for ",
+    ' (целое число)': " (integer)",
+    'Введи целое число от -999999 до 999999.': "Enter an integer between -999999 and 999999.",
+    'Бонусы · ': "Bonuses · ",
+    'Поиск по ID / имени': "Search by ID / name",
+    'Поиск переключателя': "Search switches",
+    'Переключатели · ': "Switches · ",
+    'Поиск переменной': "Search variables",
+    'Новое значение переменной #': "New value for variable #",
+    'Переменные · ': "Variables · ",
+    'Язык меню: ': 'Menu language: ',
+    'Выбор языка': 'Choose language',
+    'Автоматически (по языку игры или системы)': 'Automatic (game or system language)',
+    'Язык интерфейса меню не меняет названия предметов, карт и навыков, заданные самой игрой.': 'Changing the menu language does not translate items, maps, or skills provided by the game.'
+};
+var SWF_LANG_KEY = 'SWF_CheatMenu.menuLanguage';
+var swfLanguageSetting = 'auto';
+try {
+    var swfStoredLanguage = window.localStorage.getItem(SWF_LANG_KEY);
+    if (swfStoredLanguage === 'ru' || swfStoredLanguage === 'en') swfLanguageSetting = swfStoredLanguage;
+} catch (ignored) {}
+function swfCurrentLanguage() {
+    if (swfLanguageSetting !== 'auto') return swfLanguageSetting;
+    var gameLocale = typeof $dataSystem !== 'undefined' && $dataSystem ? String($dataSystem.locale || '') : '';
+    var systemLocale = typeof navigator !== 'undefined' ? String(navigator.language || '') : '';
+    return /^ru(?:[-_]|$)/i.test(gameLocale || systemLocale) ? 'ru' : 'en';
+}
+function TR(ru) {
+    if (swfCurrentLanguage() === 'ru') return ru;
+    return Object.prototype.hasOwnProperty.call(SWF_EN_STRINGS, ru) ? SWF_EN_STRINGS[ru] : ru;
+}
+function swfLanguageLabel() {
+    return swfLanguageSetting === 'auto' ? 'Auto' : swfLanguageSetting === 'ru' ? 'Русский' : 'English';
+}
+function swfSetLanguage(lang) {
+    if (lang !== 'auto' && lang !== 'ru' && lang !== 'en') return;
+    swfLanguageSetting = lang;
+    try { window.localStorage.setItem(SWF_LANG_KEY, lang); } catch (ignored) {}
+    if (typeof $dataItems !== 'undefined' && $dataItems && $dataItems[ITEM_ID] && itemIsControl($dataItems[ITEM_ID])) {
+        $dataItems[ITEM_ID].name = TR('Меню управления');
+        $dataItems[ITEM_ID].description = TR('Управление персонажами, инвентарём и игрой. Доступен в бою.\nF7 — полное меню, 1 — быстрые читы.');
+    }
+}
+
 var openRequested = false;
 // Per-save stack size setting. Zero means the original game limit.
 function selectedStackLimit() {
@@ -1827,7 +2034,7 @@ function selectedStackLimit() {
 }
 function stackLimitLabel() {
     var limit = selectedStackLimit();
-    return limit ? String(limit) : 'стандартный';
+    return limit ? String(limit) : TR('стандартный');
 }
 // A unique-instance item cannot be given as a larger stack. Also avoid overriding
 // explicit per-item caps described in common note tags used by other plugins.
@@ -1862,7 +2069,7 @@ function installItem(data) {
     var found = data.filter(function(item) { return item && item.meta && item.meta.UniversalControl; })[0];
     ITEM_ID = found ? found.id : data.length;
     BASE_COUNTS.items = found ? found.id : data.length;
-    data[ITEM_ID] = {id:ITEM_ID,name:'Меню управления',description:'Управление персонажами, инвентарём и игрой. Доступен в бою.\nF7 — полное меню, 1 — быстрые читы.',iconIndex:83,itypeId:2,consumable:false,occasion:0,scope:0,speed:0,successRate:100,repeats:1,tpGain:0,hitType:0,animationId:0,price:0,damage:{critical:false,elementId:0,formula:'0',type:0,variance:0},effects:[],note:'<UniversalControl>\n<Not Independent Item>\nitemMaxNum:1',meta:{UniversalControl:true},nonIndependent:true};
+    data[ITEM_ID] = {id:ITEM_ID,name:TR('Меню управления'),description:TR('Управление персонажами, инвентарём и игрой. Доступен в бою.\nF7 — полное меню, 1 — быстрые читы.'),iconIndex:83,itypeId:2,consumable:false,occasion:0,scope:0,speed:0,successRate:100,repeats:1,tpGain:0,hitType:0,animationId:0,price:0,damage:{critical:false,elementId:0,formula:'0',type:0,variance:0},effects:[],note:'<UniversalControl>\n<Not Independent Item>\nitemMaxNum:1',meta:{UniversalControl:true},nonIndependent:true};
 }
 var oldOnLoad = DataManager.onLoad;
 DataManager.onLoad = function(object) {
@@ -1971,7 +2178,7 @@ Window_UniversalList.prototype.makeCommandList=function(){
     this._rows.forEach(function(r){this.addCommand(r.name,'choose',r.enabled!==false,r);},this);
 };
 Window_UniversalList.prototype.setRows=function(rows,index){this._rows=rows;this.refresh();this.select(Math.min(index||0,Math.max(0,rows.length-1)));this.activate();};
-Window_UniversalList.prototype.updateHelp=function(){if(this._helpWindow){var r=this.currentExt();this._helpWindow.setText(r&&r.help?r.help:'Enter — выбрать · Esc / правая кнопка — назад · PageUp / PageDown — листать');}};
+Window_UniversalList.prototype.updateHelp=function(){if(this._helpWindow){var r=this.currentExt();this._helpWindow.setText(r&&r.help?r.help:TR('Enter — выбрать · Esc / правая кнопка — назад · PageUp / PageDown — листать'));}};
 function Scene_UniversalControl(){this.initialize.apply(this,arguments);}
 Scene_UniversalControl.prototype=Object.create(Scene_MenuBase.prototype);
 Scene_UniversalControl.prototype.constructor=Scene_UniversalControl;
@@ -1999,7 +2206,7 @@ Scene_UniversalControl.prototype.create=function(){
     this.main();
 };
 Scene_UniversalControl.prototype.terminate=function(){if(this._modal)this._modal.remove();this._modal=null;Scene_MenuBase.prototype.terminate.call(this);};
-Scene_UniversalControl.prototype.choose=function(){var row=this._listWindow.currentExt();try{if(row&&row.run)row.run();else this._listWindow.activate();}catch(e){console.error('[UniversalControlMenu]',e);this.notice('Операция не выполнена: '+e.message+'\nВозможно, нужна адаптация под плагины этой игры.');}};
+Scene_UniversalControl.prototype.choose=function(){var row=this._listWindow.currentExt();try{if(row&&row.run)row.run();else this._listWindow.activate();}catch(e){console.error('[UniversalControlMenu]',e);this.notice(TR('Операция не выполнена: ')+e.message+TR('\nВозможно, нужна адаптация под плагины этой игры.'));}};
 Scene_UniversalControl.prototype.showPage=function(title,rows,replace){
     if(!replace&&this._page){this._page.index=this._listWindow.index();this._pages.push(this._page);}
     this._page={title:title,rows:rows,index:0};this.renderPage();
@@ -2017,8 +2224,8 @@ Scene_UniversalControl.prototype.ask=function(title,value,callback){
     var box=document.createElement('form');box.style.cssText='width:min(580px,85vw);padding:28px;background:#202634;border:1px solid #8094ba;border-radius:12px';
     var label=document.createElement('label');label.textContent=title;label.style.cssText='display:block;margin-bottom:18px;white-space:pre-line';
     var input=document.createElement('input');input.value=value||'';input.style.cssText='box-sizing:border-box;width:100%;font:22px Arial;padding:12px;margin-bottom:18px';
-    var ok=document.createElement('button');ok.type='submit';ok.textContent='Применить';
-    var cancel=document.createElement('button');cancel.type='button';cancel.textContent='Отмена';
+    var ok=document.createElement('button');ok.type='submit';ok.textContent=TR('Применить');
+    var cancel=document.createElement('button');cancel.type='button';cancel.textContent=TR('Отмена');
     [ok,cancel].forEach(function(b){b.style.cssText='font:20px Arial;padding:10px 18px;margin-right:12px;cursor:pointer';});
     function finish(v){cover.remove();self._modal=null;Input.clear();TouchInput.clear();self._listWindow.activate();if(v!==null)callback(v);}
     box.appendChild(label);label.appendChild(input);box.appendChild(ok);box.appendChild(cancel);cover.appendChild(box);document.body.appendChild(cover);this._modal=cover;
@@ -2029,12 +2236,12 @@ Scene_UniversalControl.prototype.ask=function(title,value,callback){
 };
 Scene_UniversalControl.prototype.askNumber=function(title,value,min,max,callback){
     var self=this;this.ask(title+' ('+min+'–'+max+')',String(value),function(s){
-        if(!/^\d+$/.test(s.trim())){self.notice('Введи целое число от '+min+' до '+max+'.');return;}
-        var n=Number(s);if(n<min||n>max){self.notice('Допустимый диапазон: '+min+'–'+max+'.');return;}callback(n);
+        if(!/^\d+$/.test(s.trim())){self.notice(TR('Введи целое число от ')+min+TR(' до ')+max+'.');return;}
+        var n=Number(s);if(n<min||n>max){self.notice(TR('Допустимый диапазон: ')+min+'–'+max+'.');return;}callback(n);
     });
 };
 Scene_UniversalControl.prototype.confirm=function(title,help,action){
-    var self=this;this.showPage(title,[{name:'Подтвердить',help:help,run:action},{name:'Отмена',run:function(){self.back();}}]);
+    var self=this;this.showPage(title,[{name:TR('Подтвердить'),help:help,run:action},{name:TR('Отмена'),run:function(){self.back();}}]);
 };
 // Single main menu: legacy cheats appear directly in the native interface,
 // grouped by purpose without a second "Extra cheats" page.
@@ -2043,63 +2250,75 @@ Scene_UniversalControl.prototype.main=function(){
     if (!battle) {
         var ret=$gameSystem._universalControlReturn;
         rows.push(
-            {name:'Телепорт: посещённые карты',help:'Телепортация не выполняет сюжетные события.',run:function(){self.maps(true,'');}},
-            {name:'Телепорт: все карты игры',help:'Включая тестовые и служебные карты. Сохрани игру отдельно.',run:function(){self.maps(false,'');}},
-            {name:'Возврат после телепорта',enabled:!!ret,help:ret?'Карта #'+ret.mapId+' · '+ret.x+', '+ret.y:'Точка возврата пока не записана.',run:function(){self.confirm('Возврат','Сюжетные события не откатываются.',function(){self.teleport(ret.mapId,ret.x,ret.y,ret.direction,false,false);});}},
-            {name:'Точки быстрого перемещения (3 слота)',run:function(){self.savedPositions();}}
+            {name:TR('Телепорт: посещённые карты'),help:TR('Телепортация не выполняет сюжетные события.'),run:function(){self.maps(true,'');}},
+            {name:TR('Телепорт: все карты игры'),help:TR('Включая тестовые и служебные карты. Сохрани игру отдельно.'),run:function(){self.maps(false,'');}},
+            {name:TR('Возврат после телепорта'),enabled:!!ret,help:ret?TR('Карта #')+ret.mapId+' · '+ret.x+', '+ret.y:TR('Точка возврата пока не записана.'),run:function(){self.confirm(TR('Возврат'),TR('Сюжетные события не откатываются.'),function(){self.teleport(ret.mapId,ret.x,ret.y,ret.direction,false,false);});}},
+            {name:TR('Точки быстрого перемещения (3 слота)'),run:function(){self.savedPositions();}}
         );
     } else {
-        rows.push({name:'Противники: установить HP = 1',run:function(){Cheat_Menu.set_enemy_hp(1,true);self.notice('У живых противников осталось 1 HP.');}});
-        rows.push({name:'Победить всех противников',help:'Мгновенно устанавливает HP всех живых врагов в 0 и завершает бой через штатную обработку победы.',run:function(){
-            self.confirm('Победить всех противников?','У всех оставшихся врагов будет 0 HP.',function(){
+        rows.push({name:TR('Противники: установить HP = 1'),run:function(){Cheat_Menu.set_enemy_hp(1,true);self.notice(TR('У живых противников осталось 1 HP.'));}});
+        rows.push({name:TR('Победить всех противников'),help:TR('Мгновенно устанавливает HP всех живых врагов в 0 и завершает бой через штатную обработку победы.'),run:function(){
+            self.confirm(TR('Победить всех противников?'),TR('У всех оставшихся врагов будет 0 HP.'),function(){
                 self.close(); Cheat_Menu.set_enemy_hp(0,true);
             });
         }});
     }
     rows.push(
-        {name:'Персонажи: уровни, навыки, параметры, читы',run:function(){self.actors();}},
-        {name:'HP / MP / TP всей группы',help:'Пополнить ресурсы, обнулить их или снять все состояния.',run:function(){self.partyResources();}},
-        {name:'Получить предмет / оружие / броню',run:function(){self.itemCategories();}},
-        {name:'Лимит предметов: '+stackLimitLabel(),run:function(){self.stackLimits();}},
-        {name:'Золото: '+$gameParty.gold(),run:function(){self.askNumber('Установить золото',$gameParty.gold(),0,999999999,function(n){$gameParty.gainGold(n-$gameParty.gold());self.main();self.notice('Золото: '+$gameParty.gold());});}},
-        {name:'Игровые переключатели',run:function(){self.extraSwitches('');}},
-        {name:'Игровые переменные',run:function(){self.extraVariables('');}}
+        {name:TR('Персонажи: уровни, навыки, параметры, читы'),run:function(){self.actors();}},
+        {name:TR('HP / MP / TP всей группы'),help:TR('Пополнить ресурсы, обнулить их или снять все состояния.'),run:function(){self.partyResources();}},
+        {name:TR('Получить предмет / оружие / броню'),run:function(){self.itemCategories();}},
+        {name:TR('Лимит предметов: ')+stackLimitLabel(),run:function(){self.stackLimits();}},
+        {name:TR('Золото: ')+$gameParty.gold(),run:function(){self.askNumber(TR('Установить золото'),$gameParty.gold(),0,999999999,function(n){$gameParty.gainGold(n-$gameParty.gold());self.main();self.notice(TR('Золото: ')+$gameParty.gold());});}},
+        {name:TR('Игровые переключатели'),run:function(){self.extraSwitches('');}},
+        {name:TR('Игровые переменные'),run:function(){self.extraVariables('');}}
     );
     if (!battle) {
-        var through=$gamePlayer.isThrough&&$gamePlayer.isThrough()?'ВКЛ':'ВЫКЛ';
+        var through=$gamePlayer.isThrough&&$gamePlayer.isThrough()?TR('ВКЛ'):TR('ВЫКЛ');
         var speed=$gamePlayer.moveSpeed?$gamePlayer.moveSpeed():$gamePlayer._moveSpeed;
         rows.push(
-            {name:'Проход сквозь стены: '+through,run:function(){$gamePlayer.setThrough(!$gamePlayer.isThrough());self.main();}},
-            {name:'Скорость движения: '+speed,run:function(){self.ask('Скорость (0.5–6.0, шаг 0.5)',String(speed),function(v){
-                var n=Number(v);if(!isFinite(n)||n<0.5||n>6||Math.round(n*2)!==n*2){self.notice('Введите число от 0.5 до 6.0, шаг 0.5.');return;}
+            {name:TR('Проход сквозь стены: ')+through,run:function(){$gamePlayer.setThrough(!$gamePlayer.isThrough());self.main();}},
+            {name:TR('Скорость движения: ')+speed,run:function(){self.ask(TR('Скорость (0.5–6.0, шаг 0.5)'),String(speed),function(v){
+                var n=Number(v);if(!isFinite(n)||n<0.5||n>6||Math.round(n*2)!==n*2){self.notice(TR('Введите число от 0.5 до 6.0, шаг 0.5.'));return;}
                 if(Cheat_Menu.speed_initialized && !Cheat_Menu.speed_unlocked) Cheat_Menu.speed_unlocked=true;
                 $gamePlayer.setMoveSpeed(n);self.main();
             });}},
-            {name:'Зафиксировать скорость: '+(Cheat_Menu.speed_unlocked?'ВЫКЛ':'ВКЛ'),run:function(){Cheat_Menu.toggle_lock_player_speed();self.main();}},
-            {name:$gameSystem._universalControlDisabled?'Вернуть предмет в инвентарь':'Подготовить удаление мода',run:function(){
+            {name:TR('Зафиксировать скорость: ')+(Cheat_Menu.speed_unlocked?TR('ВЫКЛ'):TR('ВКЛ')),run:function(){Cheat_Menu.toggle_lock_player_speed();self.main();}},
+            {name:$gameSystem._universalControlDisabled?TR('Вернуть предмет в инвентарь'):TR('Подготовить удаление мода'),run:function(){
                 if ($gameSystem._universalControlDisabled){$gameSystem._universalControlDisabled=false;ensureItem();self.main();return;}
-                self.confirm('Удалить служебный предмет?','Перед удалением верни лимит предметов к обычному и сохрани игру в другой слот.',function(){delete $gameParty._items[ITEM_ID];$gameSystem._universalControlDisabled=true;$gameSystem._universalControlItemCap=0;delete $gameSystem._universalControlReturn;self.close();});
+                self.confirm(TR('Удалить служебный предмет?'),TR('Перед удалением верни лимит предметов к обычному и сохрани игру в другой слот.'),function(){delete $gameParty._items[ITEM_ID];$gameSystem._universalControlDisabled=true;$gameSystem._universalControlItemCap=0;delete $gameSystem._universalControlReturn;self.close();});
             }}
         );
     }
-    rows.push({name:battle?'Закрыть меню и продолжить бой':'Закрыть меню',run:function(){self.close();}});
-    this.showPage('Меню управления · '+(IS_MZ?'MZ':'MV')+(battle?' · БОЙ':''),rows,true);
+
+    rows.push({
+        name:TR('Язык меню: ')+swfLanguageLabel(),
+        help:TR('Язык интерфейса меню не меняет названия предметов, карт и навыков, заданные самой игрой.'),
+        run:function(){
+            self.showPage(TR('Выбор языка'),[
+                {name:TR('Автоматически (по языку игры или системы)'),run:function(){swfSetLanguage('auto');self._pages=[];self.main();}},
+                {name:'Русский',run:function(){swfSetLanguage('ru');self._pages=[];self.main();}},
+                {name:'English',run:function(){swfSetLanguage('en');self._pages=[];self.main();}}
+            ]);
+        }
+    });
+    rows.push({name:battle?TR('Закрыть меню и продолжить бой'):TR('Закрыть меню'),run:function(){self.close();}});
+    this.showPage(TR('Меню управления · ')+(IS_MZ?'MZ':'MV')+(battle?TR(' · БОЙ'):''),rows,true);
 };
 Scene_UniversalControl.prototype.savedPositions=function(replace){
     var self=this,rows=[];
     Cheat_Menu.prepare();
     Cheat_Menu.saved_positions.forEach(function(p,i){
-        var name='Слот '+(i+1),filled=p&&p.m>0;
-        var info=filled?'Карта #'+p.m+' ('+p.x+', '+p.y+')':'пусто';
-        rows.push({name:name+' · сохранить текущую точку',help:'Перезапишет слот. '+info,run:function(){
+        var name=TR('Слот ')+(i+1),filled=p&&p.m>0;
+        var info=filled?TR('Карта #')+p.m+' ('+p.x+', '+p.y+')':TR('пусто');
+        rows.push({name:name+TR(' · сохранить текущую точку'),help:TR('Перезапишет слот. ')+info,run:function(){
             Cheat_Menu.saved_positions[i]={m:$gameMap.mapId(),x:$gamePlayer.x,y:$gamePlayer.y};
             self.savedPositions(true);
         }});
-        rows.push({name:name+' · переместиться · '+info,enabled:filled,help:'Переместиться в сохранённую точку. Не изменяет сюжетные флаги.',run:function(){
-            self.confirm('Переместиться в '+name+'?','Карта '+p.m+', '+p.x+', '+p.y,function(){self.teleport(p.m,p.x,p.y,2,true,true);});
+        rows.push({name:name+TR(' · переместиться · ')+info,enabled:filled,help:TR('Переместиться в сохранённую точку. Не изменяет сюжетные флаги.'),run:function(){
+            self.confirm(TR('Переместиться в ')+name+'?',TR('Карта ')+p.m+', '+p.x+', '+p.y,function(){self.teleport(p.m,p.x,p.y,2,true,true);});
         }});
     });
-    this.showPage('Сохранённые точки',rows,replace);
+    this.showPage(TR('Сохранённые точки'),rows,replace);
 };
 Scene_UniversalControl.prototype.partyResources=function(){
     var self=this;
@@ -2109,33 +2328,33 @@ Scene_UniversalControl.prototype.partyResources=function(){
             if(key==='mp')a.setMp(value==='full'?a.mmp:value);
             if(key==='tp')a.setTp(value==='full'?a.maxTp():value);
         });
-        self.notice('Ресурсы группы изменены.');
+        self.notice(TR('Ресурсы группы изменены.'));
     }
-    var rows=[{name:'Полностью восстановить всю группу',run:function(){
+    var rows=[{name:TR('Полностью восстановить всю группу'),run:function(){
         $gameParty.allMembers().forEach(function(a){if(a){a.recoverAll();a.setTp(a.maxTp());}});
-        self.notice('Группа восстановлена.');
+        self.notice(TR('Группа восстановлена.'));
     }}];
     [['HP','hp'],['MP','mp'],['TP','tp']].forEach(function(entry){
-        rows.push({name:'Восстановить '+entry[0]+' до максимума',run:function(){groupSet(entry[1],'full');}});
-        rows.push({name:'Установить '+entry[0]+' группы на 1',run:function(){groupSet(entry[1],1);}});
-        rows.push({name:'Установить '+entry[0]+' группы на 0',run:function(){groupSet(entry[1],0);}});
+        rows.push({name:TR('Восстановить ')+entry[0]+TR(' до максимума'),run:function(){groupSet(entry[1],'full');}});
+        rows.push({name:TR('Установить ')+entry[0]+TR(' группы на 1'),run:function(){groupSet(entry[1],1);}});
+        rows.push({name:TR('Установить ')+entry[0]+TR(' группы на 0'),run:function(){groupSet(entry[1],0);}});
     });
-    rows.push({name:'Снять все состояния с группы',run:function(){Cheat_Menu.clear_party_states();self.notice('Состояния группы очищены.');}});
-    this.showPage('HP / MP / TP группы',rows);
+    rows.push({name:TR('Снять все состояния с группы'),run:function(){Cheat_Menu.clear_party_states();self.notice(TR('Состояния группы очищены.'));}});
+    this.showPage(TR('HP / MP / TP группы'),rows);
 };
 Scene_UniversalControl.prototype.stackLimits=function(replace){
     var self=this,current=selectedStackLimit();
-    var options=[{limit:0,title:'Стандартный (как в игре)'},{limit:99,title:'99 штук'},{limit:999,title:'999 штук'},{limit:9999,title:'9999 штук'}];
+    var options=[{limit:0,title:TR('Стандартный (как в игре)')},{limit:99,title:TR('99 штук')},{limit:999,title:TR('999 штук')},{limit:9999,title:TR('9999 штук')}];
     var rows=options.map(function(o){return {
         name:(o.limit===current?'✓  ':'    ')+o.title,
-        help:o.limit===0?'Используется оригинальный предел игры. Уже накопленные большие стопки защищены от удаления при следующей выдаче.':'Ограничение для обычных предметов, оружия и брони.\nНе затрагивает уникальные экземпляры и распознанные специальные ограничения.',
+        help:o.limit===0?TR('Используется оригинальный предел игры. Уже накопленные большие стопки защищены от удаления при следующей выдаче.'):TR('Ограничение для обычных предметов, оружия и брони.\nНе затрагивает уникальные экземпляры и распознанные специальные ограничения.'),
         run:function(){
             $gameSystem._universalControlItemCap=o.limit;
             self.stackLimits(true);
-            self.notice('Лимит: '+stackLimitLabel()+'. Изменение сохраняется при следующем сохранении игры.\nБольшие существующие стопки не уменьшаются автоматически.');
+            self.notice(TR('Лимит: ')+stackLimitLabel()+TR('. Изменение сохраняется при следующем сохранении игры.\nБольшие существующие стопки не уменьшаются автоматически.'));
         }
     };});
-    this.showPage('Лимит инвентаря · '+stackLimitLabel(),rows,replace);
+    this.showPage(TR('Лимит инвентаря · ')+stackLimitLabel(),rows,replace);
 };
 // Maps are loaded separately; the current $dataMap is never replaced by this reader.
 function readMap(id, callback) {
@@ -2147,7 +2366,7 @@ function readMap(id, callback) {
         if(xhr.status>=400){callback(new Error('HTTP '+xhr.status));return;}
         try{var data=JSON.parse(xhr.responseText);if(!Array.isArray(data.data)||!Array.isArray(data.events)||!data.width||!data.height)throw new Error('Invalid map');mapCache[id]=data;callback(null,data);}catch(e){callback(e);}
     };
-    xhr.onerror=xhr.ontimeout=function(){callback(new Error('Не удалось прочитать карту'));};xhr.send();
+    xhr.onerror=xhr.ontimeout=function(){callback(new Error(TR('Не удалось прочитать карту')));};xhr.send();
 }
 function candidatePoint(data,seeds) {
     var w=data.width,h=data.height,tiles=$dataTilesets[data.tilesetId];
@@ -2184,15 +2403,15 @@ function knownEntrances(id) {
 Scene_UniversalControl.prototype.maps=function(visitedOnly,query,replace){
     var self=this,q=query.toLowerCase(),visited=$gameSystem._universalControlVisited||{};
     var selected=MAPS.filter(function(m){return (!visitedOnly||visited[m.id])&&(!q||(m.id+' '+m.name+' '+m.internal).toLowerCase().indexOf(q)>=0);});
-    var rows=[{name:'Поиск по названию или ID'+(query?' — '+query:''),run:function(){self.ask('Название карты или ID (пусто — показать все)',query,function(v){self.maps(visitedOnly,v,true);});}}];
-    selected.forEach(function(m){rows.push({name:'#'+m.id+' · '+clean(m.name),help:'Название карты из базы игры. Список может включать служебные карты.\nДанные и координаты будут прочитаны после выбора.\nПеред телепортом сохранись отдельно.',run:function(){self.loadMapDetail(m);}});});
-    this.showPage('Телепорт · найдено '+selected.length,rows,replace);
+    var rows=[{name:TR('Поиск по названию или ID')+(query?' — '+query:''),run:function(){self.ask(TR('Название карты или ID (пусто — показать все)'),query,function(v){self.maps(visitedOnly,v,true);});}}];
+    selected.forEach(function(m){rows.push({name:'#'+m.id+' · '+clean(m.name),help:TR('Название карты из базы игры. Список может включать служебные карты.\nДанные и координаты будут прочитаны после выбора.\nПеред телепортом сохранись отдельно.'),run:function(){self.loadMapDetail(m);}});});
+    this.showPage(TR('Телепорт · найдено ')+selected.length,rows,replace);
 };
 Scene_UniversalControl.prototype.loadMapDetail=function(info){
-    var self=this;this._listWindow.deactivate();this._helpWindow.setText('Читаю карту #'+info.id+'…');
+    var self=this;this._listWindow.deactivate();this._helpWindow.setText(TR('Читаю карту #')+info.id+'…');
     readMap(info.id,function(error,data){
         if(SceneManager._scene!==self)return;
-        if(error){self.notice('Карта не прочитана: '+error.message+'. Возможно, игра использует особый формат данных.');return;}
+        if(error){self.notice(TR('Карта не прочитана: ')+error.message+TR('. Возможно, игра использует особый формат данных.'));return;}
         var m={id:info.id,name:data.displayName||info.name,width:data.width,height:data.height,point:candidatePoint(data,knownEntrances(info.id))};
         if(data.displayName)info.name=data.displayName;
         self.mapDetail(m);
@@ -2200,111 +2419,111 @@ Scene_UniversalControl.prototype.loadMapDetail=function(info){
 };
 Scene_UniversalControl.prototype.mapDetail=function(m){
     var self=this;this.showPage('#'+m.id+' · '+clean(m.name),[
-        {name:'Перейти в подобранную точку'+(m.point?' ('+m.point[0]+', '+m.point[1]+')':''),enabled:!!m.point,help:'Проходимость рассчитывается по стандартным тайлам.\nПри наличии известных входов выбирается клетка рядом с ними.\nСобытия и нестандартные плагины коллизий могут влиять на переход.',run:function(){self.confirm('Телепорт: '+clean(m.name),'Перед переходом сохранись в отдельный слот.\nДля возвращения открой это меню через F7.\nТелепорт не устанавливает сюжетные флаги.',function(){self.teleport(m.id,m.point[0],m.point[1],m.point[2],true,true);});}},
-        {name:'Указать координаты вручную',help:'Без автоматического смещения. Можно попасть в стену или на событие.',run:function(){self.ask('Координаты X,Y (X: 0–'+(m.width-1)+', Y: 0–'+(m.height-1)+')',m.point?m.point[0]+','+m.point[1]:'0,0',function(s){var match=s.trim().match(/^(\d+)\s*[,; ]\s*(\d+)$/);if(!match||Number(match[1])>=m.width||Number(match[2])>=m.height){self.notice('Неверные координаты. Введи X,Y в границах карты.');return;}self.confirm('Ручной телепорт','В указанной клетке может быть стена или событие.\nF7 → возврат позволит вернуться, если игра продолжает работать.',function(){self.teleport(m.id,Number(match[1]),Number(match[2]),2,true,false);});});}}
+        {name:TR('Перейти в подобранную точку')+(m.point?' ('+m.point[0]+', '+m.point[1]+')':''),enabled:!!m.point,help:TR('Проходимость рассчитывается по стандартным тайлам.\nПри наличии известных входов выбирается клетка рядом с ними.\nСобытия и нестандартные плагины коллизий могут влиять на переход.'),run:function(){self.confirm(TR('Телепорт: ')+clean(m.name),TR('Перед переходом сохранись в отдельный слот.\nДля возвращения открой это меню через F7.\nТелепорт не устанавливает сюжетные флаги.'),function(){self.teleport(m.id,m.point[0],m.point[1],m.point[2],true,true);});}},
+        {name:TR('Указать координаты вручную'),help:TR('Без автоматического смещения. Можно попасть в стену или на событие.'),run:function(){self.ask(TR('Координаты X,Y (X: 0–')+(m.width-1)+', Y: 0–'+(m.height-1)+')',m.point?m.point[0]+','+m.point[1]:'0,0',function(s){var match=s.trim().match(/^(\d+)\s*[,; ]\s*(\d+)$/);if(!match||Number(match[1])>=m.width||Number(match[2])>=m.height){self.notice(TR('Неверные координаты. Введи X,Y в границах карты.'));return;}self.confirm(TR('Ручной телепорт'),TR('В указанной клетке может быть стена или событие.\nF7 → возврат позволит вернуться, если игра продолжает работать.'),function(){self.teleport(m.id,Number(match[1]),Number(match[2]),2,true,false);});});}}
     ]);
 };
 Scene_UniversalControl.prototype.teleport=function(mapId,x,y,direction,remember,adjust){
-    if($gamePlayer.isInVehicle()){this.notice('Сначала выйди из транспорта.');return;}
+    if($gamePlayer.isInVehicle()){this.notice(TR('Сначала выйди из транспорта.'));return;}
     if(remember)$gameSystem._universalControlReturn={mapId:$gameMap.mapId(),x:$gamePlayer.x,y:$gamePlayer.y,direction:$gamePlayer.direction()};
     $gameTemp._universalControlLanding={mapId:mapId,adjust:adjust};
     $gamePlayer.reserveTransfer(mapId,x,y,direction||2,0);SceneManager.goto(Scene_Map);
 };
 Scene_UniversalControl.prototype.actors=function(){
-    var self=this;var rows=$gameParty.allMembers().map(function(a){return {name:clean(a.name())+' · уровень '+a.level,help:'Персонаж из текущего отряда, включая резерв.\nНастройка уровня не меняет сюжетные флаги.',run:function(){self.actorMenu(a);}};});
-    if(!rows.length)rows.push({name:'В отряде нет персонажей',enabled:false});this.showPage('Персонажи отряда',rows);
+    var self=this;var rows=$gameParty.allMembers().map(function(a){return {name:clean(a.name())+TR(' · уровень ')+a.level,help:TR('Персонаж из текущего отряда, включая резерв.\nНастройка уровня не меняет сюжетные флаги.'),run:function(){self.actorMenu(a);}};});
+    if(!rows.length)rows.push({name:TR('В отряде нет персонажей'),enabled:false});this.showPage(TR('Персонажи отряда'),rows);
 };
 Scene_UniversalControl.prototype.actorMenu=function(a,replace){
     var self=this;
     var rows=[
-        {name:'Установить уровень: '+a.level,help:'Опыт выставляется на начало выбранного уровня; классовые навыки сохраняются.',run:function(){self.askNumber('Уровень: '+clean(a.name()),a.level,1,a.maxLevel(),function(n){a.changeLevel(n,false);self.actorMenu(a,true);});}},
-        {name:'Добавить опыт',run:function(){self.askNumber('Добавить опыт',1000,0,99999999,function(n){a.gainExp(n);self.actorMenu(a,true);});}},
-        {name:'Бессмертие: '+(a.god_mode?'ВКЛ':'ВЫКЛ'),help:'Бессмертие старого Cheat_Menu. После загрузки сохранения его может потребоваться включить снова.',run:function(){if(a.god_mode)Cheat_Menu.god_mode_off(a);else Cheat_Menu.god_mode(a);self.actorMenu(a,true);}},
-        {name:'Установить HP: '+a.hp+' / '+a.mhp,run:function(){self.askNumber('HP',a.hp,0,a.mhp,function(n){a.setHp(n);self.actorMenu(a,true);});}},
-        {name:'Установить MP: '+a.mp+' / '+a.mmp,run:function(){self.askNumber('MP',a.mp,0,a.mmp,function(n){a.setMp(n);self.actorMenu(a,true);});}},
-        {name:'Установить TP: '+a.tp+' / '+a.maxTp(),run:function(){self.askNumber('TP',a.tp,0,a.maxTp(),function(n){a.setTp(n);self.actorMenu(a,true);});}},
-        {name:'Полностью восстановить',run:function(){a.recoverAll();a.setTp(a.maxTp());self.actorMenu(a,true);}},
-        {name:'Снять все состояния',run:function(){Cheat_Menu.clear_actor_states(a);self.actorMenu(a,true);}},
-        {name:'Изменить бонусы характеристик',run:function(){self.extraStats(a);}},
-        {name:'Изучить навык',run:function(){self.skills(a,false,'');}},
-        {name:'Забыть изученный навык',run:function(){self.skills(a,true,'');}}
+        {name:TR('Установить уровень: ')+a.level,help:TR('Опыт выставляется на начало выбранного уровня; классовые навыки сохраняются.'),run:function(){self.askNumber(TR('Уровень: ')+clean(a.name()),a.level,1,a.maxLevel(),function(n){a.changeLevel(n,false);self.actorMenu(a,true);});}},
+        {name:TR('Добавить опыт'),run:function(){self.askNumber(TR('Добавить опыт'),1000,0,99999999,function(n){a.gainExp(n);self.actorMenu(a,true);});}},
+        {name:TR('Бессмертие: ')+(a.god_mode?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Бессмертие старого Cheat_Menu. После загрузки сохранения его может потребоваться включить снова.'),run:function(){if(a.god_mode)Cheat_Menu.god_mode_off(a);else Cheat_Menu.god_mode(a);self.actorMenu(a,true);}},
+        {name:TR('Установить HP: ')+a.hp+' / '+a.mhp,run:function(){self.askNumber('HP',a.hp,0,a.mhp,function(n){a.setHp(n);self.actorMenu(a,true);});}},
+        {name:TR('Установить MP: ')+a.mp+' / '+a.mmp,run:function(){self.askNumber('MP',a.mp,0,a.mmp,function(n){a.setMp(n);self.actorMenu(a,true);});}},
+        {name:TR('Установить TP: ')+a.tp+' / '+a.maxTp(),run:function(){self.askNumber('TP',a.tp,0,a.maxTp(),function(n){a.setTp(n);self.actorMenu(a,true);});}},
+        {name:TR('Полностью восстановить'),run:function(){a.recoverAll();a.setTp(a.maxTp());self.actorMenu(a,true);}},
+        {name:TR('Снять все состояния'),run:function(){Cheat_Menu.clear_actor_states(a);self.actorMenu(a,true);}},
+        {name:TR('Изменить бонусы характеристик'),run:function(){self.extraStats(a);}},
+        {name:TR('Изучить навык'),run:function(){self.skills(a,false,'');}},
+        {name:TR('Забыть изученный навык'),run:function(){self.skills(a,true,'');}}
     ];
-    this.showPage(clean(a.name())+' · уровень '+a.level,rows,replace);
+    this.showPage(clean(a.name())+TR(' · уровень ')+a.level,rows,replace);
 };
 Scene_UniversalControl.prototype.skills=function(a,remove,query,replace){
     var self=this,q=query.toLowerCase();var data=$dataSkills.filter(function(s){return s&&s.name&&(!remove||a.isLearnedSkill(s.id))&&(!q||(s.id+' '+clean(s.name)).toLowerCase().indexOf(q)>=0);});
-    var rows=[{name:'Поиск по названию / ID'+(query?' — '+query:''),run:function(){self.ask('Навык или ID (пусто — все)',query,function(v){self.skills(a,remove,v,true);});}}];
-    data.forEach(function(s){rows.push({name:'#'+s.id+' · '+clean(s.name)+(a.isLearnedSkill(s.id)?' [изучен]':''),help:clean(s.description)+'\n'+(remove?'Удалить из изученных навыков.':'Изучить напрямую, без траты очков дерева навыков.')+'\nСюжетные, классовые и экипировочные условия использования сохраняются.',run:function(){self.confirm((remove?'Забыть: ':'Изучить: ')+clean(s.name),'Персонаж: '+clean(a.name())+'\n'+clean(s.description),function(){if(remove)a.forgetSkill(s.id);else a.learnSkill(s.id);self.back();self.skills(a,remove,query,true);self.notice(remove?'Навык удалён из изученных.':'Навык изучен. Для применения могут требоваться класс, оружие или ресурсы.');});}});});
-    this.showPage((remove?'Забыть':'Изучить')+' · '+clean(a.name()),rows,replace);
+    var rows=[{name:TR('Поиск по названию / ID')+(query?' — '+query:''),run:function(){self.ask(TR('Навык или ID (пусто — все)'),query,function(v){self.skills(a,remove,v,true);});}}];
+    data.forEach(function(s){rows.push({name:'#'+s.id+' · '+clean(s.name)+(a.isLearnedSkill(s.id)?TR(' [изучен]'):''),help:clean(s.description)+'\n'+(remove?TR('Удалить из изученных навыков.'):TR('Изучить напрямую, без траты очков дерева навыков.'))+TR('\nСюжетные, классовые и экипировочные условия использования сохраняются.'),run:function(){self.confirm((remove?TR('Забыть: '):TR('Изучить: '))+clean(s.name),TR('Персонаж: ')+clean(a.name())+'\n'+clean(s.description),function(){if(remove)a.forgetSkill(s.id);else a.learnSkill(s.id);self.back();self.skills(a,remove,query,true);self.notice(remove?TR('Навык удалён из изученных.'):TR('Навык изучен. Для применения могут требоваться класс, оружие или ресурсы.'));});}});});
+    this.showPage((remove?TR('Забыть'):TR('Изучить'))+' · '+clean(a.name()),rows,replace);
 };
 Scene_UniversalControl.prototype.itemCategories=function(){
-    var self=this;this.showPage('Выдача предметов',[
-        {name:'Обычные предметы',run:function(){self.items('items','normal','');}},
-        {name:'Оружие',run:function(){self.items('weapons','normal','');}},
-        {name:'Броня и аксессуары',run:function(){self.items('armors','normal','');}},
-        {name:'Ключевые и скрытые предметы',help:'Могут участвовать в квестовых проверках. Выдача не завершает квест.',run:function(){self.items('items','special','');}},
-        {name:'Все записи базы предметов (включая пустые)',help:'Служебные записи могут не иметь назначения. Для обычной игры используй другие категории.',run:function(){self.items('items','all','');}}
+    var self=this;this.showPage(TR('Выдача предметов'),[
+        {name:TR('Обычные предметы'),run:function(){self.items('items','normal','');}},
+        {name:TR('Оружие'),run:function(){self.items('weapons','normal','');}},
+        {name:TR('Броня и аксессуары'),run:function(){self.items('armors','normal','');}},
+        {name:TR('Ключевые и скрытые предметы'),help:TR('Могут участвовать в квестовых проверках. Выдача не завершает квест.'),run:function(){self.items('items','special','');}},
+        {name:TR('Все записи базы предметов (включая пустые)'),help:TR('Служебные записи могут не иметь назначения. Для обычной игры используй другие категории.'),run:function(){self.items('items','all','');}}
     ]);
 };
 function database(kind){return kind==='items'?$dataItems:kind==='weapons'?$dataWeapons:$dataArmors;}
 Scene_UniversalControl.prototype.items=function(kind,mode,query,replace){
     var self=this,q=query.toLowerCase();var data=database(kind).slice(0,BASE_COUNTS[kind]).filter(function(i){return i&&i.id!==ITEM_ID&&!(i.meta && i.meta.UniversalControl)&&(mode==='all'||!!i.name)&&(kind!=='items'||mode==='all'||(mode==='normal'?i.itypeId===1:i.itypeId!==1))&&(!q||(i.id+' '+clean(i.name)).toLowerCase().indexOf(q)>=0);});
-    var rows=[{name:'Поиск по названию / ID'+(query?' — '+query:''),run:function(){self.ask('Название или ID (пусто — все)',query,function(v){self.items(kind,mode,v,true);});}}];
-    data.forEach(function(item){rows.push({name:'#'+item.id+' · '+(clean(item.name)||'[без названия]'),help:clean(item.description)+'\nВыдача через игровую систему предметов. Лимит: '+stackLimitLabel()+'. Уникальные экземпляры и спецлимиты не меняются.',run:function(){self.giveDialog(item);}});});
-    this.showPage('Предметы · найдено '+data.length,rows,replace);
+    var rows=[{name:TR('Поиск по названию / ID')+(query?' — '+query:''),run:function(){self.ask(TR('Название или ID (пусто — все)'),query,function(v){self.items(kind,mode,v,true);});}}];
+    data.forEach(function(item){rows.push({name:'#'+item.id+' · '+(clean(item.name)||TR('[без названия]')),help:clean(item.description)+TR('\nВыдача через игровую систему предметов. Лимит: ')+stackLimitLabel()+TR('. Уникальные экземпляры и спецлимиты не меняются.'),run:function(){self.giveDialog(item);}});});
+    this.showPage(TR('Предметы · найдено ')+data.length,rows,replace);
 };
 Scene_UniversalControl.prototype.giveDialog=function(item){
     var self=this,independent=DataManager.isIndependent&&DataManager.isIndependent(item);
-    if(independent && (typeof $gameParty.numIndependentItems!=='function'||typeof $gameParty.getIndependentItemTypeMax!=='function'||typeof $gameParty.getIndependentItemTypeCur!=='function'||typeof $gameParty.gainIndependentItem!=='function')){this.notice('У этой игры нестандартная система экземпляров предметов. Нужна отдельная адаптация.');return;}
+    if(independent && (typeof $gameParty.numIndependentItems!=='function'||typeof $gameParty.getIndependentItemTypeMax!=='function'||typeof $gameParty.getIndependentItemTypeCur!=='function'||typeof $gameParty.gainIndependentItem!=='function')){this.notice(TR('У этой игры нестандартная система экземпляров предметов. Нужна отдельная адаптация.'));return;}
     var before=independent?$gameParty.numIndependentItems(item):$gameParty.numItems(item);
     var max=independent?Math.max(0,Math.min(50,$gameParty.getIndependentItemTypeMax(item)-$gameParty.getIndependentItemTypeCur(item))):Math.max(0,Math.min(9999,Number($gameParty.maxItems(item))-before));
-    if(!isFinite(max)){this.notice('Не удалось определить лимит предмета: нестандартный плагин инвентаря.');return;}
-    if(max<1){this.notice('Достигнут лимит этого предмета или категории экипировки.');return;}
-    this.askNumber('Сколько выдать: '+(clean(item.name)||'#'+item.id),1,1,max,function(n){
-        self.confirm('Выдать '+n+' × '+(clean(item.name)||'#'+item.id),'Квестовые и служебные предметы могут менять результаты проверок.\nПредметы не заменяют прохождение соответствующих событий.',function(){
+    if(!isFinite(max)){this.notice(TR('Не удалось определить лимит предмета: нестандартный плагин инвентаря.'));return;}
+    if(max<1){this.notice(TR('Достигнут лимит этого предмета или категории экипировки.'));return;}
+    this.askNumber(TR('Сколько выдать: ')+(clean(item.name)||'#'+item.id),1,1,max,function(n){
+        self.confirm(TR('Выдать ')+n+' × '+(clean(item.name)||'#'+item.id),TR('Квестовые и служебные предметы могут менять результаты проверок.\nПредметы не заменяют прохождение соответствующих событий.'),function(){
             var countBefore=independent?$gameParty.numIndependentItems(item):$gameParty.numItems(item);
             if(independent)$gameParty.gainIndependentItem(item,n,false);else $gameParty.gainItem(item,n,false);
             var countAfter=independent?$gameParty.numIndependentItems(item):$gameParty.numItems(item);
-            self.back();self.notice('Добавлено: '+(countAfter-countBefore)+' × '+(clean(item.name)||'#'+item.id)+'.');
+            self.back();self.notice(TR('Добавлено: ')+(countAfter-countBefore)+' × '+(clean(item.name)||'#'+item.id)+'.');
         });
     });
 };
 
 // Utilities shared by actor menu and legacy Cheat_Menu.
 Scene_UniversalControl.prototype.extraStats=function(a,replace){
-    var self=this,names=['Макс. HP','Макс. MP','Атака','Защита','Маг. атака','Маг. защита','Ловкость','Удача'];
-    var rows=names.map(function(name,id){return {name:name+' · бонус '+a._paramPlus[id],run:function(){
-        self.ask('Бонус параметра '+name+' (целое число)',String(a._paramPlus[id]),function(v){
-            if(!/^-?\d+$/.test(v.trim()) || Math.abs(Number(v))>999999){self.notice('Введи целое число от -999999 до 999999.');return;}
+    var self=this,names=[TR('Макс. HP'),TR('Макс. MP'),TR('Атака'),TR('Защита'),TR('Маг. атака'),TR('Маг. защита'),TR('Ловкость'),TR('Удача')];
+    var rows=names.map(function(name,id){return {name:name+TR(' · бонус ')+a._paramPlus[id],run:function(){
+        self.ask(TR('Бонус параметра ')+name+TR(' (целое число)'),String(a._paramPlus[id]),function(v){
+            if(!/^-?\d+$/.test(v.trim()) || Math.abs(Number(v))>999999){self.notice(TR('Введи целое число от -999999 до 999999.'));return;}
             a.addParam(id,Number(v)-a._paramPlus[id]);self.extraStats(a,true);
         });
     }};});
-    this.showPage('Бонусы · '+clean(a.name()),rows,replace);
+    this.showPage(TR('Бонусы · ')+clean(a.name()),rows,replace);
 };
 Scene_UniversalControl.prototype.extraSwitches=function(query,replace){
     var self=this,q=query.trim().toLowerCase(),names=$dataSystem.switches||[];
-    var rows=[{name:'Поиск по ID / имени'+(query?' · '+query:''),run:function(){self.ask('Поиск переключателя',query,function(v){self.extraSwitches(v,true);});}}];
+    var rows=[{name:TR('Поиск по ID / имени')+(query?' · '+query:''),run:function(){self.ask(TR('Поиск переключателя'),query,function(v){self.extraSwitches(v,true);});}}];
     names.forEach(function(name,i){if(i===0 || !name || (q && (String(i)+' '+name).toLowerCase().indexOf(q)<0))return;
-        rows.push({name:'#'+i+' '+clean(name)+' · '+($gameSwitches.value(i)?'ВКЛ':'ВЫКЛ'),run:function(){
+        rows.push({name:'#'+i+' '+clean(name)+' · '+($gameSwitches.value(i)?TR('ВКЛ'):TR('ВЫКЛ')),run:function(){
             $gameSwitches.setValue(i,!$gameSwitches.value(i));self.extraSwitches(query,true);
         }});
     });
-    this.showPage('Переключатели · '+(rows.length-1),rows,replace);
+    this.showPage(TR('Переключатели · ')+(rows.length-1),rows,replace);
 };
 Scene_UniversalControl.prototype.extraVariables=function(query,replace){
     var self=this,q=query.trim().toLowerCase(),names=$dataSystem.variables||[];
-    var rows=[{name:'Поиск по ID / имени'+(query?' · '+query:''),run:function(){self.ask('Поиск переменной',query,function(v){self.extraVariables(v,true);});}}];
+    var rows=[{name:TR('Поиск по ID / имени')+(query?' · '+query:''),run:function(){self.ask(TR('Поиск переменной'),query,function(v){self.extraVariables(v,true);});}}];
     names.forEach(function(name,i){if(i===0 || !name || (q && (String(i)+' '+name).toLowerCase().indexOf(q)<0))return;
         var value=$gameVariables.value(i);
         rows.push({name:'#'+i+' '+clean(name)+' · '+String(value).slice(0,28),run:function(){
-            self.ask('Новое значение переменной #'+i+' · '+name,String(value),function(v){
+            self.ask(TR('Новое значение переменной #')+i+' · '+name,String(value),function(v){
                 // Numerical input by default, but preserve ability to use text variables.
                 var next=/^-?\d+(?:\.\d+)?$/.test(v.trim())?Number(v):v;
                 $gameVariables.setValue(i,next);self.extraVariables(query,true);
             });
         }});
     });
-    this.showPage('Переменные · '+(rows.length-1),rows,replace);
+    this.showPage(TR('Переменные · ')+(rows.length-1),rows,replace);
 };
 
 // Display the same native control UI *inside* Scene_Battle. Changing scenes
