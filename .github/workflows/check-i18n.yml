@@ -16,3 +16,9 @@ jobs:
         run: node --check SWF_CheatMenu.js
       - name: Verify Russian and English strings, auto mode and saved selection
         run: node tests/test_i18n.cjs
+      - name: Export bilingual plugin for test archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: SWF-CheatMenu-bilingual-plugin
+          path: SWF_CheatMenu.js
+          if-no-files-found: error
