@@ -22,7 +22,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate POSIX scripts
-        run: bash -n Install_Linux.sh Remove_Linux.sh Install_macOS.command Remove_macOS.command
+        run: |
+          for file in Install_Linux.sh Remove_Linux.sh Install_macOS.command Remove_macOS.command; do bash -n "$file"; done
       - name: Test Linux and macOS installer CLI
         run: python3 -m unittest discover -s tests -v
   macos-validation:
@@ -30,7 +31,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate POSIX scripts on macOS
-        run: bash -n Install_macOS.command Remove_macOS.command Install_Linux.sh Remove_Linux.sh
+        run: |
+          for file in Install_macOS.command Remove_macOS.command Install_Linux.sh Remove_Linux.sh; do bash -n "$file"; done
       - name: Test installer CLI and simulated macOS selection
         run: python3 -m unittest discover -s tests -v
   windows-validation:

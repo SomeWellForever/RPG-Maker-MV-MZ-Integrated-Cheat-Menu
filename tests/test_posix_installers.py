@@ -74,9 +74,15 @@ class PosixInstallerTests(unittest.TestCase):
         self.assertIn("SWF_CheatMenu", self.names())
 
     def test_does_not_install_to_invalid_path(self):
+        # Never open the real macOS folder picker in unattended CI.
+        bindir = self.base / "cancel-bin"
+        bindir.mkdir()
+        picker = bindir / "osascript"
+        picker.write_text("#!/bin/sh\\nexit 1\\n".replace("\\\\n", "\\n"), encoding="utf-8")
+        picker.chmod(0o755)
+        env = {"PATH": str(bindir) + os.pathsep + os.environ.get("PATH", "")}
         for script in ("Install_macOS.command", "Install_Linux.sh"):
-            result = self.run_script(ROOT / script, self.base / "missing",
-                                     input="")
+            result = self.run_script(ROOT / script, self.base / "missing", input="", env=env)
             self.assertFalse((self.base / "missing" / "www").exists())
             self.assertNotIn("SWF_CheatMenu", self.names())
 
