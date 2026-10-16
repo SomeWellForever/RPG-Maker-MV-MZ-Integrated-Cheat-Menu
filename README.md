@@ -33,6 +33,7 @@
 
 - `1` — быстрый оверлей на карте или во время боя.
 - `F7` — основное меню на карте или в бою.
+- **Язык:** пункт «Язык меню» в основном меню — `Auto`, `Русский`, `English`. Автоматический выбор использует языковую настройку игры, если она доступна, иначе язык системы. Выбор сохраняется для этой игры. Названия игровых предметов, навыков и карт остаются на языке самой игры.
 - **«Меню управления»** — ключевой предмет для открытия меню, включая боевой инвентарь; не расходуется и не должен отнимать ход.
 
 ### Установка
@@ -77,6 +78,7 @@ The integrated menu combines features without a duplicate "extra cheats" section
 
 - `1` — open the legacy quick overlay on the map or during battle.
 - `F7` — open the integrated main menu on the map or during battle.
+- **Language:** choose `Auto`, `Русский`, or `English` under **Menu language** in the main menu. Auto uses the game's locale when available, otherwise the system language. The choice is saved per game. Item, skill, and map names remain in the game's own language.
 - **Control Menu** (`Меню управления`) — a non-consumable key item usable from the inventory, including in battle, without intentionally spending a turn.
 
 ### Installation

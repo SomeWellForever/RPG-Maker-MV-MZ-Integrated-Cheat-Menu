@@ -1,0 +1,18 @@
+name: Check bilingual RPG Maker plugin
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'SWF_CheatMenu.js'
+      - 'tests/test_i18n.cjs'
+      - '.github/workflows/check-i18n.yml'
+  workflow_dispatch:
+jobs:
+  bilingual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify JavaScript syntax
+        run: node --check SWF_CheatMenu.js
+      - name: Verify Russian and English strings, auto mode and saved selection
+        run: node tests/test_i18n.cjs
