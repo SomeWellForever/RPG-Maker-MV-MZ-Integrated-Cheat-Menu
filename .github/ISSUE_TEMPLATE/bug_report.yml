@@ -1,0 +1,50 @@
+name: Bug report / Сообщение об ошибке
+description: Report a problem with Cheat Menu / Сообщить о проблеме с модом
+title: "[Bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please include details to help reproduce the issue. / Пожалуйста, укажите подробности, чтобы воспроизвести ошибку.
+  - type: input
+    id: game
+    attributes:
+      label: Game and version / Игра и версия
+      placeholder: "Example: Game Name 2.07"
+    validations:
+      required: true
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine / Движок
+      options:
+        - RPG Maker MV
+        - RPG Maker MZ
+        - Unsure / Не знаю
+    validations:
+      required: true
+  - type: input
+    id: mod
+    attributes:
+      label: Mod version / Версия мода
+      placeholder: v2.1
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce / Как воспроизвести
+      description: Explain what you did and what happened. / Опишите действия и результат.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Error and screenshots / Ошибка и скриншоты
+      description: Paste the error text or attach screenshots. / Вставьте текст ошибки или прикрепите скриншоты.
+  - type: textarea
+    id: plugins
+    attributes:
+      label: Other plugins / Другие плагины
+      description: List potentially related plugins. / Перечислите другие плагины, которые могут влиять на работу.
