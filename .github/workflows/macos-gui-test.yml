@@ -1,0 +1,83 @@
+name: Build Finder-clickable SWF Cheat Menu for macOS
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/macos/**'
+      - 'SWF_CheatMenu.js'
+      - 'installer/**'
+      - '.github/workflows/macos-gui-test.yml'
+  workflow_dispatch:
+jobs:
+  macos-finder-apps:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: installer/go.mod
+      - name: Verify shared installer behavior
+        run: go -C installer test -v ./...
+      - name: Verify localization syntax
+        run: node --check SWF_CheatMenu.js
+      - name: Build Apple Silicon and Intel installer binaries
+        run: |
+          mkdir -p build
+          (cd installer && GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o ../build/swf-setup-macos-arm64 .)
+          (cd installer && GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../build/swf-setup-macos-amd64 .)
+          codesign --force --sign - build/swf-setup-macos-arm64
+          codesign --force --sign - build/swf-setup-macos-amd64
+      - name: Compile Finder apps with native AppleScript
+        run: |
+          mkdir -p "macOS Preview"
+          osacompile -o "macOS Preview/Install SWF Cheat Menu.app" scripts/macos/install.applescript
+          osacompile -o "macOS Preview/Remove SWF Cheat Menu.app" scripts/macos/remove.applescript
+          for app in "macOS Preview/Install SWF Cheat Menu.app" "macOS Preview/Remove SWF Cheat Menu.app"; do
+            mkdir -p "$app/Contents/Resources"
+            cp build/swf-setup-macos-arm64 build/swf-setup-macos-amd64 "$app/Contents/Resources/"
+            cp SWF_CheatMenu.js "$app/Contents/Resources/"
+            codesign --force --sign - --deep "$app"
+            codesign --verify --deep --strict --verbose=2 "$app"
+            plutil -lint "$app/Contents/Info.plist"
+            test -x "$app/Contents/MacOS/applet"
+            test -x "$app/Contents/Resources/swf-setup-macos-arm64"
+            test -x "$app/Contents/Resources/swf-setup-macos-amd64"
+          done
+      - name: Smoke test installed Go binary and verify game files
+        run: |
+          GAME="$RUNNER_TEMP/SWF game 日本語 тест"
+          mkdir -p "$GAME/www/js/plugins"
+          printf 'PluginManager.setup($plugins);\n' > "$GAME/www/js/main.js"
+          printf 'var $plugins = [{"name":"OtherPlugin","status":true}];\n' > "$GAME/www/js/plugins.js"
+          "macOS Preview/Install SWF Cheat Menu.app/Contents/Resources/swf-setup-macos-arm64" install "$GAME" "macOS Preview/Install SWF Cheat Menu.app/Contents/Resources/SWF_CheatMenu.js"
+          "macOS Preview/Install SWF Cheat Menu.app/Contents/Resources/swf-setup-macos-arm64" install "$GAME" "macOS Preview/Install SWF Cheat Menu.app/Contents/Resources/SWF_CheatMenu.js"
+          grep -q '"SWF_CheatMenu"' "$GAME/www/js/plugins.js"
+          test -f "$GAME/www/js/plugins/SWF_CheatMenu.js"
+          "macOS Preview/Remove SWF Cheat Menu.app/Contents/Resources/swf-setup-macos-arm64" remove "$GAME"
+          ! grep -q '"SWF_CheatMenu"' "$GAME/www/js/plugins.js"
+          test ! -f "$GAME/www/js/plugins/SWF_CheatMenu.js"
+      - name: Pack Finder apps preserving macOS metadata and executable permissions
+        run: |
+          cp scripts/macos/README.md "macOS Preview/READ_ME_FIRST.md"
+          ditto -c -k --sequesterRsrc --keepParent "macOS Preview" "SWF_CheatMenu_Bilingual_macOS_GUI_TEST.zip"
+          python3 - <<'PY'
+          from zipfile import ZipFile
+          z=ZipFile('SWF_CheatMenu_Bilingual_macOS_GUI_TEST.zip')
+          assert z.testzip() is None
+          names=z.namelist()
+          for app in ('Install SWF Cheat Menu.app', 'Remove SWF Cheat Menu.app'):
+              stem='macOS Preview/'+app+'/Contents/'
+              assert stem+'MacOS/applet' in names
+              assert stem+'Resources/SWF_CheatMenu.js' in names
+              for arch in ('arm64','amd64'):
+                  file=stem+'Resources/swf-setup-macos-'+arch
+                  assert file in names
+                  assert (z.getinfo(file).external_attr>>16)&0o111, file
+              assert (z.getinfo(stem+'MacOS/applet').external_attr>>16)&0o111
+          print('macOS GUI ZIP verified: both signed app bundles, binaries and executable permissions')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SWF-CheatMenu-macOS-Finder-GUI-Test
+          path: SWF_CheatMenu_Bilingual_macOS_GUI_TEST.zip
+          if-no-files-found: error
