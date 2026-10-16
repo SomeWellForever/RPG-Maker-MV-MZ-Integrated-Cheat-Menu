@@ -48,22 +48,19 @@ try {
         $dialog.Dispose()
     }
 
-    $pythonCommand = Get-Command py -ErrorAction SilentlyContinue
-    if ($pythonCommand) {
-        $pythonExe = $pythonCommand.Source
-        $pythonArgs = @('-3')
-    } else {
-        $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
-        if (-not $pythonCommand) {
-            throw 'Python 3 is not installed or not on PATH. Download it from python.org and retry.'
-        }
-        $pythonExe = $pythonCommand.Source
-        $pythonArgs = @()
+    $arch = $env:PROCESSOR_ARCHITECTURE
+    if ($arch -eq "ARM64") { $machine = "arm64" }
+    else { $machine = "amd64" }
+    $binary = Join-Path $releaseFolder "bin\swf-setup-windows-$machine.exe"
+    if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) {
+        throw ("Missing Windows installer binary: " + $binary + ". Extract the entire release ZIP.")
     }
-
+    $binaryArgs = @($Action, $GamePath)
+    if ($Action -eq 'install') {
+        $binaryArgs += (Join-Path $releaseFolder 'SWF_CheatMenu.js')
+    }
     Write-Host ('Game folder: ' + $GamePath) -ForegroundColor Cyan
-    $env:PYTHONIOENCODING = 'utf-8:backslashreplace'
-    & $pythonExe @pythonArgs (Join-Path $releaseFolder 'Setup.py') $Action $GamePath
+    & $binary @binaryArgs
     if ($LASTEXITCODE -ne 0) {
         throw ("Installer exited with code " + $LASTEXITCODE + ". Please check the error above.")
     }
