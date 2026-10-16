@@ -39,7 +39,7 @@
 
 1. **Закройте игру и создайте резервную копию сохранений.**
 2. Скачайте и распакуйте [архив версии 2.2.0](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.2.0/SWF_CheatMenu_MV_MZ_v2.2.0.zip) в любую папку.
-3. В Windows запустите `Install_Windows.cmd` и выберите папку игры в появившемся окне. В macOS — `Install_macOS.command`, в Linux — `bash Install_Linux.sh` (при запуске из другой папки передайте путь к игре). **Для установщиков требуется Python 3.**
+3. В Windows запустите `Install_Windows.cmd`; в macOS — `Install_macOS.command`; в Linux — `bash Install_Linux.sh`. Выберите папку игры: macOS откроет Finder, Linux — Zenity/KDialog (если доступны) или попросит ввести путь в терминале. Можно также передать путь к игре аргументом. **Для установщиков требуется Python 3.**
 4. Убедитесь, что создано **одно** подключение `SWF_CheatMenu.js` в `js/plugins` или `www/js/plugins`.
 5. Запустите игру и проверьте меню на отдельном сохранении.
 
@@ -83,7 +83,7 @@ The integrated menu combines features without a duplicate "extra cheats" section
 
 1. **Close the game and back up your save files.**
 2. Download and extract the [v2.2.0 release ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.2.0/SWF_CheatMenu_MV_MZ_v2.2.0.zip) to any folder.
-3. On Windows, run `Install_Windows.cmd` and select the game folder in the dialog. On macOS, run `Install_macOS.command` and choose the game folder; on Linux, run `bash Install_Linux.sh` (pass the game folder path if extracted elsewhere). **Python 3 is required by the installers.**
+3. Run `Install_Windows.cmd` on Windows, `Install_macOS.command` on macOS, or `bash Install_Linux.sh` on Linux. Choose the game folder: macOS opens a Finder picker; Linux uses Zenity/KDialog when available, or asks for a folder path in the terminal. You can also supply the game folder as an argument. **Python 3 is required by all installers.**
 4. Confirm that only one `SWF_CheatMenu.js` is enabled under `js/plugins` or `www/js/plugins`.
 5. Launch the game and test with a separate save slot.
 
