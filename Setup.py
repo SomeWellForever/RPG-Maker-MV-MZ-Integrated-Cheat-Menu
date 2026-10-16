@@ -8,6 +8,12 @@ import shutil
 import sys
 from pathlib import Path
 
+# Some Windows consoles use legacy encodings (for example cp1252).
+# Backslash-escape unsupported characters instead of crashing after file changes.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(errors="backslashreplace")
+
 NAME = "SWF_CheatMenu"
 FILE = NAME + ".js"
 OLD = "Cheat_Menu"

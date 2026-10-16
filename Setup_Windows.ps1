@@ -62,6 +62,7 @@ try {
     }
 
     Write-Host ('Game folder: ' + $GamePath) -ForegroundColor Cyan
+    $env:PYTHONIOENCODING = 'utf-8:backslashreplace'
     & $pythonExe @pythonArgs (Join-Path $releaseFolder 'Setup.py') $Action $GamePath
     if ($LASTEXITCODE -ne 0) {
         throw ("Installer exited with code " + $LASTEXITCODE + ". Please check the error above.")

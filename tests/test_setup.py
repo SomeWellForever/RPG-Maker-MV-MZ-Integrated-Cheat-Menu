@@ -70,6 +70,33 @@ class SetupTests(unittest.TestCase):
         finally:
             relocated.rename(old_mv)
 
+    def test_legacy_console_encoding_with_unicode_path(self):
+        # On localized Windows, stdout encoding may be cp1252. Successful
+        # installation should not fail when the backup path contains Unicode.
+        import os
+        import subprocess
+        import sys
+        unicode_game = self.root / "Game 日本語"
+        unicode_js = unicode_game / "www" / "js"
+        (unicode_js / "plugins").mkdir(parents=True)
+        (unicode_js / "main.js").write_text(NORMAL_MAIN, encoding="utf-8")
+        (unicode_js / "plugins.js").write_text('var $plugins = [];', encoding="utf-8")
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "cp1252"
+        result = subprocess.run(
+            [sys.executable, str(Path(__file__).resolve().parent.parent / "Setup.py"),
+             "install", str(unicode_game)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, timeout=20
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode("ascii", errors="replace"))
+        self.assertTrue((unicode_js / "plugins" / "SWF_CheatMenu.js").exists())
+        result = subprocess.run(
+            [sys.executable, str(Path(__file__).resolve().parent.parent / "Setup.py"),
+             "remove", str(unicode_game)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env, timeout=20
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode("ascii", errors="replace"))
+
     def test_removal_without_distribution_plugin(self):
         apply(self.root, True)
         # Remove the plugin file from the installer only in a copied Setup.py
