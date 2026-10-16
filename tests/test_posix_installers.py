@@ -78,7 +78,7 @@ class PosixInstallerTests(unittest.TestCase):
         bindir = self.base / "cancel-bin"
         bindir.mkdir()
         picker = bindir / "osascript"
-        picker.write_text("#!/bin/sh\\nexit 1\\n".replace("\\\\n", "\\n"), encoding="utf-8")
+        picker.write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
         picker.chmod(0o755)
         env = {"PATH": str(bindir) + os.pathsep + os.environ.get("PATH", "")}
         for script in ("Install_macOS.command", "Install_Linux.sh"):
