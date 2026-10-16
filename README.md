@@ -3,7 +3,7 @@
 **[Русский](#-русский) · [English](#-english)**  
 **Version 2.1 · RPG Maker MV / MZ · Windows / Linux**
 
-> **Publication status / Статус публикации:** Documentation is available. Mod source and downloadable installer are not yet uploaded. / Документация опубликована. Исходный код и установочный архив пока не загружены.
+> **Latest release / Последняя версия:** [v2.1 — Download ZIP / Скачать ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.1/Cheat_Menu_Integrated_MV_MZ_v2.1.zip).
 
 > An integrated cheat menu for single-player games made with RPG Maker MV and MZ. One JavaScript plugin, one in-game key item, and a quick overlay accessible in and out of battle.
 >
@@ -36,7 +36,7 @@
 ### Установка
 
 1. **Закройте игру и создайте резервную копию сохранений.**
-2. Скачайте и распакуйте [архив версии 2.1](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases) в каталог, где находится `Game.exe`.
+2. Скачайте и распакуйте [архив версии 2.1](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.1/Cheat_Menu_Integrated_MV_MZ_v2.1.zip) в каталог, где находится `Game.exe`.
 3. В Windows запустите `Install_Windows.cmd`. В Linux запустите `bash Install_Linux.sh` (требуется Python 3).
 4. Убедитесь, что создано **одно** подключение `Cheat_Menu.js` в `js/plugins` или `www/js/plugins`.
 5. Запустите игру и проверьте меню на отдельном сохранении.
@@ -74,7 +74,7 @@ The integrated menu combines features without a duplicate "extra cheats" section
 ### Installation
 
 1. **Close the game and back up your save files.**
-2. Download and extract the [v2.1 release ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases) into the folder containing `Game.exe`.
+2. Download and extract the [v2.1 release ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.1/Cheat_Menu_Integrated_MV_MZ_v2.1.zip) into the folder containing `Game.exe`.
 3. On Windows, run `Install_Windows.cmd`. On Linux, run `bash Install_Linux.sh` (requires Python 3).
 4. Confirm that only one `Cheat_Menu.js` is enabled under `js/plugins` or `www/js/plugins`.
 5. Launch the game and test with a separate save slot.
