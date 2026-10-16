@@ -51,6 +51,27 @@ jobs:
           }
       - name: Test installer logic on Windows
         run: python -m unittest discover -s tests -v
+      - name: Smoke-test Windows installer and remover
+        shell: pwsh
+        run: |
+          $game = Join-Path $env:RUNNER_TEMP 'RPG Maker [test] 日本語'
+          $js = Join-Path $game 'www\js'
+          New-Item -Force -ItemType Directory -Path (Join-Path $js 'plugins') | Out-Null
+          Set-Content -LiteralPath (Join-Path $js 'main.js') -Value 'PluginManager.setup($plugins);' -Encoding utf8
+          Set-Content -LiteralPath (Join-Path $js 'plugins.js') -Value 'var $plugins = [{"name":"Other","status":true}];' -Encoding utf8
+          & .\Setup_Windows.ps1 -Action install -GamePath $game
+          if ($LASTEXITCODE -ne 0) { throw 'Windows installer failed' }
+          $current = Get-Content -Raw -LiteralPath (Join-Path $js 'plugins.js')
+          if ($current -notmatch '"SWF_CheatMenu"') { throw 'Plugin was not registered' }
+          $cleaner = Join-Path $env:RUNNER_TEMP 'installer without plugin payload'
+          New-Item -Force -ItemType Directory -Path $cleaner | Out-Null
+          Copy-Item -LiteralPath .\Setup_Windows.ps1 -Destination (Join-Path $cleaner 'Setup_Windows.ps1')
+          Copy-Item -LiteralPath .\Setup.py -Destination (Join-Path $cleaner 'Setup.py')
+          & (Join-Path $cleaner 'Setup_Windows.ps1') -Action remove -GamePath $game
+          if ($LASTEXITCODE -ne 0) { throw 'Windows removal without plugin payload failed' }
+          $current = Get-Content -Raw -LiteralPath (Join-Path $js 'plugins.js')
+          if ($current -match '"SWF_CheatMenu"') { throw 'Plugin registration was not removed' }
+
   publish:
     needs: [windows-validation, linux-validation, macos-validation]
     runs-on: ubuntu-latest

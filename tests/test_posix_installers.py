@@ -73,6 +73,20 @@ class PosixInstallerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("SWF_CheatMenu", self.names())
 
+    def test_removal_works_without_plugin_in_installer_folder(self):
+        # A removal launcher must not require the distribution's plugin payload.
+        for script in ("Remove_macOS.command", "Remove_Linux.sh"):
+            first = self.run_script(ROOT / "Install_Linux.sh", self.game)
+            self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+            alternate_release = self.base / ("cleaner-" + script)
+            alternate_release.mkdir()
+            shutil.copy2(ROOT / "Setup.py", alternate_release / "Setup.py")
+            shutil.copy2(ROOT / script, alternate_release / script)
+            self.assertFalse((alternate_release / "SWF_CheatMenu.js").exists())
+            last = self.run_script(alternate_release / script, self.game)
+            self.assertEqual(last.returncode, 0, last.stdout + last.stderr)
+            self.assertEqual(self.names(), ["Other"])
+
     def test_does_not_install_to_invalid_path(self):
         # Never open the real macOS folder picker in unattended CI.
         bindir = self.base / "cancel-bin"

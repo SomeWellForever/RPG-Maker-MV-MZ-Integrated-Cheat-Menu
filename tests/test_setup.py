@@ -50,6 +50,42 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(self.names(), ["Cheat_Menu","SWF_CheatMenu"])
 
 
+    def test_mz_layout_and_backup(self):
+        mz = self.root / "js"
+        (mz / "plugins").mkdir(parents=True)
+        (mz / "main.js").write_text(NORMAL_MAIN)
+        (mz / "plugins.js").write_text('var $plugins = [{"name":"MZOther","status":true}];')
+        # Ensure the MZ root layout is correctly detected independently.
+        old_mv = self.root / "www"
+        relocated = self.root / "_old_www"
+        old_mv.rename(relocated)
+        try:
+            apply(self.root, True)
+            self.assertTrue((mz / "plugins" / "SWF_CheatMenu.js").exists())
+            self.assertIn("SWF_CheatMenu", (mz / "plugins.js").read_text())
+            backups = list((self.root / "SWF_CheatMenu_Backup").glob("*/js/plugins.js"))
+            self.assertGreater(len(backups), 0, "Expected backup of existing registration")
+            apply(self.root, False)
+            self.assertNotIn("SWF_CheatMenu", (mz / "plugins.js").read_text())
+        finally:
+            relocated.rename(old_mv)
+
+    def test_removal_without_distribution_plugin(self):
+        apply(self.root, True)
+        # Remove the plugin file from the installer only in a copied Setup.py
+        # to ensure uninstall does not depend on a payload.
+        import shutil
+        cleaner = self.root / "cleaner"
+        cleaner.mkdir()
+        shutil.copy2(Path(__file__).resolve().parent.parent / "Setup.py", cleaner / "Setup.py")
+        import subprocess
+        result = subprocess.run(
+            [__import__("sys").executable, str(cleaner / "Setup.py"), "remove", str(self.root)],
+            capture_output=True, text=True
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertNotIn("SWF_CheatMenu", self.names())
+
     def test_nested_plugin_parameters(self):
         self.set_entries([{
             "name": "ComplexPlugin",

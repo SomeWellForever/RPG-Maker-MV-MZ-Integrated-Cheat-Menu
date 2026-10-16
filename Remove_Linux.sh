@@ -2,7 +2,7 @@
 # SWF Cheat Menu - Linux launcher. Supports GUI and terminal selection.
 HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)" || exit 1
 
-if [ ! -f "$HERE/Setup.py" ] || [ ! -f "$HERE/SWF_CheatMenu.js" ]; then
+if [ ! -f "$HERE/Setup.py" ]; then
   echo "ERROR: Installer files are missing. Extract the complete release archive." >&2
   exit 1
 fi

@@ -2,7 +2,7 @@
 # SWF Cheat Menu - macOS launcher. The game may be anywhere on disk.
 HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)" || exit 1
 
-if [ ! -f "$HERE/Setup.py" ] || [ ! -f "$HERE/SWF_CheatMenu.js" ]; then
+if [ ! -f "$HERE/Setup.py" ]; then
   echo "ERROR: Installer files are missing. Extract the complete release archive."
   exit 1
 fi
