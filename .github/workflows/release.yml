@@ -30,13 +30,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          NOTES="$(cat <<'EOF'
+          **SWF Cheat Menu v2.2.0** — RPG Maker MV/MZ, Windows, macOS and Linux.
+
+          - Plugin file: `SWF_CheatMenu.js` (avoids Xenolauncher's built-in `Cheat_Menu.js` filename).
+          - Controls: `1` for quick overlay, `F7` or the in-game **Control Menu** key item for the full menu, including battle functions.
+          - Includes automatic installers (Python 3 required) and migration for recognized previous integrated-menu installations; modified files are backed up.
+          - In Xenolauncher, leave its own **Enable Cheat Menu** option disabled.
+          - Source acknowledgements and redistribution caveats: [CREDITS.md](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/blob/main/CREDITS.md).
+
+          **SWF Cheat Menu 2.2.0** — объединённое чит-меню для RPG Maker MV/MZ. Windows, macOS и Linux. Установщики переносят распознаваемые старые подключения и сохраняют резервные копии. Встроенное Cheat Menu в Xenolauncher должно быть выключено.
+          EOF
+          )"
           if gh release view v2.2.0 >/dev/null 2>&1; then
+            gh release edit v2.2.0 --title "SWF Cheat Menu v2.2.0" --notes "$NOTES"
             gh release upload v2.2.0 SWF_CheatMenu_MV_MZ_v2.2.0.zip --clobber
           else
-            gh release create v2.2.0 SWF_CheatMenu_MV_MZ_v2.2.0.zip --title "SWF Cheat Menu v2.2.0" --notes "Integrated RPG Maker MV/MZ cheat menu. Windows, macOS, Linux installers. Compatible with Xenolauncher when its built-in Cheat Menu is disabled. See README and CREDITS."
+            gh release create v2.2.0 SWF_CheatMenu_MV_MZ_v2.2.0.zip --title "SWF Cheat Menu v2.2.0" --notes "$NOTES"
           fi
-      - name: Remove superseded release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release delete v2.1 --yes --cleanup-tag || true

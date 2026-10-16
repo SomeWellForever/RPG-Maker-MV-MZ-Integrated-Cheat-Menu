@@ -49,5 +49,29 @@ class SetupTests(unittest.TestCase):
         apply(self.root, True)
         self.assertEqual(self.names(), ["Cheat_Menu","SWF_CheatMenu"])
 
+
+    def test_nested_plugin_parameters(self):
+        self.set_entries([{
+            "name": "ComplexPlugin",
+            "status": True,
+            "parameters": {
+                "nested": ["a", "b"],
+                "label": "Contains [brackets] and ] characters",
+                "json": "[1, 2, 3]"
+            }
+        }])
+        apply(self.root, True)
+        self.assertEqual(self.names(), ["ComplexPlugin", "SWF_CheatMenu"])
+        apply(self.root, False)
+        self.assertEqual(self.names(), ["ComplexPlugin"])
+
+    def test_migrate_registry_after_xenolauncher_deleted_old_file(self):
+        self.set_entries([
+            {"name": "Cheat_Menu", "status": True, "description": "Integrated Cheat Menu"},
+            {"name": "Unrelated", "status": True}
+        ])
+        apply(self.root, True)
+        self.assertEqual(self.names(), ["Unrelated", "SWF_CheatMenu"])
+
 if __name__ == "__main__":
     unittest.main()

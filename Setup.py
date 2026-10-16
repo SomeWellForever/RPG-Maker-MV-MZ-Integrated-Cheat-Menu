@@ -12,7 +12,7 @@ NAME = "SWF_CheatMenu"
 FILE = NAME + ".js"
 OLD = "Cheat_Menu"
 OLD_START = "// BEGIN CHEAT_MENU_INTEGRATED_LOADER"
-RE = re.compile(r"((?:var|let|const)\s+\$plugins\s*=\s*)(\[[\s\S]*?\])(\s*;)", re.M)
+ASSIGNMENT = re.compile(r"(?:var|let|const)\s+\$plugins\s*=\s*", re.M)
 OLD_BLOCK = re.compile(r"^[ \t]*// BEGIN CHEAT_MENU_INTEGRATED_LOADER[^\n]*\n[\s\S]*?^[ \t]*// END CHEAT_MENU_INTEGRATED_LOADER[^\n]*(?:\n|$)", re.M)
 NEW_BLOCK = re.compile(r"^[ \t]*// BEGIN SWF_CHEATMENU_LOADER[^\n]*\n[\s\S]*?^[ \t]*// END SWF_CHEATMENU_LOADER[^\n]*(?:\n|$)", re.M)
 OLD_LOAD = re.compile(r"^[ \t]*PluginManager\.loadScript\(\s*['\"]Cheat_Menu\.js['\"]\s*\)\s*;?[ \t]*(?:\n|$)", re.M)
@@ -49,15 +49,21 @@ def legacy_is_ours(js, main):
 
 
 def registry_edit(source, installing, ours):
-    match = RE.search(source)
+    # Decode the actual JSON array, not the first closing square bracket.
+    # RPG Maker plugin parameters can contain nested arrays and ] in strings.
+    match = ASSIGNMENT.search(source)
     if match is None:
         return None
+    start = match.end()
+    while start < len(source) and source[start].isspace():
+        start += 1
     try:
-        plugins = json.loads(match.group(2))
+        plugins, consumed = json.JSONDecoder().raw_decode(source[start:])
         if not isinstance(plugins, list):
             return None
     except (ValueError, TypeError):
         return None
+    end = start + consumed
     new = []
     for entry in plugins:
         if not isinstance(entry, dict):
@@ -72,7 +78,7 @@ def registry_edit(source, installing, ours):
         new.append(entry)
     if installing:
         new.append({"name": NAME, "status": True, "description": "SWF Cheat Menu Integrated 2.2.0", "parameters": {}})
-    return source[:match.start(2)] + json.dumps(new, ensure_ascii=False, indent=4) + source[match.end(2):]
+    return source[:start] + json.dumps(new, ensure_ascii=False, indent=4) + source[end:]
 
 
 def main_edit(source, installing, has_registry, ours):

@@ -1,4 +1,4 @@
-# RPG Maker MV/MZ — Integrated Cheat Menu
+# SWF Cheat Menu — RPG Maker MV/MZ
 
 **[Русский](#-русский) · [English](#-english)**  
 **Version 2.2.0 · RPG Maker MV / MZ · Windows / macOS / Linux**
@@ -38,10 +38,12 @@
 ### Установка
 
 1. **Закройте игру и создайте резервную копию сохранений.**
-2. Скачайте и распакуйте [архив версии 2.1](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.2.0/SWF_CheatMenu_MV_MZ_v2.2.0.zip) в каталог, где находится `Game.exe`.
-3. В Windows запустите `Install_Windows.cmd`, в macOS — `Install_macOS.command`, в Linux — `bash Install_Linux.sh` (требуется Python 3). В macOS выберите папку игры в появившемся окне.
+2. Скачайте и распакуйте [архив версии 2.2.0](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.2.0/SWF_CheatMenu_MV_MZ_v2.2.0.zip) в каталог, где находится `Game.exe`.
+3. В Windows запустите `Install_Windows.cmd`, в macOS — `Install_macOS.command`, в Linux — `bash Install_Linux.sh`. **Для установщика требуется Python 3.** В macOS выберите папку игры в появившемся окне.
 4. Убедитесь, что создано **одно** подключение `SWF_CheatMenu.js` в `js/plugins` или `www/js/plugins`.
 5. Запустите игру и проверьте меню на отдельном сохранении.
+
+**Xenolauncher:** отключите его встроенное `Enable Cheat Menu`. Наш плагин использует имя `SWF_CheatMenu.js`; установщик переносит распознаваемые подключения прежней объединённой версии и сохраняет резервные копии изменённых файлов.
 
 **Удаление:** закройте игру и запустите `Remove_Windows.cmd`, `Remove_macOS.command` или `bash Remove_Linux.sh`. Резервные копии установщика находятся в `SWF_CheatMenu_Backup/`.
 
@@ -81,9 +83,11 @@ The integrated menu combines features without a duplicate "extra cheats" section
 
 1. **Close the game and back up your save files.**
 2. Download and extract the [v2.2.0 release ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.2.0/SWF_CheatMenu_MV_MZ_v2.2.0.zip) into the folder containing `Game.exe`.
-3. On Windows, run `Install_Windows.cmd`; on macOS, run `Install_macOS.command`; on Linux, run `bash Install_Linux.sh` (Python 3 required). On macOS, select the game folder when prompted.
+3. On Windows, run `Install_Windows.cmd`; on macOS, run `Install_macOS.command`; on Linux, run `bash Install_Linux.sh`. **Python 3 is required for installation.** On macOS, select the game folder when prompted.
 4. Confirm that only one `SWF_CheatMenu.js` is enabled under `js/plugins` or `www/js/plugins`.
 5. Launch the game and test with a separate save slot.
+
+**Xenolauncher:** keep its built-in `Enable Cheat Menu` disabled. Our plugin uses the separate filename `SWF_CheatMenu.js`; the installer migrates recognized previous integrated-menu registrations and backs up any overwritten files.
 
 **Uninstall:** close the game and run `Remove_Windows.cmd`, `Remove_macOS.command` or `bash Remove_Linux.sh`. Backups are stored in `SWF_CheatMenu_Backup/`.
 
