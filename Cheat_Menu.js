@@ -1,0 +1,2377 @@
+/*:
+ * @target MV MZ
+ * @plugindesc Cheat Menu Integrated 2.1: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @author Community Cheat Menu + integrated local patch
+ * @help In-game key item 'Меню управления' or F7 opens the integrated menu.
+ * Key 1 on map or in battle opens the legacy quick overlay.
+ * The key item is usable in battle without consuming a turn.
+ * Contains original Cheat_Menu features plus RPG Maker MV/MZ control menu.
+ */
+
+
+
+/////////////////////////////////////////////////
+// Cheat Menu Plugin Class
+/////////////////////////////////////////////////
+// Check if already defined (allows game specific extensions to be loaded in any order)
+if (typeof Cheat_Menu == "undefined") { Cheat_Menu = {}; }
+
+Cheat_Menu.initialized = false;
+Cheat_Menu.cheat_menu_open = false;
+Cheat_Menu.overlay_openable = false;
+Cheat_Menu.position = 1;
+Cheat_Menu.menu_update_timer = null;
+
+Cheat_Menu.cheat_selected = 0;
+Cheat_Menu.cheat_selected_actor = 1;
+Cheat_Menu.amounts = [1, 10, 100, 1000, 10000, 100000, 1000000];
+Cheat_Menu.amount_index = 0;
+Cheat_Menu.stat_selection = 0;
+Cheat_Menu.item_selection = 1;
+Cheat_Menu.weapon_selection = 1;
+Cheat_Menu.armor_selection = 1;
+Cheat_Menu.move_amounts = [0.5, 1, 1.5, 2];
+Cheat_Menu.move_amount_index = 1;
+
+Cheat_Menu.variable_selection = 1;
+Cheat_Menu.switch_selection = 1;
+
+Cheat_Menu.saved_positions = [{m: -1, x: -1, y: -1}, {m: -1, x: -1, y: -1}, {m: -1, x: -1, y: -1}];
+
+Cheat_Menu.teleport_location = {m: 1, x: 0, y: 0};
+
+Cheat_Menu.speed = null;
+Cheat_Menu.speed_unlocked = true;
+Cheat_Menu.speed_initialized = false;
+
+
+/////////////////////////////////////////////////
+// Initial values for reseting on new game/load
+/////////////////////////////////////////////////
+
+// Check if already defined (allows game specific extensions to be loaded in any order)
+if (typeof Cheat_Menu.initial_values == "undefined") { Cheat_Menu.initial_values = {}; }
+
+
+// All values below are the inital values for a new saved game
+//	upon loading a saved game these values will be loaded from the
+//	save game if possible overwriting the below values
+//	Because of this all of these variables should be non recursive
+Cheat_Menu.initial_values.position = 1;
+Cheat_Menu.initial_values.cheat_selected = 0;
+Cheat_Menu.initial_values.cheat_selected_actor = 1;
+Cheat_Menu.initial_values.amount_index = 0;
+Cheat_Menu.initial_values.stat_selection = 0;
+Cheat_Menu.initial_values.item_selection = 1;
+Cheat_Menu.initial_values.weapon_selection = 1;
+Cheat_Menu.initial_values.armor_selection = 1;
+Cheat_Menu.initial_values.move_amount_index = 1;
+Cheat_Menu.initial_values.variable_selection = 1;
+Cheat_Menu.initial_values.switch_selection = 1;
+Cheat_Menu.initial_values.saved_positions = [{m: -1, x: -1, y: -1}, {m: -1, x: -1, y: -1}, {m: -1, x: -1, y: -1}];
+Cheat_Menu.initial_values.teleport_location = {m: 1, x: 0, y: 0};
+Cheat_Menu.initial_values.speed = null;
+Cheat_Menu.initial_values.speed_unlocked = true;
+
+/////////////////////////////////////////////////
+// Cheat Functions
+/////////////////////////////////////////////////
+
+// enable god mode for an actor
+Cheat_Menu.god_mode = function(actor) {
+	if (actor instanceof Game_Actor && !(actor.god_mode)) {
+		actor.god_mode = true;
+
+		actor.gainHP_bkup = actor.gainHp;
+		actor.gainHp = function(value) {
+			value = this.mhp;
+			this.gainHP_bkup(value);
+		};
+
+		actor.setHp_bkup = actor.setHp;
+		actor.setHp = function(hp) {
+			hp = this.mhp;
+			this.setHp_bkup(hp);
+		};
+
+		actor.gainMp_bkup = actor.gainMp;
+		actor.gainMp = function (value) {
+			value = this.mmp;
+			this.gainMp_bkup(value);
+		};
+
+		actor.setMp_bkup = actor.setMp;
+		actor.setMp = function(mp) {
+			mp = this.mmp;
+			this.setMp_bkup(mp);
+		};
+
+		actor.gainTp_bkup = actor.gainTp;
+		actor.gainTp = function (value) {
+			value = this.maxTp();
+			this.gainTp_bkup(value);
+		};
+
+		actor.setTp_bkup = actor.setTp;
+		actor.setTp = function(tp) {
+			tp = this.maxTp();
+			this.setTp_bkup(tp);
+		};
+
+		actor.paySkillCost_bkup = actor.paySkillCost;
+		actor.paySkillCost = function (skill) {
+			// do nothing
+		};
+
+		actor.god_mode_interval = setInterval(function() {
+			actor.gainHp(actor.mhp);
+			actor.gainMp(actor.mmp);
+			actor.gainTp(actor.maxTp());
+		}, 100);
+	}
+};
+
+
+// disable god mode for an actor
+Cheat_Menu.god_mode_off = function(actor) {
+	if (actor instanceof Game_Actor && actor.god_mode) {
+		actor.god_mode = false;
+
+		actor.gainHp = actor.gainHP_bkup;
+		actor.setHp = actor.setHp_bkup;
+		actor.gainMp = actor.gainMp_bkup;
+		actor.setMp = actor.setMp_bkup;
+		actor.gainTp = actor.gainTp_bkup;
+		actor.setTp = actor.setTp_bkup;
+		actor.paySkillCost = actor.paySkillCost_bkup;
+
+		clearInterval(actor.god_mode_interval);
+	}
+};
+
+// set all party hp
+Cheat_Menu.set_party_hp = function(hp, alive) {
+	var members = $gameParty.allMembers();
+	for (var i = 0; i < members.length; i++) {
+		if ((alive && members[i]._hp != 0) || !alive) {
+			members[i].setHp(hp);
+		}
+	}
+};
+
+// set all party mp
+Cheat_Menu.set_party_mp = function(mp, alive) {
+	var members = $gameParty.allMembers();
+	for (var i = 0; i < members.length; i++) {
+		if ((alive && members[i]._hp != 0) || !alive) {
+			members[i].setMp(mp);
+		}
+	}
+};
+
+// set all party tp
+Cheat_Menu.set_party_tp = function(tp, alive) {
+	var members = $gameParty.allMembers();
+	for (var i = 0; i < members.length; i++) {
+		if ((alive && members[i]._hp != 0) || !alive) {
+			members[i].setTp(tp);
+		}
+	}
+};
+
+// party full recover hp
+Cheat_Menu.recover_party_hp = function(alive) {
+	var members = $gameParty.allMembers();
+	for (var i = 0; i < members.length; i++) {
+		if ((alive && members[i]._hp != 0) || !alive) {
+			members[i].setHp(members[i].mhp);
+		}
+	}
+};
+
+// party full recover mp
+Cheat_Menu.recover_party_mp = function(alive) {
+	var members = $gameParty.allMembers();
+	for (var i = 0; i < members.length; i++) {
+		if ((alive && members[i]._hp != 0) || !alive) {
+			members[i].setMp(members[i].mmp);
+		}
+	}
+};
+
+// party max tp
+Cheat_Menu.recover_party_tp = function(alive) {
+	var members = $gameParty.allMembers();
+	for (var i = 0; i < members.length; i++) {
+		if ((alive && members[i]._hp != 0) || !alive) {
+			members[i].setTp(members[i].maxTp());
+		}
+	}
+};
+
+// set all enemies hp
+Cheat_Menu.set_enemy_hp = function(hp, alive) {
+	var members = $gameTroop.members();
+	for (var i = 0; i < members.length; i++) {
+		if (members[i]) {
+			if ((alive && members[i]._hp != 0) || !alive) {
+				members[i].setHp(hp);
+			}
+		}
+	}
+    // RPG Maker may not run its normal battle-end check while the command
+    // window remains active. Do it explicitly after a cheat defeats the troop.
+    if ($gameParty.inBattle && $gameParty.inBattle() && $gameTroop.isAllDead && $gameTroop.isAllDead()) {
+        Cheat_Menu.close_overlay();
+        if (typeof BattleManager !== 'undefined' && BattleManager.checkBattleEnd) BattleManager.checkBattleEnd();
+    }
+};
+
+// increase exp
+Cheat_Menu.give_exp = function(actor, amount) {
+	if (actor instanceof Game_Actor) {
+		actor.gainExp(amount);
+	}
+};
+
+// increase stat bonus
+Cheat_Menu.give_stat = function(actor, stat_index, amount) {
+	if (actor instanceof Game_Actor) {
+		if (actor._paramPlus[stat_index] != undefined) {
+			actor.addParam(stat_index, amount);
+		}
+	}
+};
+
+// increase gold
+Cheat_Menu.give_gold = function(amount) {
+	$gameParty.gainGold(amount);
+};
+
+// increase item count for party of item, by id
+Cheat_Menu.give_item = function(item_id, amount) {
+	if ($dataItems[item_id] != undefined) {
+		$gameParty.gainItem($dataItems[item_id], amount);
+	}
+};
+
+// increase weapon count for party of item, by id
+Cheat_Menu.give_weapon = function(weapon_id, amount) {
+	if ($dataWeapons[weapon_id] != undefined) {
+		$gameParty.gainItem($dataWeapons[weapon_id], amount);
+	}
+};
+
+// increase armor count for party of item, by id
+Cheat_Menu.give_armor = function(armor_id, amount) {
+	if ($dataArmors[armor_id] != undefined) {
+		$gameParty.gainItem($dataArmors[armor_id], amount);
+	}
+};
+
+// initialize speed hook for locking
+Cheat_Menu.initialize_speed_lock = function() {
+	if (!Cheat_Menu.speed_initialized) {
+		Cheat_Menu.speed = $gamePlayer._moveSpeed;
+		Object.defineProperty($gamePlayer, "_moveSpeed", {
+			get: function() {return Cheat_Menu.speed;},
+			set: function(newVal) {if(Cheat_Menu.speed_unlocked) {Cheat_Menu.speed = newVal;}}
+		});
+		Cheat_Menu.speed_initialized = true;
+	}
+};
+
+// change player movement speed
+Cheat_Menu.change_player_speed = function(amount) {
+	Cheat_Menu.initialize_speed_lock();
+	Cheat_Menu.speed += amount;
+};
+
+// toggle locking of player speed
+Cheat_Menu.toggle_lock_player_speed = function(amount) {
+	Cheat_Menu.initialize_speed_lock();
+	Cheat_Menu.speed_unlocked = !Cheat_Menu.speed_unlocked;
+};
+
+
+// clear active states on an actor
+Cheat_Menu.clear_actor_states = function(actor) {
+	if (actor instanceof Game_Actor) {
+		if (actor._states != undefined && actor._states.length > 0) {
+			actor.clearStates();
+		}
+	}
+};
+
+// clear active states on party
+Cheat_Menu.clear_party_states = function() {
+	var members = $gameParty.allMembers();
+	for (var i = 0; i < members.length; i++) {
+		Cheat_Menu.clear_actor_states(members[i]);
+	}
+};
+
+// change game variable value, by id
+Cheat_Menu.set_variable = function(variable_id, value) {
+	if ($dataSystem.variables[variable_id] != undefined) {
+		var new_value = $gameVariables.value(variable_id) + value;
+		$gameVariables.setValue(variable_id, new_value);
+	}
+};
+
+// toggle game switch value, by id
+Cheat_Menu.toggle_switch = function(switch_id) {
+	if ($dataSystem.switches[switch_id] != undefined) {
+		$gameSwitches.setValue(switch_id, !$gameSwitches.value(switch_id));
+	}
+};
+
+// Change location by map id, and x, y position
+Cheat_Menu.teleport = function(map_id, x_pos, y_pos) {
+	$gamePlayer.reserveTransfer(map_id, x_pos, y_pos, $gamePlayer.direction(), 0);
+	$gamePlayer.setPosition(x_pos, y_pos);
+};
+
+/////////////////////////////////////////////////
+// Cheat Menu overlay
+/////////////////////////////////////////////////
+
+// HTML elements and some CSS for positioning
+//	other css in in CSS file attached
+Cheat_Menu.overlay_box = document.createElement('div');
+Cheat_Menu.overlay_box.id = "cheat_menu";
+Cheat_Menu.overlay_box.style.left = "5px";
+Cheat_Menu.overlay_box.style.top = "5px";
+Cheat_Menu.overlay_box.style.right = "";
+Cheat_Menu.overlay_box.style.bottom = "";
+
+Cheat_Menu.overlay = document.createElement('table');
+Cheat_Menu.overlay.id = "cheat_menu_text";
+Cheat_Menu.overlay.style.left = "5px";
+Cheat_Menu.overlay.style.top = "5px";
+Cheat_Menu.overlay.style.right = "";
+Cheat_Menu.overlay.style.bottom = "";
+
+
+// Attach other css for styling
+Cheat_Menu.style_css = document.createElement("style");
+Cheat_Menu.style_css.type = "text/css";
+Cheat_Menu.style_css.textContent = '#cheat_menu{\n\tposition: absolute;\n\twidth: 280px;\n\theight: 100px;\n\tz-index: 1000;\n\tbackground-color: #000000;\n\tcolor: #ffffff;\n\topacity: 0.75;\n\ttext-align: center;\n\tpadding: 10px;\n}\n\n#cheat_menu_text{\n\tposition: absolute;\n\twidth: 300px;\n\tz-index: 1001;\n\tbackground-color: transparent;\n\tcolor: #ffffff;\n\topacity: 1;\n\ttext-align: center;\n\tpadding: 10px;\n\n\tborder-spacing: 0; \n}\n\n.scroll_selector_row {\n\twidth: 100%;\n\ttext-align: center;\n}\n\n.scroll_selector_buttons:hover {\n\tcolor: #ff0000;\n\ttext-shadow: 0 0 5px #ff0000;\n}\n\n.cheat_menu_buttons:hover {\n\tcolor: #ff0000;\n\ttext-shadow: 0 0 5px #ff0000;\n}\n\n.cheat_menu_cell {\n\tborder-bottom: 1px solid #6f6f6f;\n\tmax-width: 100px;\n\twidth: 100px;\n\n\tfont-weight: normal;\n\tfont-size: 15px;\n\tpadding-top: 5px;\n\tpadding-bottom: 5px;\n}\n\n.cheat_menu_cell_title {\n\tmax-width: 100px;\n\twidth: 100px;\n\tfont-weight: bold;\n\tfont-size: 20px;\n\tpadding-top: 8px;\n\tpadding-bottom: 5px;\n}';
+document.head.appendChild(Cheat_Menu.style_css);
+
+
+// keep menu in correct location
+Cheat_Menu.position_menu = function(event) {
+	//middle of screen
+	if (Cheat_Menu.position == 0) {
+		Cheat_Menu.overlay_box.style.left = "" + (window.innerWidth / 2) + "px";
+		Cheat_Menu.overlay_box.style.top = "" + (window.innerHeight / 2) + "px";
+		Cheat_Menu.overlay_box.style.right = "";
+		Cheat_Menu.overlay_box.style.bottom = "";
+
+		Cheat_Menu.overlay_box.style.marginLeft = "-110px";
+		Cheat_Menu.overlay_box.style.marginTop = "-50px";
+
+		Cheat_Menu.overlay.style.left = "" + (window.innerWidth / 2) + "px";
+		Cheat_Menu.overlay.style.top = "" + (window.innerHeight / 2) + "px";
+		Cheat_Menu.overlay.style.right = "";
+		Cheat_Menu.overlay.style.bottom = "";
+
+		Cheat_Menu.overlay.style.marginLeft = "-110px";
+		Cheat_Menu.overlay.style.marginTop = "-50px";
+	}
+	// top left corner
+	else if (Cheat_Menu.position == 1) {
+		Cheat_Menu.overlay_box.style.left = "5px";
+		Cheat_Menu.overlay_box.style.top = "5px";
+		Cheat_Menu.overlay_box.style.right = "";
+		Cheat_Menu.overlay_box.style.bottom = "";
+
+		Cheat_Menu.overlay_box.style.marginLeft = "";
+		Cheat_Menu.overlay_box.style.marginTop = "";
+
+		Cheat_Menu.overlay.style.left = "5px";
+		Cheat_Menu.overlay.style.top = "5px";
+		Cheat_Menu.overlay.style.right = "";
+		Cheat_Menu.overlay.style.bottom = "";
+
+		Cheat_Menu.overlay.style.marginLeft = "";
+		Cheat_Menu.overlay.style.marginTop = "";
+	}
+	// top right corner
+	else if (Cheat_Menu.position == 2) {
+		Cheat_Menu.overlay_box.style.left = "";
+		Cheat_Menu.overlay_box.style.top = "5px";
+		Cheat_Menu.overlay_box.style.right = "5px";
+		Cheat_Menu.overlay_box.style.bottom = "";
+
+		Cheat_Menu.overlay_box.style.marginLeft = "";
+		Cheat_Menu.overlay_box.style.marginTop = "";
+
+		Cheat_Menu.overlay.style.left = "";
+		Cheat_Menu.overlay.style.top = "5px";
+		Cheat_Menu.overlay.style.right = "-15px";
+		Cheat_Menu.overlay.style.bottom = "";
+
+		Cheat_Menu.overlay.style.marginLeft = "";
+		Cheat_Menu.overlay.style.marginTop = "";
+	}
+	// bottom right corner
+	else if (Cheat_Menu.position == 3) {
+		Cheat_Menu.overlay_box.style.left = "";
+		Cheat_Menu.overlay_box.style.top = "";
+		Cheat_Menu.overlay_box.style.right = "5px";
+		Cheat_Menu.overlay_box.style.bottom = "5px";
+
+		Cheat_Menu.overlay_box.style.marginLeft = "";
+		Cheat_Menu.overlay_box.style.marginTop = "";
+
+		Cheat_Menu.overlay.style.left = "";
+		Cheat_Menu.overlay.style.top = "";
+		Cheat_Menu.overlay.style.right = "-15px";
+		Cheat_Menu.overlay.style.bottom = "5px";
+
+		Cheat_Menu.overlay.style.marginLeft = "";
+		Cheat_Menu.overlay.style.marginTop = "";
+	}
+	// bottom left corner
+	else if (Cheat_Menu.position == 4) {
+		Cheat_Menu.overlay_box.style.left = "5px";
+		Cheat_Menu.overlay_box.style.top = "";
+		Cheat_Menu.overlay_box.style.right = "";
+		Cheat_Menu.overlay_box.style.bottom = "5px";
+
+		Cheat_Menu.overlay_box.style.marginLeft = "";
+		Cheat_Menu.overlay_box.style.marginTop = "";
+
+		Cheat_Menu.overlay.style.left = "5px";
+		Cheat_Menu.overlay.style.top = "";
+		Cheat_Menu.overlay.style.right = "";
+		Cheat_Menu.overlay.style.bottom = "5px";
+
+		Cheat_Menu.overlay.style.marginLeft = "";
+		Cheat_Menu.overlay.style.marginTop = "";
+	}
+	
+	// adjust background box size to match contents
+	var height = 20;
+	for (var i = 0; i < Cheat_Menu.overlay.children.length; i++) {
+		height += Cheat_Menu.overlay.children[i].scrollHeight;
+	}
+	Cheat_Menu.overlay_box.style.height = "" + height + "px";
+};
+
+/////////////////////////////////////////////////
+// Menu item types
+/////////////////////////////////////////////////
+
+// insert row with buttons to scroll left and right for some context
+//	appears as:
+//	<-[key1] text [key2]->
+//	scrolling is handled by scroll_left_handler and scroll_right_handler functions
+//	text: string 
+//	key1,key2: key mapping
+//	scroll_handler: single function that handles the left and right scroll arguments should be (direction, event)
+Cheat_Menu.append_scroll_selector = function(text, key1, key2, scroll_handler) {
+	var scroll_selector = Cheat_Menu.overlay.insertRow();
+	scroll_selector.className = "scroll_selector_row";
+
+	var scroll_left_button = scroll_selector.insertCell();
+	scroll_left_button.className = "scroll_selector_buttons cheat_menu_cell";
+
+	
+	var scroll_text = scroll_selector.insertCell();
+	scroll_text.className = "cheat_menu_cell";
+
+	var scroll_right_button = scroll_selector.insertCell();
+	scroll_right_button.className = "scroll_selector_buttons cheat_menu_cell";
+	
+	scroll_left_button.innerHTML = "←[" + key1 + "]";
+	scroll_text.innerHTML = text;
+	scroll_right_button.innerHTML =  "[" + key2 + "]→";
+
+	scroll_left_button.addEventListener('mousedown', scroll_handler.bind(null, "left"));
+	scroll_right_button.addEventListener('mousedown', scroll_handler.bind(null, "right"));
+
+	Cheat_Menu.key_listeners[key1] = scroll_handler.bind(null, "left");
+	Cheat_Menu.key_listeners[key2] = scroll_handler.bind(null, "right");
+};
+
+// Insert a title row
+//	A row in the menu that is just text
+//	title: string
+Cheat_Menu.append_title = function(title) {
+	var title_row = Cheat_Menu.overlay.insertRow();
+	var temp = title_row.insertCell()
+	temp.className = "cheat_menu_cell_title";
+	var title_text = title_row.insertCell();
+	title_text.className = "cheat_menu_cell_title";
+	temp = title_row.insertCell()
+	temp.className = "cheat_menu_cell_title";
+	title_text.innerHTML = title;
+};
+
+// Insert a desciption row
+//	A row in the menu that is just text (smaller than title)
+//	text: string
+Cheat_Menu.append_description = function(text) {
+	var title_row = Cheat_Menu.overlay.insertRow();
+	var temp = title_row.insertCell()
+	temp.className = "cheat_menu_cell";
+	var title_text = title_row.insertCell();
+	title_text.className = "cheat_menu_cell";
+	temp = title_row.insertCell()
+	temp.className = "cheat_menu_cell";
+	title_text.innerHTML = text;
+};
+
+// Append a cheat with some handler to activate
+//	Appears as:
+//	cheat text	status text[key]
+//	cheat_text: string
+//	status_text: string 
+//	key: key mapping
+//	click_handler: function
+Cheat_Menu.append_cheat = function(cheat_text, status_text, key, click_handler) {
+	var cheat_row = Cheat_Menu.overlay.insertRow();
+
+	var cheat_title = cheat_row.insertCell();
+	cheat_title.className = "cheat_menu_cell"
+	var temp = cheat_row.insertCell()
+	temp.className = "cheat_menu_cell";
+	var cheat = cheat_row.insertCell();
+	cheat.className = "cheat_menu_buttons cheat_menu_cell";
+
+	cheat_title.innerHTML = cheat_text;
+	cheat.innerHTML = status_text + "[" + key + "]";
+
+	cheat.addEventListener('mousedown', click_handler);
+	Cheat_Menu.key_listeners[key] = click_handler;
+};
+
+/////////////////////////////////////////////////////////////
+// Various functions to settup each page of the cheat menu
+/////////////////////////////////////////////////////////////
+
+
+// Left and right scrollers for handling switching between menus
+Cheat_Menu.scroll_cheat = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.cheat_selected--;
+		if (Cheat_Menu.cheat_selected < 0) {
+			Cheat_Menu.cheat_selected = Cheat_Menu.menus.length - 1;
+		}
+	}
+	else {
+		Cheat_Menu.cheat_selected++;
+		if (Cheat_Menu.cheat_selected > Cheat_Menu.menus.length - 1) {
+			Cheat_Menu.cheat_selected = 0;
+		}
+	}
+
+	SoundManager.playSystemSound(0);
+	Cheat_Menu.update_menu();
+};
+
+// Menu title with scroll options to go between menu, should be first
+//	append on each menu
+Cheat_Menu.append_cheat_title = function(cheat_name) {
+	Cheat_Menu.append_title("Cheat");
+	Cheat_Menu.append_scroll_selector(cheat_name, 2, 3, Cheat_Menu.scroll_cheat);
+};
+
+// Left and right scrollers for handling switching selected actors
+Cheat_Menu.scroll_actor = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.cheat_selected_actor--;
+		if (Cheat_Menu.cheat_selected_actor < 0) {
+			Cheat_Menu.cheat_selected_actor = $gameActors._data.length - 1;
+		}
+	}
+	else {
+		Cheat_Menu.cheat_selected_actor++;
+		if (Cheat_Menu.cheat_selected_actor >= $gameActors._data.length) {
+			Cheat_Menu.cheat_selected_actor = 0;
+		}
+	}
+	
+	SoundManager.playSystemSound(0);
+	Cheat_Menu.update_menu();
+};
+
+// Append actor selection to the menu
+Cheat_Menu.append_actor_selection = function(key1, key2) {
+	Cheat_Menu.append_title("Actor");
+
+	var actor_name;
+
+	if ($gameActors._data[Cheat_Menu.cheat_selected_actor] && $gameActors._data[Cheat_Menu.cheat_selected_actor]._name) {
+		actor_name = "<font color='#0088ff'>" + $gameActors._data[Cheat_Menu.cheat_selected_actor]._name + "</font>";
+	}
+	else {
+		actor_name = "<font color='#ff0000'>NULL</font>";
+	}
+
+	Cheat_Menu.append_scroll_selector(actor_name, key1, key2, Cheat_Menu.scroll_actor);
+};
+
+// Hanler for the god_mode cheat
+Cheat_Menu.god_mode_toggle = function(event) {
+	if ($gameActors._data[Cheat_Menu.cheat_selected_actor]) {
+		if (!($gameActors._data[Cheat_Menu.cheat_selected_actor].god_mode)) {
+			Cheat_Menu.god_mode($gameActors._data[Cheat_Menu.cheat_selected_actor]);
+			SoundManager.playSystemSound(1);
+		}
+		else {
+			Cheat_Menu.god_mode_off($gameActors._data[Cheat_Menu.cheat_selected_actor]);
+			SoundManager.playSystemSound(2);
+		}
+		Cheat_Menu.update_menu();
+	}
+};
+
+// Append the god_mode cheat to the menu
+Cheat_Menu.append_godmode_status = function() {
+	var status_text;
+	if ($gameActors._data[Cheat_Menu.cheat_selected_actor] && $gameActors._data[Cheat_Menu.cheat_selected_actor].god_mode) {
+		status_text = "<font color='#00ff00'>on</font>";
+	}
+	else {
+		status_text = "<font color='#ff0000'>off</font>";
+	}
+
+	Cheat_Menu.append_cheat("Status:", status_text, 6, Cheat_Menu.god_mode_toggle);
+};
+
+// handler for the enemy hp to 0 cheat alive only
+Cheat_Menu.enemy_hp_cheat_1 = function() {
+	Cheat_Menu.set_enemy_hp(0, true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the enemy hp to 1 cheat alive only
+Cheat_Menu.enemy_hp_cheat_2 = function() {
+	Cheat_Menu.set_enemy_hp(1, true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the enemy hp to 0 cheat all
+Cheat_Menu.enemy_hp_cheat_3 = function() {
+	Cheat_Menu.set_enemy_hp(0, false);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the enemy hp to 1 cheat all
+Cheat_Menu.enemy_hp_cheat_4 = function() {
+	Cheat_Menu.set_enemy_hp(1, false);
+	SoundManager.playSystemSound(1);
+};
+
+// Append the enemy hp cheats to the menu
+Cheat_Menu.append_enemy_cheats = function(key1, key2, key3, key4) {
+	Cheat_Menu.append_title("Alive");
+	Cheat_Menu.append_cheat("Enemy HP to 0", "Activate", key1, Cheat_Menu.enemy_hp_cheat_1);
+	Cheat_Menu.append_cheat("Enemy HP to 1", "Activate", key2, Cheat_Menu.enemy_hp_cheat_2);
+	Cheat_Menu.append_title("All");
+	Cheat_Menu.append_cheat("Enemy HP to 0", "Activate", key3, Cheat_Menu.enemy_hp_cheat_3);
+	Cheat_Menu.append_cheat("Enemy HP to 1", "Activate", key4, Cheat_Menu.enemy_hp_cheat_4);
+};
+
+// handler for the party hp cheat to 0 alive only
+Cheat_Menu.party_hp_cheat_1 = function() {
+	Cheat_Menu.set_party_hp(0, true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party hp cheat to 1 alive only
+Cheat_Menu.party_hp_cheat_2 = function() {
+	Cheat_Menu.set_party_hp(1, true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party hp cheat to full alive only
+Cheat_Menu.party_hp_cheat_3 = function() {
+	Cheat_Menu.recover_party_hp(true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party hp cheat to 0 all
+Cheat_Menu.party_hp_cheat_4 = function() {
+	Cheat_Menu.set_party_hp(0, false);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party hp cheat to 1 all
+Cheat_Menu.party_hp_cheat_5 = function() {
+	Cheat_Menu.set_party_hp(1, false);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party hp cheat full all
+Cheat_Menu.party_hp_cheat_6 = function() {
+	Cheat_Menu.recover_party_hp(false);
+	SoundManager.playSystemSound(1);
+};
+
+
+// append the party hp cheats
+Cheat_Menu.append_hp_cheats = function(key1, key2, key3, key4, key5, key6) {
+	Cheat_Menu.append_title("Alive");
+	Cheat_Menu.append_cheat("Party HP to 0", "Activate", key1, Cheat_Menu.party_hp_cheat_1);
+	Cheat_Menu.append_cheat("Party HP to 1", "Activate", key2, Cheat_Menu.party_hp_cheat_2);
+	Cheat_Menu.append_cheat("Party Full HP", "Activate", key3, Cheat_Menu.party_hp_cheat_3);
+	Cheat_Menu.append_title("All");
+	Cheat_Menu.append_cheat("Party HP to 0", "Activate", key4, Cheat_Menu.party_hp_cheat_4);
+	Cheat_Menu.append_cheat("Party HP to 1", "Activate", key5, Cheat_Menu.party_hp_cheat_5);
+	Cheat_Menu.append_cheat("Party Full HP", "Activate", key6, Cheat_Menu.party_hp_cheat_6);
+};
+
+// handler for the party mp cheat to 0 alive only
+Cheat_Menu.party_mp_cheat_1 = function() {
+	Cheat_Menu.set_party_mp(0, true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party mp cheat to 1 alive only
+Cheat_Menu.party_mp_cheat_2 = function() {
+	Cheat_Menu.set_party_mp(1, true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party mp cheat to full alive only
+Cheat_Menu.party_mp_cheat_3 = function() {
+	Cheat_Menu.recover_party_mp(true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party mp cheat to 0 all
+Cheat_Menu.party_mp_cheat_4 = function() {
+	Cheat_Menu.set_party_mp(0, false);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party mp cheat to 1 all
+Cheat_Menu.party_mp_cheat_5 = function() {
+	Cheat_Menu.set_party_mp(1, false);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party mp cheat full all
+Cheat_Menu.party_mp_cheat_6 = function() {
+	Cheat_Menu.recover_party_mp(false);
+	SoundManager.playSystemSound(1);
+};
+
+
+// append the party mp cheats
+Cheat_Menu.append_mp_cheats = function(key1, key2, key3, key4, key5, key6) {
+	Cheat_Menu.append_title("Alive");
+	Cheat_Menu.append_cheat("Party MP to 0", "Activate", key1, Cheat_Menu.party_mp_cheat_1);
+	Cheat_Menu.append_cheat("Party MP to 1", "Activate", key2, Cheat_Menu.party_mp_cheat_2);
+	Cheat_Menu.append_cheat("Party Full MP", "Activate", key3, Cheat_Menu.party_mp_cheat_3);
+	Cheat_Menu.append_title("All");
+	Cheat_Menu.append_cheat("Party MP to 0", "Activate", key4, Cheat_Menu.party_mp_cheat_4);
+	Cheat_Menu.append_cheat("Party MP to 1", "Activate", key5, Cheat_Menu.party_mp_cheat_5);
+	Cheat_Menu.append_cheat("Party Full MP", "Activate", key6, Cheat_Menu.party_mp_cheat_6);
+};
+
+// handler for the party tp cheat to 0 alive only
+Cheat_Menu.party_tp_cheat_1 = function() {
+	Cheat_Menu.set_party_tp(0, true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party tp cheat to 1 alive only
+Cheat_Menu.party_tp_cheat_2 = function() {
+	Cheat_Menu.set_party_tp(1, true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party tp cheat to full alive only
+Cheat_Menu.party_tp_cheat_3 = function() {
+	Cheat_Menu.recover_party_tp(true);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party tp cheat to 0 all
+Cheat_Menu.party_tp_cheat_4 = function() {
+	Cheat_Menu.set_party_tp(0, false);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party tp cheat to 1 all
+Cheat_Menu.party_tp_cheat_5 = function() {
+	Cheat_Menu.set_party_tp(1, false);
+	SoundManager.playSystemSound(1);
+};
+
+// handler for the party tp cheat full all
+Cheat_Menu.party_tp_cheat_6 = function() {
+	Cheat_Menu.recover_party_tp(false);
+	SoundManager.playSystemSound(1);
+};
+
+
+// append the party tp cheats
+Cheat_Menu.append_tp_cheats = function(key1, key2, key3, key4, key5, key6) {
+	Cheat_Menu.append_title("Alive");
+	Cheat_Menu.append_cheat("Party TP to 0", "Activate", key1, Cheat_Menu.party_tp_cheat_1);
+	Cheat_Menu.append_cheat("Party TP to 1", "Activate", key2, Cheat_Menu.party_tp_cheat_2);
+	Cheat_Menu.append_cheat("Party Full TP", "Activate", key3, Cheat_Menu.party_tp_cheat_3);
+	Cheat_Menu.append_title("All");
+	Cheat_Menu.append_cheat("Party TP to 0", "Activate", key4, Cheat_Menu.party_tp_cheat_4);
+	Cheat_Menu.append_cheat("Party TP to 1", "Activate", key5, Cheat_Menu.party_tp_cheat_5);
+	Cheat_Menu.append_cheat("Party Full TP", "Activate", key6, Cheat_Menu.party_tp_cheat_6);
+};
+
+// handler for the toggle no clip cheat
+Cheat_Menu.toggle_no_clip_status = function(event) {
+	$gamePlayer._through = !($gamePlayer._through);
+	Cheat_Menu.update_menu();
+	if ($gamePlayer._through) {
+		SoundManager.playSystemSound(1);
+	}
+	else {
+		SoundManager.playSystemSound(2);
+	}
+};
+
+// appen the no clip cheat
+Cheat_Menu.append_no_clip_status = function(key1) {
+	var status_text;
+	if ($gamePlayer._through) {
+		status_text = "<font color='#00ff00'>on</font>";
+	}
+	else {
+		status_text = "<font color='#ff0000'>off</font>";
+	}
+
+	Cheat_Menu.append_cheat("Status:", status_text, key1, Cheat_Menu.toggle_no_clip_status);
+};
+
+// Left and right scrollers for handling switching amount to modify numerical cheats
+Cheat_Menu.scroll_amount = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.amount_index--;
+		if (Cheat_Menu.amount_index < 0) {
+			Cheat_Menu.amount_index = 0;
+		}
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		Cheat_Menu.amount_index++;
+		if (Cheat_Menu.amount_index >= Cheat_Menu.amounts.length) {
+			Cheat_Menu.amount_index = Cheat_Menu.amounts.length - 1;
+		}
+		SoundManager.playSystemSound(1);
+	}
+	
+	Cheat_Menu.update_menu();
+};
+
+// append the amount selection to the menu
+Cheat_Menu.append_amount_selection = function(key1, key2) {
+	Cheat_Menu.append_title("Amount");
+
+	var current_amount = "<font color='#0088ff'>" + Cheat_Menu.amounts[Cheat_Menu.amount_index] + "</font>";
+	Cheat_Menu.append_scroll_selector(current_amount, key1, key2, Cheat_Menu.scroll_amount);
+};
+
+// Left and right scrollers for handling switching amount to modify for the movement cheat
+Cheat_Menu.scroll_move_amount = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.move_amount_index--;
+		if (Cheat_Menu.move_amount_index < 0) {
+			Cheat_Menu.move_amount_index = 0;
+		}
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		Cheat_Menu.move_amount_index++;
+		if (Cheat_Menu.move_amount_index >= Cheat_Menu.move_amounts.length) {
+			Cheat_Menu.move_amount_index = Cheat_Menu.move_amounts.length - 1;
+		}
+		SoundManager.playSystemSound(1);
+	}
+	
+	Cheat_Menu.update_menu();
+};
+
+// append the movement speed amount to the menu
+Cheat_Menu.append_move_amount_selection = function(key1, key2) {
+	Cheat_Menu.append_title("Amount");
+
+	var current_amount = "<font color='#0088ff'>" + Cheat_Menu.move_amounts[Cheat_Menu.move_amount_index] + "</font>";
+	Cheat_Menu.append_scroll_selector(current_amount, key1, key2, Cheat_Menu.scroll_move_amount);
+};
+
+// handlers for the exp cheat
+Cheat_Menu.apply_current_exp = function(direction, event) {
+	var amount = Cheat_Menu.amounts[Cheat_Menu.amount_index];
+	if (direction == "left") {
+		amount = -amount;
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		SoundManager.playSystemSound(1);
+	}
+	Cheat_Menu.give_exp($gameActors._data[Cheat_Menu.cheat_selected_actor], amount);
+	Cheat_Menu.update_menu();
+};
+
+// append the exp cheat to the menu
+Cheat_Menu.append_exp_cheat = function(key1, key2) {
+	var current_exp = "NULL";
+	if ($gameActors._data[Cheat_Menu.cheat_selected_actor]) {
+		current_exp = $gameActors._data[Cheat_Menu.cheat_selected_actor].currentExp();
+	}
+	Cheat_Menu.append_title("EXP");
+	Cheat_Menu.append_scroll_selector(current_exp, key1, key2, Cheat_Menu.apply_current_exp);
+};
+
+// Left and right scrollers for handling switching between stats for the selected character
+Cheat_Menu.scroll_stat = function(direction, event) {
+	if ($gameActors._data[Cheat_Menu.cheat_selected_actor] && $gameActors._data[Cheat_Menu.cheat_selected_actor]._paramPlus) {
+		if (direction == "left") {
+			Cheat_Menu.stat_selection--;
+			if (Cheat_Menu.stat_selection < 0) {
+				Cheat_Menu.stat_selection = $gameActors._data[Cheat_Menu.cheat_selected_actor]._paramPlus.length - 1;
+			}
+		}
+		else {
+			Cheat_Menu.stat_selection++;
+			if (Cheat_Menu.stat_selection >= $gameActors._data[Cheat_Menu.cheat_selected_actor]._paramPlus.length) {
+				Cheat_Menu.stat_selection = 0;
+			}
+		}
+	}
+	else {
+		Cheat_Menu.stat_selection = 0;
+	}
+	SoundManager.playSystemSound(0);
+	Cheat_Menu.update_menu();
+};
+
+// handlers for the stat cheat
+Cheat_Menu.apply_current_stat = function(direction, event) {
+	var amount = Cheat_Menu.amounts[Cheat_Menu.amount_index];
+	if (direction == "left") {
+		amount = -amount;
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		SoundManager.playSystemSound(1);
+	}
+	Cheat_Menu.give_stat($gameActors._data[Cheat_Menu.cheat_selected_actor], Cheat_Menu.stat_selection , amount);
+	Cheat_Menu.update_menu();
+};
+
+
+// append the stat selection to the menu
+Cheat_Menu.append_stat_selection = function(key1, key2, key3, key4) {
+	Cheat_Menu.append_title("Stat");
+
+	var stat_string = "";
+
+	var stat_string = "";
+	if ($gameActors._data[Cheat_Menu.cheat_selected_actor] && $gameActors._data[Cheat_Menu.cheat_selected_actor]._paramPlus) {
+		if (Cheat_Menu.stat_selection >= $gameActors._data[Cheat_Menu.cheat_selected_actor]._paramPlus.length) {
+			Cheat_Menu.stat_selection = 0;
+		}
+		stat_string += $dataSystem.terms.params[Cheat_Menu.stat_selection];
+	}
+
+	Cheat_Menu.append_scroll_selector(stat_string, key1, key2, Cheat_Menu.scroll_stat);
+	var current_value = "NULL";
+	if ($gameActors._data[Cheat_Menu.cheat_selected_actor] && $gameActors._data[Cheat_Menu.cheat_selected_actor]._paramPlus) {
+		current_value = $gameActors._data[Cheat_Menu.cheat_selected_actor]._paramPlus[Cheat_Menu.stat_selection];
+	}
+	Cheat_Menu.append_scroll_selector(current_value, key3, key4, Cheat_Menu.apply_current_stat);
+};
+
+// handlers for the gold cheat
+Cheat_Menu.apply_current_gold = function(direction, event) {
+	var amount = Cheat_Menu.amounts[Cheat_Menu.amount_index];
+	if (direction == "left") {
+		amount = -amount;
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		SoundManager.playSystemSound(1);
+	}
+	Cheat_Menu.give_gold(amount);
+	Cheat_Menu.update_menu();
+};
+
+// append the gold cheat to the menu
+Cheat_Menu.append_gold_status = function(key1, key2) {
+	Cheat_Menu.append_title("Gold");
+	Cheat_Menu.append_scroll_selector($gameParty._gold, key1, key2, Cheat_Menu.apply_current_gold);
+};
+
+// handler for the movement speed cheat
+Cheat_Menu.apply_speed_change = function(direction, event) {
+	var amount = Cheat_Menu.move_amounts[Cheat_Menu.move_amount_index];
+	if (direction == "left") {
+		amount = -amount;
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		SoundManager.playSystemSound(1);
+	}
+	Cheat_Menu.change_player_speed(amount);
+	Cheat_Menu.update_menu();
+};
+
+Cheat_Menu.apply_speed_lock_toggle = function() {
+	Cheat_Menu.toggle_lock_player_speed();
+	if (Cheat_Menu.speed_unlocked) {
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		SoundManager.playSystemSound(1);
+	}
+	Cheat_Menu.update_menu();
+};
+
+// append the movement speed to the menu
+Cheat_Menu.append_speed_status = function(key1, key2, key3) {
+	Cheat_Menu.append_title("Current Speed");
+	Cheat_Menu.append_scroll_selector($gamePlayer._moveSpeed, key1, key2, Cheat_Menu.apply_speed_change);
+	var status_text;
+	if (!Cheat_Menu.speed_unlocked) {
+		status_text = "<font color='#00ff00'>false</font>";
+	}
+	else {
+		status_text = "<font color='#ff0000'>true</font>";
+	}
+	Cheat_Menu.append_cheat("Speed Unlocked", status_text, key3, Cheat_Menu.apply_speed_lock_toggle);
+};
+
+// Left and right scrollers for handling switching between items selected
+Cheat_Menu.scroll_item = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.item_selection--;
+		if (Cheat_Menu.item_selection < 0) {
+			Cheat_Menu.item_selection = $dataItems.length - 1;
+		}
+	}
+	else {
+		Cheat_Menu.item_selection++;
+		if (Cheat_Menu.item_selection >= $dataItems.length) {
+			Cheat_Menu.item_selection = 0;
+		}
+	}
+	SoundManager.playSystemSound(0);
+	Cheat_Menu.update_menu();
+};
+
+// handlers for the item cheat
+Cheat_Menu.apply_current_item = function(direction, event) {
+	var amount = Cheat_Menu.amounts[Cheat_Menu.amount_index];
+	if (direction == "left") {
+		amount = -amount;
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		SoundManager.playSystemSound(1);
+	}
+	Cheat_Menu.give_item(Cheat_Menu.item_selection, amount);
+	Cheat_Menu.update_menu();
+};
+
+// append the item cheat to the menu
+Cheat_Menu.append_item_selection = function(key1, key2, key3, key4) {
+	Cheat_Menu.append_title("Item");
+	var current_item = "";
+	if ($dataItems[Cheat_Menu.item_selection] && $dataItems[Cheat_Menu.item_selection].name && $dataItems[Cheat_Menu.item_selection].name.length > 0) {
+		current_item = $dataItems[Cheat_Menu.item_selection].name;
+	}
+	else {
+		current_item = "NULL";
+	}
+
+	Cheat_Menu.append_scroll_selector(current_item, key1, key2, Cheat_Menu.scroll_item);
+	var current_item_amount = 0;
+	if ($gameParty._items[Cheat_Menu.item_selection] != undefined) {
+		current_item_amount = $gameParty._items[Cheat_Menu.item_selection];
+	}
+	Cheat_Menu.append_scroll_selector(current_item_amount, key3, key4, Cheat_Menu.apply_current_item);
+};
+
+// Left and right scrollers for handling switching between weapon selected
+Cheat_Menu.scroll_weapon = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.weapon_selection--;
+		if (Cheat_Menu.weapon_selection < 0) {
+			Cheat_Menu.weapon_selection = $dataWeapons.length - 1;
+		}
+	}
+	else {
+		Cheat_Menu.weapon_selection++;
+		if (Cheat_Menu.weapon_selection >= $dataWeapons.length) {
+			Cheat_Menu.weapon_selection = 0;
+		}
+	}
+	SoundManager.playSystemSound(0);
+	
+	Cheat_Menu.update_menu();
+};
+
+// handlers for the weapon cheat
+Cheat_Menu.apply_current_weapon = function(direction, event) {
+	var amount = Cheat_Menu.amounts[Cheat_Menu.amount_index];
+	if (direction == "left") {
+		amount = -amount;
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		SoundManager.playSystemSound(1);
+	}
+	Cheat_Menu.give_weapon(Cheat_Menu.weapon_selection, amount);
+	Cheat_Menu.update_menu();
+};
+
+// append the weapon cheat to the menu
+Cheat_Menu.append_weapon_selection = function(key1, key2, key3, key4) {
+	Cheat_Menu.append_title("Weapon");
+	var current_weapon = "";
+	if ($dataWeapons[Cheat_Menu.weapon_selection] && $dataWeapons[Cheat_Menu.weapon_selection].name && $dataWeapons[Cheat_Menu.weapon_selection].name.length > 0) {
+		current_weapon = $dataWeapons[Cheat_Menu.weapon_selection].name;
+	}
+	else {
+		current_weapon = "NULL";
+	}
+
+	Cheat_Menu.append_scroll_selector(current_weapon, key1, key2, Cheat_Menu.scroll_weapon);
+	var current_weapon_amount = 0;
+	if ($gameParty._weapons[Cheat_Menu.weapon_selection] != undefined) {
+		current_weapon_amount = $gameParty._weapons[Cheat_Menu.weapon_selection];
+	}
+	Cheat_Menu.append_scroll_selector(current_weapon_amount, key3, key4, Cheat_Menu.apply_current_weapon);
+};
+
+// Left and right scrollers for handling switching between armor selected
+Cheat_Menu.scroll_armor = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.armor_selection--;
+		if (Cheat_Menu.armor_selection < 0) {
+			Cheat_Menu.armor_selection = $dataArmors.length - 1;
+		}
+	}
+	else {
+		Cheat_Menu.armor_selection++;
+		if (Cheat_Menu.armor_selection >= $dataArmors.length) {
+			Cheat_Menu.armor_selection = 0;
+		}
+	}
+	SoundManager.playSystemSound(0);
+	
+	Cheat_Menu.update_menu();
+};
+
+// handler for the armor cheat
+Cheat_Menu.apply_current_armor = function(direction, event) {
+	var amount = Cheat_Menu.amounts[Cheat_Menu.amount_index];
+	if (direction == "left") {
+		amount = -amount;
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		SoundManager.playSystemSound(1);
+	}
+	Cheat_Menu.give_armor(Cheat_Menu.armor_selection, amount);
+	Cheat_Menu.update_menu();
+};
+
+// append the armor cheat to the menu
+Cheat_Menu.append_armor_selection = function(key1, key2, key3, key4) {
+	Cheat_Menu.append_title("Armor");
+	var current_armor = "";
+	if ($dataArmors[Cheat_Menu.armor_selection] && $dataArmors[Cheat_Menu.armor_selection].name && $dataArmors[Cheat_Menu.armor_selection].name.length > 0) {
+		current_armor = $dataArmors[Cheat_Menu.armor_selection].name;
+	}
+	else {
+		current_armor = "NULL";
+	}
+
+	Cheat_Menu.append_scroll_selector(current_armor, key1, key2, Cheat_Menu.scroll_armor);
+	var current_armor_amount = 0;
+	if ($gameParty._armors[Cheat_Menu.armor_selection] != undefined) {
+		current_armor_amount = $gameParty._armors[Cheat_Menu.armor_selection];
+	}
+	Cheat_Menu.append_scroll_selector(current_armor_amount, key3, key4, Cheat_Menu.apply_current_armor);
+};
+
+// handler for the clear actor state cheat
+Cheat_Menu.clear_current_actor_states = function() {
+	Cheat_Menu.clear_actor_states($gameActors._data[Cheat_Menu.cheat_selected_actor]);
+	SoundManager.playSystemSound(1);
+	Cheat_Menu.update_menu();
+};
+
+// handler for the party state clear cheat
+Cheat_Menu.party_clear_states_cheat = function() {
+	Cheat_Menu.clear_party_states();
+	SoundManager.playSystemSound(1);
+};
+
+// append the party hp cheats
+Cheat_Menu.append_party_state = function(key1) {
+	Cheat_Menu.append_cheat("Clear Party States", "Activate", key1, Cheat_Menu.party_clear_states_cheat);
+};
+
+// append the clear actor state cheat to the menu
+Cheat_Menu.append_current_state = function(key1) {
+	Cheat_Menu.append_title("Current State");
+	var number_states = 0;
+
+	if ($gameActors._data[Cheat_Menu.cheat_selected_actor] && $gameActors._data[Cheat_Menu.cheat_selected_actor]._states && $gameActors._data[Cheat_Menu.cheat_selected_actor]._states.length >= 0) {
+		number_states = $gameActors._data[Cheat_Menu.cheat_selected_actor]._states.length;
+	}
+	else {
+		number_states = null;
+	}
+
+	Cheat_Menu.append_cheat("Number Effects:", number_states, key1, Cheat_Menu.clear_current_actor_states);
+};
+
+// Left and right scrollers for handling switching between selected variable
+Cheat_Menu.scroll_variable = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.variable_selection--;
+		if (Cheat_Menu.variable_selection < 0) {
+			Cheat_Menu.variable_selection = $dataSystem.variables.length - 1;
+		}
+	}
+	else {
+		Cheat_Menu.variable_selection++;
+		if (Cheat_Menu.variable_selection >= $dataSystem.variables.length) {
+			Cheat_Menu.variable_selection = 0;
+		}
+	}
+	SoundManager.playSystemSound(0);
+	Cheat_Menu.update_menu();
+};
+
+// handlers for the setting the current variable
+Cheat_Menu.apply_current_variable = function(direction, event) {
+	var amount = Cheat_Menu.amounts[Cheat_Menu.amount_index];
+	if (direction == "left") {
+		amount = -amount;
+		SoundManager.playSystemSound(2);
+	}
+	else {
+		SoundManager.playSystemSound(1);
+	}
+	Cheat_Menu.set_variable(Cheat_Menu.variable_selection, amount);
+	Cheat_Menu.update_menu();
+};
+
+// append the variable cheat to the menu
+Cheat_Menu.append_variable_selection = function(key1, key2, key3, key4) {
+	Cheat_Menu.append_title("Variable");
+	var current_variable = "";
+	if ($dataSystem.variables[Cheat_Menu.variable_selection] && $dataSystem.variables[Cheat_Menu.variable_selection].length > 0) {
+		current_variable = $dataSystem.variables[Cheat_Menu.variable_selection];
+	}
+	else {
+		current_variable = "NULL";
+	}
+
+	Cheat_Menu.append_scroll_selector(current_variable, key1, key2, Cheat_Menu.scroll_variable);
+	var current_variable_value = 'NULL';
+	if ($gameVariables.value(Cheat_Menu.variable_selection) != undefined) {
+		current_variable_value = $gameVariables.value(Cheat_Menu.variable_selection);
+	}
+	Cheat_Menu.append_scroll_selector(current_variable_value, key3, key4, Cheat_Menu.apply_current_variable);
+};
+
+// Left and right scrollers for handling switching between selected switch
+Cheat_Menu.scroll_switch = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.switch_selection--;
+		if (Cheat_Menu.switch_selection < 0) {
+			Cheat_Menu.switch_selection = $dataSystem.switches.length - 1;
+		}
+	}
+	else {
+		Cheat_Menu.switch_selection++;
+		if (Cheat_Menu.switch_selection >= $dataSystem.switches.length) {
+			Cheat_Menu.switch_selection = 0;
+		}
+	}
+	SoundManager.playSystemSound(0);
+	Cheat_Menu.update_menu();
+};
+
+// handler for the toggling the current switch
+Cheat_Menu.toggle_current_switch = function(event) {
+	Cheat_Menu.toggle_switch(Cheat_Menu.switch_selection);
+	if ($gameSwitches.value(Cheat_Menu.switch_selection)) {
+		SoundManager.playSystemSound(1);
+	}
+	else {
+		SoundManager.playSystemSound(2);
+	}
+	Cheat_Menu.update_menu();
+};
+
+// append the switch cheat to the menu
+Cheat_Menu.append_switch_selection = function(key1, key2, key3) {
+	Cheat_Menu.append_title("Switch");
+	var current_switch = "";
+	if ($dataSystem.switches[Cheat_Menu.switch_selection] && $dataSystem.switches[Cheat_Menu.switch_selection].length > 0) {
+		current_switch = $dataSystem.switches[Cheat_Menu.switch_selection];
+	}
+	else {
+		current_switch = "NULL";
+	}
+
+	Cheat_Menu.append_scroll_selector(current_switch, key1, key2, Cheat_Menu.scroll_switch);
+	var current_switch_value = 'NULL';
+	if ($gameSwitches.value(Cheat_Menu.switch_selection) != undefined) {
+		current_switch_value = $gameSwitches.value(Cheat_Menu.switch_selection);
+	}
+	Cheat_Menu.append_cheat("Status:", current_switch_value, key3, Cheat_Menu.toggle_current_switch);
+};
+
+// handler for saving positions
+Cheat_Menu.save_position = function(pos_num, event) {
+	Cheat_Menu.saved_positions[pos_num].m = $gameMap.mapId();
+	Cheat_Menu.saved_positions[pos_num].x = $gamePlayer.x;
+	Cheat_Menu.saved_positions[pos_num].y = $gamePlayer.y;
+
+	SoundManager.playSystemSound(1);
+	Cheat_Menu.update_menu();
+};
+
+// handler for loading/recalling positions
+Cheat_Menu.recall_position = function(pos_num, event) {
+	if (Cheat_Menu.saved_positions[pos_num].m != -1) {
+		Cheat_Menu.teleport(Cheat_Menu.saved_positions[pos_num].m, Cheat_Menu.saved_positions[pos_num].x, Cheat_Menu.saved_positions[pos_num].y);
+		SoundManager.playSystemSound(1);
+	}
+	else {
+		SoundManager.playSystemSound(2);
+	}
+	Cheat_Menu.update_menu();
+};
+
+// append the save/recall cheat to the menu
+Cheat_Menu.append_save_recall = function (key1, key2, key3, key4, key5, key6) {
+	
+	Cheat_Menu.append_title("Current Position: ");
+
+	if ($dataMapInfos[$gameMap.mapId()] && $dataMapInfos[$gameMap.mapId()].name) {
+		var current_map = "" + $gameMap.mapId() + ": " + $dataMapInfos[$gameMap.mapId()].name;
+		Cheat_Menu.append_description(current_map);
+
+		var map_pos = "(" + $gamePlayer.x + ", " + $gamePlayer.y + ")";
+		Cheat_Menu.append_description(map_pos);
+	}
+	else {
+		Cheat_Menu.append_description("NULL");
+	}
+
+	var cur_key = 1;
+	for (var i = 0; i < Cheat_Menu.saved_positions.length; i++) {
+		Cheat_Menu.append_title("Position " + (i+1));
+
+		var map_text;
+		var pos_text;
+		if (Cheat_Menu.saved_positions[i].m != -1) {
+			map_text = "" + Cheat_Menu.saved_positions[i].m + ": ";
+			if($dataMapInfos[Cheat_Menu.saved_positions[i].m].name) {
+				map_text += $dataMapInfos[Cheat_Menu.saved_positions[i].m].name;
+			}
+			else {
+				map_text += "NULL";
+			}
+			pos_text = "(" + Cheat_Menu.saved_positions[i].x + ", " + Cheat_Menu.saved_positions[i].y + ")";
+		} 
+		else {
+			map_text = "NULL";
+			pos_text = "NULL"
+		}
+
+		Cheat_Menu.append_cheat("Save:", map_text, eval("key" + cur_key), Cheat_Menu.save_position.bind(null, i));
+		cur_key++;
+
+		Cheat_Menu.append_cheat("Recall:", pos_text, eval("key" + cur_key), Cheat_Menu.recall_position.bind(null, i));
+		cur_key++;
+	}
+};
+
+// Left and right scrollers for handling switching between target teleport map
+Cheat_Menu.scroll_map_teleport_selection = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.teleport_location.m--;
+		if (Cheat_Menu.teleport_location.m < 1) {
+			Cheat_Menu.teleport_location.m = $dataMapInfos.length - 1;
+		}
+	}
+	else {
+		Cheat_Menu.teleport_location.m++;
+		if (Cheat_Menu.teleport_location.m >= $dataMapInfos.length) {
+			Cheat_Menu.teleport_location.m = 1;
+		}
+	}
+
+	SoundManager.playSystemSound(0);
+	Cheat_Menu.update_menu();
+};
+
+// Left and right scrollers for handling switching between target teleport x coord
+Cheat_Menu.scroll_x_teleport_selection = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.teleport_location.x--;
+		if (Cheat_Menu.teleport_location.x < 0) {
+			Cheat_Menu.teleport_location.x = 255;
+		}
+	}
+	else {
+		Cheat_Menu.teleport_location.x++;
+		if (Cheat_Menu.teleport_location.x > 255) {
+			Cheat_Menu.teleport_location.x = 0;
+		}
+	}
+
+	SoundManager.playSystemSound(0);
+	Cheat_Menu.update_menu();
+};
+
+// Left and right scrollers for handling switching between target teleport y coord
+Cheat_Menu.scroll_y_teleport_selection = function(direction, event) {
+	if (direction == "left") {
+		Cheat_Menu.teleport_location.y--;
+		if (Cheat_Menu.teleport_location.y < 0) {
+			Cheat_Menu.teleport_location.y = 255;
+		}
+	}
+	else {
+		Cheat_Menu.teleport_location.y++;
+		if (Cheat_Menu.teleport_location.y > 255) {
+			Cheat_Menu.teleport_location.y = 0;
+		}
+	}
+
+	SoundManager.playSystemSound(0);
+	Cheat_Menu.update_menu();
+};
+
+// handler for teleporting to targed map and location
+Cheat_Menu.teleport_current_location = function(event) {
+	Cheat_Menu.teleport(Cheat_Menu.teleport_location.m, Cheat_Menu.teleport_location.x, Cheat_Menu.teleport_location.y);
+	SoundManager.playSystemSound(1);
+	Cheat_Menu.update_menu();
+};
+
+// append the teleport cheat to the menu
+Cheat_Menu.append_teleport = function (key1, key2, key3, key4, key5, key6, key7) {
+	var current_map = "" + Cheat_Menu.teleport_location.m + ": ";
+
+	if ($dataMapInfos[Cheat_Menu.teleport_location.m] && $dataMapInfos[Cheat_Menu.teleport_location.m].name) {
+		current_map += $dataMapInfos[Cheat_Menu.teleport_location.m].name;
+	}
+	else {
+		current_map += "NULL";
+	}
+
+	Cheat_Menu.append_scroll_selector(current_map, key1, key2, Cheat_Menu.scroll_map_teleport_selection);
+
+	Cheat_Menu.append_scroll_selector("X: " + Cheat_Menu.teleport_location.x, key3, key4, Cheat_Menu.scroll_x_teleport_selection);
+
+	Cheat_Menu.append_scroll_selector("Y: " + Cheat_Menu.teleport_location.y, key5, key6, Cheat_Menu.scroll_y_teleport_selection);
+
+	Cheat_Menu.append_cheat("Teleport", "Activate", key7, Cheat_Menu.teleport_current_location);
+};
+
+
+//////////////////////////////////////////////////////////////////////////////////
+// Final Functions for building each Menu and function list for updating the menu
+//////////////////////////////////////////////////////////////////////////////////
+// Check if already defined (allows game specific extensions to be loaded in any order)
+if (typeof Cheat_Menu.menus == "undefined") { Cheat_Menu.menus = []; }
+
+// One menu added for each cheat/page of the Cheat_Menu
+//	appended in reverse order at the front so they will
+//	appear first no matter the plugin load order for any
+//	extension plugins
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Teleport");
+	Cheat_Menu.append_teleport(4, 5, 6, 7, 8, 9, 0);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Save and Recall");
+	Cheat_Menu.append_save_recall(4, 5, 6, 7, 8, 9);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Switches");
+	Cheat_Menu.append_switch_selection(4, 5, 6);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Variables");
+	Cheat_Menu.append_amount_selection(4, 5);
+	Cheat_Menu.append_variable_selection(6, 7, 8, 9);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Clear States");
+	Cheat_Menu.append_party_state(4);
+	Cheat_Menu.append_actor_selection(5, 6);
+	Cheat_Menu.append_current_state(7);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Speed");
+	Cheat_Menu.append_move_amount_selection(4, 5);
+	Cheat_Menu.append_speed_status(6, 7, 8);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Armors");
+	Cheat_Menu.append_amount_selection(4, 5);
+	Cheat_Menu.append_armor_selection(6, 7, 8, 9);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Weapons");
+	Cheat_Menu.append_amount_selection(4, 5);
+	Cheat_Menu.append_weapon_selection(6, 7, 8, 9);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Items");
+	Cheat_Menu.append_amount_selection(4, 5);
+	Cheat_Menu.append_item_selection(6, 7, 8, 9);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Gold");
+	Cheat_Menu.append_amount_selection(4, 5);
+	Cheat_Menu.append_gold_status(6, 7);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Stats");
+	Cheat_Menu.append_actor_selection(4, 5);
+	Cheat_Menu.append_amount_selection(6, 7);
+	Cheat_Menu.append_stat_selection(8, 9, 0, '-');
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Give Exp");
+	Cheat_Menu.append_actor_selection(4, 5);
+	Cheat_Menu.append_amount_selection(6, 7);
+	Cheat_Menu.append_exp_cheat(8, 9);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Party TP");
+
+	Cheat_Menu.append_tp_cheats(4, 5, 6, 7, 8, 9);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Party MP");
+
+	Cheat_Menu.append_mp_cheats(4, 5, 6, 7, 8, 9);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Party HP");
+
+	Cheat_Menu.append_hp_cheats(4, 5, 6, 7, 8, 9);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("Enemy HP");
+
+	Cheat_Menu.append_enemy_cheats(4, 5, 6, 7);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("No Clip");
+
+	Cheat_Menu.append_no_clip_status(4);
+});
+
+Cheat_Menu.menus.splice(0, 0, function() {
+	Cheat_Menu.append_cheat_title("God Mode");
+	Cheat_Menu.append_actor_selection(4, 5);
+
+	Cheat_Menu.append_godmode_status();
+});
+
+
+// update whats being displayed in menu
+Cheat_Menu.update_menu = function() {
+	// clear menu
+	Cheat_Menu.overlay.innerHTML = "";
+	// clear key listeners
+	Cheat_Menu.key_listeners = {};
+
+	Cheat_Menu.menus[Cheat_Menu.cheat_selected]();
+
+	Cheat_Menu.position_menu();
+};
+
+// listener to reposition menu
+window.addEventListener("resize", Cheat_Menu.position_menu);
+
+
+// prevent clicking from passing through
+Cheat_Menu.overlay.addEventListener("mousedown", function(event) {
+	event.stopPropagation();
+});
+
+
+
+/////////////////////////////////////////////////
+// Cheat Menu Key Listener
+/////////////////////////////////////////////////
+
+// Key codes
+if (typeof Cheat_Menu.keyCodes == "undefined") { Cheat_Menu.keyCodes = {}; }
+
+Cheat_Menu.keyCodes.KEYCODE_0 = {keyCode: 48, key_listener: 0};
+Cheat_Menu.keyCodes.KEYCODE_1 = {keyCode: 49, key_listener: 1};
+Cheat_Menu.keyCodes.KEYCODE_2 = {keyCode: 50, key_listener: 2};
+Cheat_Menu.keyCodes.KEYCODE_3 = {keyCode: 51, key_listener: 3};
+Cheat_Menu.keyCodes.KEYCODE_4 = {keyCode: 52, key_listener: 4};
+Cheat_Menu.keyCodes.KEYCODE_5 = {keyCode: 53, key_listener: 5};
+Cheat_Menu.keyCodes.KEYCODE_6 = {keyCode: 54, key_listener: 6};
+Cheat_Menu.keyCodes.KEYCODE_7 = {keyCode: 55, key_listener: 7};
+Cheat_Menu.keyCodes.KEYCODE_8 = {keyCode: 56, key_listener: 8};
+Cheat_Menu.keyCodes.KEYCODE_9 = {keyCode: 57, key_listener: 9};
+Cheat_Menu.keyCodes.KEYCODE_MINUS = {keyCode: 189, key_listener: '-'};
+Cheat_Menu.keyCodes.KEYCODE_EQUAL = {keyCode: 187, key_listener: '='};
+
+Cheat_Menu.keyCodes.KEYCODE_TILDE = {keyCode: 192, key_listener: '`'};
+
+Cheat_Menu.key_listeners = {};
+
+Cheat_Menu.close_overlay = function() {
+    Cheat_Menu.cheat_menu_open = false;
+    if (Cheat_Menu.overlay_box.parentNode) Cheat_Menu.overlay_box.parentNode.removeChild(Cheat_Menu.overlay_box);
+    if (Cheat_Menu.overlay.parentNode) Cheat_Menu.overlay.parentNode.removeChild(Cheat_Menu.overlay);
+};
+
+Cheat_Menu.prepare = function() {
+	if (!Cheat_Menu.initialized) {
+		for (var i = 0; i < $gameActors._data.length; i++) {
+			if($gameActors._data[i]) {
+				$gameActors._data[i].god_mode = false;
+				if ($gameActors._data[i].god_mode_interval) {
+					clearInterval($gameActors._data[i].god_mode_interval);
+				}
+			}
+		}
+		
+		// reset to inital values
+		for (var name in Cheat_Menu.initial_values) {
+			Cheat_Menu[name] = Cheat_Menu.initial_values[name];
+		}
+		// load saved values if they exist
+		if ($gameSystem.Cheat_Menu) {
+			for (var name in $gameSystem.Cheat_Menu) {
+				Cheat_Menu[name] = $gameSystem.Cheat_Menu[name];
+			}
+		}
+
+		// if speed is locked then initialize it so effect is active
+		if (Cheat_Menu.speed_unlocked == false) {
+			Cheat_Menu.initialize_speed_lock();
+		}
+
+		// only do this once per load or new game
+		Cheat_Menu.initialized = true;
+	}
+};
+window.addEventListener("keydown", function(event) {
+	if (false && !event.ctrlKey && !event.altKey && (event.keyCode === 119) && $gameTemp && !$gameTemp.isPlaytest()) {
+		// open debug menu
+		event.stopPropagation();
+		event.preventDefault();
+		require('nw.gui').Window.get().showDevTools();
+	}
+	else if (!event.altKey && !event.ctrlKey && !event.shiftKey && (event.keyCode === 120) && $gameTemp && !$gameTemp.isPlaytest()) {
+		// trick the game into thinking its a playtest so it will open the switch/variable debug menu
+		$gameTemp._isPlaytest = true;
+		setTimeout(function() {
+			// back to not being playtest
+			$gameTemp._isPlaytest = false;
+		}, 100);
+	}
+	else if (Cheat_Menu.overlay_openable && (SceneManager._scene instanceof Scene_Map || SceneManager._scene instanceof Scene_Battle) && !(SceneManager._scene instanceof Scene_Battle && SceneManager._scene._universalControlBattle) && !event.altKey && !event.ctrlKey && !event.shiftKey && !event.repeat && !/^(INPUT|TEXTAREA)$/.test((event.target && event.target.tagName) || "")) {
+		// open and close menu
+		if (event.keyCode == Cheat_Menu.keyCodes.KEYCODE_1.keyCode) {
+			Cheat_Menu.prepare();
+
+			// open menu
+			if (!Cheat_Menu.cheat_menu_open) {
+				Cheat_Menu.cheat_menu_open = true;
+				document.body.appendChild(Cheat_Menu.overlay_box);
+				document.body.appendChild(Cheat_Menu.overlay);
+				Cheat_Menu.update_menu();
+				SoundManager.playSystemSound(1);
+			}
+			// close menu
+			else {
+                Cheat_Menu.close_overlay();
+                SoundManager.playSystemSound(2);
+			}
+		}
+
+		// navigate and activate cheats
+		else if (Cheat_Menu.cheat_menu_open) {
+			// move menu position
+			if (event.keyCode == Cheat_Menu.keyCodes.KEYCODE_TILDE.keyCode) {
+				Cheat_Menu.position++;
+				if (Cheat_Menu.position > 4) {
+					Cheat_Menu.position = 0;
+				}
+				Cheat_Menu.update_menu();
+			}
+
+			else {
+				for (var keyCode in Cheat_Menu.keyCodes) {
+					if (Cheat_Menu.key_listeners[Cheat_Menu.keyCodes[keyCode].key_listener] && event.keyCode == Cheat_Menu.keyCodes[keyCode].keyCode) {
+						Cheat_Menu.key_listeners[Cheat_Menu.keyCodes[keyCode].key_listener](event);
+					}
+				}
+			}
+		}
+	}
+});
+
+
+
+/////////////////////////////////////////////////
+// Load Hook
+/////////////////////////////////////////////////
+
+// close the menu and set for initialization on first open
+//	timer to provide periodic updates if the menu is open
+Cheat_Menu.initialize = function() {
+	Cheat_Menu.overlay_openable = true;
+	Cheat_Menu.initialized = false;
+	Cheat_Menu.cheat_menu_open = false;
+	Cheat_Menu.speed_initialized = false;
+    Cheat_Menu.close_overlay();
+
+
+	// periodic update
+	clearInterval(Cheat_Menu.menu_update_timer);
+	Cheat_Menu.menu_update_timer = setInterval(function() {
+		if (Cheat_Menu.cheat_menu_open) {
+			Cheat_Menu.update_menu();
+		}
+	}, 1000);
+};
+
+// add hook for loading a game
+DataManager.default_loadGame = DataManager.loadGame;
+DataManager.loadGame = function(savefileId) {
+	Cheat_Menu.initialize();
+
+	return DataManager.default_loadGame(savefileId);
+};
+
+// add hook for new game
+DataManager.default_setupNewGame = DataManager.setupNewGame;
+DataManager.setupNewGame = function() {
+	Cheat_Menu.initialize();
+
+	DataManager.default_setupNewGame();
+};
+
+// add hook for saving values (just added into $gameSystem to be saved)
+DataManager.default_saveGame = DataManager.saveGame;
+DataManager.saveGame = function(savefileId) {
+	// save values that are in intial values
+	$gameSystem.Cheat_Menu = {};
+	for (var name in Cheat_Menu.initial_values) {
+		$gameSystem.Cheat_Menu[name] = Cheat_Menu[name];
+	}
+
+	return DataManager.default_saveGame(savefileId);
+};
+
+// Integrated universal in-engine menu (no additional plugin file).
+/*:
+ * @plugindesc Cheat Menu Integrated v2.0 — teleport, levels, skills, items and stack limits.
+ * @author Custom patch
+ * @help Use the key item "Меню управления" or F7 on the map.
+ * For RPG Maker MV and MZ. Custom plugin compatibility is not guaranteed.
+ * @target MV MZ
+ */
+(function() {
+'use strict';
+var ITEM_ID = 0;
+var MAPS = [];
+var BASE_COUNTS = {};
+var mapCache = {};
+var IS_MZ = Utils.RPGMAKER_NAME === 'MZ';
+var openRequested = false;
+// Per-save stack size setting. Zero means the original game limit.
+function selectedStackLimit() {
+    if (!$gameSystem) return 0;
+    var selected = Number($gameSystem._universalControlItemCap || 0);
+    return selected === 99 || selected === 999 || selected === 9999 ? selected : 0;
+}
+function stackLimitLabel() {
+    var limit = selectedStackLimit();
+    return limit ? String(limit) : 'стандартный';
+}
+// A unique-instance item cannot be given as a larger stack. Also avoid overriding
+// explicit per-item caps described in common note tags used by other plugins.
+function eligibleForStackLimit(item) {
+    if (!item || itemIsControl(item)) return false;
+    if (!(DataManager.isItem(item) || DataManager.isWeapon(item) || DataManager.isArmor(item))) return false;
+    if (typeof DataManager.isIndependent === 'function' && DataManager.isIndependent(item)) return false;
+    if (item.meta && (item.meta.IndependentItem || item.meta.Independent || item.meta.NoStack || item.meta.NoStacking)) return false;
+    var note = String(item.note || '');
+    if (/<\s*(?:max\s*items?|item\s*max(?:imum)?|stack\s*(?:limit|max)|max\s*stack|itemmaxnum)\s*:\s*\d+\s*>/i.test(note)) return false;
+    if (/(?:^|\n)\s*itemMaxNum\s*:\s*\d+/i.test(note)) return false;
+    return true;
+}
+// Call the game's previous implementation first, so other inventory plugins
+// can retain their own special-item and category behavior.
+var previousMaxItems = Game_Party.prototype.maxItems;
+Game_Party.prototype.maxItems = function(item) {
+    var original = previousMaxItems.apply(this, arguments);
+    if (!eligibleForStackLimit(item)) return original;
+    var selected = selectedStackLimit();
+    var result = selected || original;
+    if (typeof result !== 'number' || !isFinite(result) || result < 0) return original;
+    // Do not destroy already owned surplus on the next gainItem() after lowering
+    // the limit (including when switching back to the game's original value).
+    var owned = this.numItems(item);
+    if (typeof owned === 'number' && isFinite(owned) && owned > result) result = Math.floor(owned);
+    return result;
+};
+function clean(s) { return String(s || '').replace(/\\[A-Za-z]+\[[^\]]*\]/g, '').replace(/[\r\n]+/g, ' '); }
+function itemIsControl(item) { return item && item.id === ITEM_ID && item.meta && item.meta.UniversalControl; }
+function installItem(data) {
+    var found = data.filter(function(item) { return item && item.meta && item.meta.UniversalControl; })[0];
+    ITEM_ID = found ? found.id : data.length;
+    BASE_COUNTS.items = found ? found.id : data.length;
+    data[ITEM_ID] = {id:ITEM_ID,name:'Меню управления',description:'Управление персонажами, инвентарём и игрой. Доступен в бою.\nF7 — полное меню, 1 — быстрые читы.',iconIndex:83,itypeId:2,consumable:false,occasion:0,scope:0,speed:0,successRate:100,repeats:1,tpGain:0,hitType:0,animationId:0,price:0,damage:{critical:false,elementId:0,formula:'0',type:0,variance:0},effects:[],note:'<UniversalControl>\n<Not Independent Item>\nitemMaxNum:1',meta:{UniversalControl:true},nonIndependent:true};
+}
+var oldOnLoad = DataManager.onLoad;
+DataManager.onLoad = function(object) {
+    // Append the single universal item only after other database loaders.
+    var result = oldOnLoad.apply(this, arguments);
+    if (object === $dataItems) installItem(object);
+    if (object === $dataWeapons) BASE_COUNTS.weapons = object.length;
+    if (object === $dataArmors) BASE_COUNTS.armors = object.length;
+    if (object === $dataMapInfos) MAPS = object.filter(function(m){return m && m.id > 0;}).map(function(m){return {id:m.id,name:m.name||('Map '+m.id),internal:m.name||'',parent:m.parentId};});
+    return result;
+};
+function ensureItem() {
+    if ($gameSystem && $gameSystem._universalControlDisabled) return;
+    if ($gameSystem && $gameSystem._universalControlItemId && $gameSystem._universalControlItemId !== ITEM_ID) {
+        var oldId=$gameSystem._universalControlItemId;
+        if (!$dataItems[oldId] || itemIsControl($dataItems[oldId])) delete $gameParty._items[oldId];
+    }
+    if ($gameSystem) $gameSystem._universalControlItemId=ITEM_ID;
+    if ($gameParty && $dataItems && itemIsControl($dataItems[ITEM_ID])) $gameParty._items[ITEM_ID] = 1;
+}
+var oldNewGame = DataManager.setupNewGame;
+DataManager.setupNewGame = function() { oldNewGame.apply(this, arguments); ensureItem(); };
+var oldExtract = DataManager.extractSaveContents;
+DataManager.extractSaveContents = function(contents) { oldExtract.apply(this, arguments); ensureItem(); };
+var oldItemOK = Scene_Item.prototype.onItemOk;
+Scene_Item.prototype.onItemOk = function() {
+    if (itemIsControl(this.item())) { SceneManager.push(Scene_UniversalControl); return; }
+    oldItemOK.apply(this, arguments);
+};
+// F7 is a fallback when the inventory or a scripted map is inconvenient.
+document.addEventListener('keydown', function(e) {
+    if (e.keyCode === 118 && !e.repeat && (SceneManager._scene instanceof Scene_Map || SceneManager._scene instanceof Scene_Battle)) {
+        e.preventDefault();
+        if (SceneManager._scene instanceof Scene_Battle && SceneManager._scene._universalControlBattle) {
+            openRequested = false; SceneManager._scene.closeUniversalControl(); return;
+        }
+        openRequested = true;
+    }
+});
+// Special item is always visible/usable in the Battle Item list, even when
+// custom battle item filters normally hide key items.
+if (typeof Window_BattleItem !== 'undefined') {
+    var previousBattleIncludes = Window_BattleItem.prototype.includes;
+    Window_BattleItem.prototype.includes = function(item) {
+        return itemIsControl(item) || previousBattleIncludes.apply(this, arguments);
+    };
+    var previousBattleItemEnabled = Window_BattleItem.prototype.isEnabled;
+    Window_BattleItem.prototype.isEnabled = function(item) {
+        return itemIsControl(item) || previousBattleItemEnabled.apply(this, arguments);
+    };
+}
+var oldMapStart = Scene_Map.prototype.start;
+Scene_Map.prototype.start = function() {
+    oldMapStart.apply(this,arguments);
+    if($gameSystem && $gameMap.mapId()>0){
+        $gameSystem._universalControlVisited=$gameSystem._universalControlVisited||{};
+        $gameSystem._universalControlVisited[$gameMap.mapId()]=true;
+    }
+};
+var oldMapUpdate = Scene_Map.prototype.update;
+Scene_Map.prototype.update = function() {
+    oldMapUpdate.apply(this, arguments);
+    if (openRequested && !SceneManager.isSceneChanging() && !$gamePlayer.isTransferring()) {
+        openRequested = false; ensureItem(); SceneManager.push(Scene_UniversalControl);
+    }
+};
+// Recheck landing tiles against active collision/events after the map is loaded.
+function landingPoint(map, player, x, y) {
+    var dirs = [[2,0,1],[4,-1,0],[6,1,0],[8,0,-1]];
+    var candidates = [];
+    for (var yy = Math.max(0,y-12); yy < Math.min(map.height(),y+13); yy++) {
+        for (var xx = Math.max(0,x-12); xx < Math.min(map.width(),x+13); xx++) candidates.push([xx,yy]);
+    }
+    candidates.sort(function(a,b) { return Math.abs(a[0]-x)+Math.abs(a[1]-y)-Math.abs(b[0]-x)-Math.abs(b[1]-y); });
+    for (var i=0;i<candidates.length;i++) {
+        var p=candidates[i];
+        if (map.eventsXy(p[0],p[1]).length || map.isDamageFloor(p[0],p[1])) continue;
+        if (dirs.some(function(d) {
+            var nx=p[0]+d[1],ny=p[1]+d[2];
+            return map.isValid(nx,ny) && map.isPassable(p[0],p[1],d[0]) && map.isPassable(nx,ny,10-d[0]) && !map.eventsXyNt(nx,ny).some(function(e){return e.isNormalPriority();});
+        })) return p;
+    }
+    return null;
+}
+var oldTransfer = Game_Player.prototype.performTransfer;
+Game_Player.prototype.performTransfer = function() {
+    var pending=$gameTemp._universalControlLanding;
+    var applies=pending && this.isTransferring() && this._newMapId === pending.mapId;
+    oldTransfer.apply(this, arguments);
+    if (applies) {
+        if (pending.adjust) {
+            var p=landingPoint($gameMap,this,this.x,this.y);
+            if (p) this.locate(p[0],p[1]);
+        }
+        $gameTemp._universalControlLanding=null;
+    }
+};
+function Window_UniversalList() { this.initialize.apply(this,arguments); }
+Window_UniversalList.prototype=Object.create(Window_Command.prototype);
+Window_UniversalList.prototype.constructor=Window_UniversalList;
+Window_UniversalList.prototype.initialize=function(y,h) { this._rows=[];this._height=h;if(IS_MZ)Window_Command.prototype.initialize.call(this,new Rectangle(0,y,Graphics.boxWidth,h));else Window_Command.prototype.initialize.call(this,0,y); };
+Window_UniversalList.prototype.windowWidth=function(){return Graphics.boxWidth;};
+Window_UniversalList.prototype.windowHeight=function(){return this._height;};
+Window_UniversalList.prototype.standardFontSize=function(){return 23;};
+Window_UniversalList.prototype.makeCommandList=function(){
+    this._rows.forEach(function(r){this.addCommand(r.name,'choose',r.enabled!==false,r);},this);
+};
+Window_UniversalList.prototype.setRows=function(rows,index){this._rows=rows;this.refresh();this.select(Math.min(index||0,Math.max(0,rows.length-1)));this.activate();};
+Window_UniversalList.prototype.updateHelp=function(){if(this._helpWindow){var r=this.currentExt();this._helpWindow.setText(r&&r.help?r.help:'Enter — выбрать · Esc / правая кнопка — назад · PageUp / PageDown — листать');}};
+function Scene_UniversalControl(){this.initialize.apply(this,arguments);}
+Scene_UniversalControl.prototype=Object.create(Scene_MenuBase.prototype);
+Scene_UniversalControl.prototype.constructor=Scene_UniversalControl;
+Scene_UniversalControl.prototype.initialize=function(){Scene_MenuBase.prototype.initialize.call(this);this._pages=[];this._battleMode=false;};
+// Built-in background: does not require img/pictures/Scene_UniversalControl_back.png.
+// Deliberately bypasses image-based background plugins (including MOG_MenuBackground).
+Scene_UniversalControl.prototype.createBackground=function(){
+    if (Object.prototype.hasOwnProperty.call(SceneManager, "_mback")) SceneManager._mback=false;
+    this._backgroundSprite=new Sprite();
+    this._backgroundSprite.bitmap=new Bitmap(Graphics.width,Graphics.height);
+    this._backgroundSprite.bitmap.fillAll('#161e2d');
+    this.addChild(this._backgroundSprite);
+};
+// Explicit skip hook for plugins that inspect background eligibility on the scene.
+Scene_UniversalControl.prototype.skip_mbackground=function(){return true;};
+Scene_UniversalControl.prototype.create=function(){
+    if (Cheat_Menu.cheat_menu_open) Cheat_Menu.close_overlay();
+    Cheat_Menu.prepare();
+    Scene_MenuBase.prototype.create.call(this);
+    var titleH=72,helpH=144;
+    this._titleWindow=IS_MZ?new Window_Help(new Rectangle(0,0,Graphics.boxWidth,titleH)):new Window_Help(1);this.addWindow(this._titleWindow);
+    this._helpWindow=IS_MZ?new Window_Help(new Rectangle(0,Graphics.boxHeight-helpH,Graphics.boxWidth,helpH)):new Window_Help(3);this._helpWindow.y=Graphics.boxHeight-this._helpWindow.height;this.addWindow(this._helpWindow);
+    this._listWindow=new Window_UniversalList(this._titleWindow.height,this._helpWindow.y-this._titleWindow.height);
+    this._listWindow.setHelpWindow(this._helpWindow);this._listWindow.setHandler('choose',this.choose.bind(this));this._listWindow.setHandler('cancel',this.back.bind(this));this.addWindow(this._listWindow);
+    this.main();
+};
+Scene_UniversalControl.prototype.terminate=function(){if(this._modal)this._modal.remove();this._modal=null;Scene_MenuBase.prototype.terminate.call(this);};
+Scene_UniversalControl.prototype.choose=function(){var row=this._listWindow.currentExt();try{if(row&&row.run)row.run();else this._listWindow.activate();}catch(e){console.error('[UniversalControlMenu]',e);this.notice('Операция не выполнена: '+e.message+'\nВозможно, нужна адаптация под плагины этой игры.');}};
+Scene_UniversalControl.prototype.showPage=function(title,rows,replace){
+    if(!replace&&this._page){this._page.index=this._listWindow.index();this._pages.push(this._page);}
+    this._page={title:title,rows:rows,index:0};this.renderPage();
+};
+Scene_UniversalControl.prototype.renderPage=function(){this._titleWindow.setText(this._page.title);this._listWindow.setRows(this._page.rows,this._page.index);};
+Scene_UniversalControl.prototype.back=function(){if(this._pages.length){this._page=this._pages.pop();this.renderPage();}else this.close();};
+Scene_UniversalControl.prototype.close=function(){
+    if (this._battleMode && this._battleScene) this._battleScene.closeUniversalControl();
+    else SceneManager.pop();
+};
+Scene_UniversalControl.prototype.notice=function(text){this._helpWindow.setText(text);this._listWindow.activate();};
+Scene_UniversalControl.prototype.ask=function(title,value,callback){
+    var self=this;this._listWindow.deactivate();Input.clear();TouchInput.clear();
+    var cover=document.createElement('div');cover.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2147483647;display:flex;align-items:center;justify-content:center;font:20px Arial;color:#fff';
+    var box=document.createElement('form');box.style.cssText='width:min(580px,85vw);padding:28px;background:#202634;border:1px solid #8094ba;border-radius:12px';
+    var label=document.createElement('label');label.textContent=title;label.style.cssText='display:block;margin-bottom:18px;white-space:pre-line';
+    var input=document.createElement('input');input.value=value||'';input.style.cssText='box-sizing:border-box;width:100%;font:22px Arial;padding:12px;margin-bottom:18px';
+    var ok=document.createElement('button');ok.type='submit';ok.textContent='Применить';
+    var cancel=document.createElement('button');cancel.type='button';cancel.textContent='Отмена';
+    [ok,cancel].forEach(function(b){b.style.cssText='font:20px Arial;padding:10px 18px;margin-right:12px;cursor:pointer';});
+    function finish(v){cover.remove();self._modal=null;Input.clear();TouchInput.clear();self._listWindow.activate();if(v!==null)callback(v);}
+    box.appendChild(label);label.appendChild(input);box.appendChild(ok);box.appendChild(cancel);cover.appendChild(box);document.body.appendChild(cover);this._modal=cover;
+    box.onsubmit=function(e){e.preventDefault();finish(input.value);};cancel.onclick=function(){finish(null);};
+    ['keydown','keyup','keypress'].forEach(function(type){cover.addEventListener(type,function(e){e.stopPropagation();if(type==='keydown'&&e.key==='Escape'){e.preventDefault();finish(null);}});});
+    ['mousedown','mouseup','touchstart','touchend','wheel'].forEach(function(type){cover.addEventListener(type,function(e){e.stopPropagation();});});
+    input.focus();input.select();
+};
+Scene_UniversalControl.prototype.askNumber=function(title,value,min,max,callback){
+    var self=this;this.ask(title+' ('+min+'–'+max+')',String(value),function(s){
+        if(!/^\d+$/.test(s.trim())){self.notice('Введи целое число от '+min+' до '+max+'.');return;}
+        var n=Number(s);if(n<min||n>max){self.notice('Допустимый диапазон: '+min+'–'+max+'.');return;}callback(n);
+    });
+};
+Scene_UniversalControl.prototype.confirm=function(title,help,action){
+    var self=this;this.showPage(title,[{name:'Подтвердить',help:help,run:action},{name:'Отмена',run:function(){self.back();}}]);
+};
+// Single main menu: legacy cheats appear directly in the native interface,
+// grouped by purpose without a second "Extra cheats" page.
+Scene_UniversalControl.prototype.main=function(){
+    var self=this,battle=!!this._battleMode,rows=[];
+    if (!battle) {
+        var ret=$gameSystem._universalControlReturn;
+        rows.push(
+            {name:'Телепорт: посещённые карты',help:'Телепортация не выполняет сюжетные события.',run:function(){self.maps(true,'');}},
+            {name:'Телепорт: все карты игры',help:'Включая тестовые и служебные карты. Сохрани игру отдельно.',run:function(){self.maps(false,'');}},
+            {name:'Возврат после телепорта',enabled:!!ret,help:ret?'Карта #'+ret.mapId+' · '+ret.x+', '+ret.y:'Точка возврата пока не записана.',run:function(){self.confirm('Возврат','Сюжетные события не откатываются.',function(){self.teleport(ret.mapId,ret.x,ret.y,ret.direction,false,false);});}},
+            {name:'Точки быстрого перемещения (3 слота)',run:function(){self.savedPositions();}}
+        );
+    } else {
+        rows.push({name:'Противники: установить HP = 1',run:function(){Cheat_Menu.set_enemy_hp(1,true);self.notice('У живых противников осталось 1 HP.');}});
+        rows.push({name:'Победить всех противников',help:'Мгновенно устанавливает HP всех живых врагов в 0 и завершает бой через штатную обработку победы.',run:function(){
+            self.confirm('Победить всех противников?','У всех оставшихся врагов будет 0 HP.',function(){
+                self.close(); Cheat_Menu.set_enemy_hp(0,true);
+            });
+        }});
+    }
+    rows.push(
+        {name:'Персонажи: уровни, навыки, параметры, читы',run:function(){self.actors();}},
+        {name:'HP / MP / TP всей группы',help:'Пополнить ресурсы, обнулить их или снять все состояния.',run:function(){self.partyResources();}},
+        {name:'Получить предмет / оружие / броню',run:function(){self.itemCategories();}},
+        {name:'Лимит предметов: '+stackLimitLabel(),run:function(){self.stackLimits();}},
+        {name:'Золото: '+$gameParty.gold(),run:function(){self.askNumber('Установить золото',$gameParty.gold(),0,999999999,function(n){$gameParty.gainGold(n-$gameParty.gold());self.main();self.notice('Золото: '+$gameParty.gold());});}},
+        {name:'Игровые переключатели',run:function(){self.extraSwitches('');}},
+        {name:'Игровые переменные',run:function(){self.extraVariables('');}}
+    );
+    if (!battle) {
+        var through=$gamePlayer.isThrough&&$gamePlayer.isThrough()?'ВКЛ':'ВЫКЛ';
+        var speed=$gamePlayer.moveSpeed?$gamePlayer.moveSpeed():$gamePlayer._moveSpeed;
+        rows.push(
+            {name:'Проход сквозь стены: '+through,run:function(){$gamePlayer.setThrough(!$gamePlayer.isThrough());self.main();}},
+            {name:'Скорость движения: '+speed,run:function(){self.ask('Скорость (0.5–6.0, шаг 0.5)',String(speed),function(v){
+                var n=Number(v);if(!isFinite(n)||n<0.5||n>6||Math.round(n*2)!==n*2){self.notice('Введите число от 0.5 до 6.0, шаг 0.5.');return;}
+                if(Cheat_Menu.speed_initialized && !Cheat_Menu.speed_unlocked) Cheat_Menu.speed_unlocked=true;
+                $gamePlayer.setMoveSpeed(n);self.main();
+            });}},
+            {name:'Зафиксировать скорость: '+(Cheat_Menu.speed_unlocked?'ВЫКЛ':'ВКЛ'),run:function(){Cheat_Menu.toggle_lock_player_speed();self.main();}},
+            {name:$gameSystem._universalControlDisabled?'Вернуть предмет в инвентарь':'Подготовить удаление мода',run:function(){
+                if ($gameSystem._universalControlDisabled){$gameSystem._universalControlDisabled=false;ensureItem();self.main();return;}
+                self.confirm('Удалить служебный предмет?','Перед удалением верни лимит предметов к обычному и сохрани игру в другой слот.',function(){delete $gameParty._items[ITEM_ID];$gameSystem._universalControlDisabled=true;$gameSystem._universalControlItemCap=0;delete $gameSystem._universalControlReturn;self.close();});
+            }}
+        );
+    }
+    rows.push({name:battle?'Закрыть меню и продолжить бой':'Закрыть меню',run:function(){self.close();}});
+    this.showPage('Меню управления · '+(IS_MZ?'MZ':'MV')+(battle?' · БОЙ':''),rows,true);
+};
+Scene_UniversalControl.prototype.savedPositions=function(replace){
+    var self=this,rows=[];
+    Cheat_Menu.prepare();
+    Cheat_Menu.saved_positions.forEach(function(p,i){
+        var name='Слот '+(i+1),filled=p&&p.m>0;
+        var info=filled?'Карта #'+p.m+' ('+p.x+', '+p.y+')':'пусто';
+        rows.push({name:name+' · сохранить текущую точку',help:'Перезапишет слот. '+info,run:function(){
+            Cheat_Menu.saved_positions[i]={m:$gameMap.mapId(),x:$gamePlayer.x,y:$gamePlayer.y};
+            self.savedPositions(true);
+        }});
+        rows.push({name:name+' · переместиться · '+info,enabled:filled,help:'Переместиться в сохранённую точку. Не изменяет сюжетные флаги.',run:function(){
+            self.confirm('Переместиться в '+name+'?','Карта '+p.m+', '+p.x+', '+p.y,function(){self.teleport(p.m,p.x,p.y,2,true,true);});
+        }});
+    });
+    this.showPage('Сохранённые точки',rows,replace);
+};
+Scene_UniversalControl.prototype.partyResources=function(){
+    var self=this;
+    function groupSet(key,value){
+        $gameParty.allMembers().forEach(function(a){if(!a)return;
+            if(key==='hp')a.setHp(value==='full'?a.mhp:value);
+            if(key==='mp')a.setMp(value==='full'?a.mmp:value);
+            if(key==='tp')a.setTp(value==='full'?a.maxTp():value);
+        });
+        self.notice('Ресурсы группы изменены.');
+    }
+    var rows=[{name:'Полностью восстановить всю группу',run:function(){
+        $gameParty.allMembers().forEach(function(a){if(a){a.recoverAll();a.setTp(a.maxTp());}});
+        self.notice('Группа восстановлена.');
+    }}];
+    [['HP','hp'],['MP','mp'],['TP','tp']].forEach(function(entry){
+        rows.push({name:'Восстановить '+entry[0]+' до максимума',run:function(){groupSet(entry[1],'full');}});
+        rows.push({name:'Установить '+entry[0]+' группы на 1',run:function(){groupSet(entry[1],1);}});
+        rows.push({name:'Установить '+entry[0]+' группы на 0',run:function(){groupSet(entry[1],0);}});
+    });
+    rows.push({name:'Снять все состояния с группы',run:function(){Cheat_Menu.clear_party_states();self.notice('Состояния группы очищены.');}});
+    this.showPage('HP / MP / TP группы',rows);
+};
+Scene_UniversalControl.prototype.stackLimits=function(replace){
+    var self=this,current=selectedStackLimit();
+    var options=[{limit:0,title:'Стандартный (как в игре)'},{limit:99,title:'99 штук'},{limit:999,title:'999 штук'},{limit:9999,title:'9999 штук'}];
+    var rows=options.map(function(o){return {
+        name:(o.limit===current?'✓  ':'    ')+o.title,
+        help:o.limit===0?'Используется оригинальный предел игры. Уже накопленные большие стопки защищены от удаления при следующей выдаче.':'Ограничение для обычных предметов, оружия и брони.\nНе затрагивает уникальные экземпляры и распознанные специальные ограничения.',
+        run:function(){
+            $gameSystem._universalControlItemCap=o.limit;
+            self.stackLimits(true);
+            self.notice('Лимит: '+stackLimitLabel()+'. Изменение сохраняется при следующем сохранении игры.\nБольшие существующие стопки не уменьшаются автоматически.');
+        }
+    };});
+    this.showPage('Лимит инвентаря · '+stackLimitLabel(),rows,replace);
+};
+// Maps are loaded separately; the current $dataMap is never replaced by this reader.
+function readMap(id, callback) {
+    if(mapCache[id]){callback(null,mapCache[id]);return;}
+    var xhr=new XMLHttpRequest();
+    xhr.open('GET','data/Map'+String(id).padZero(3)+'.json');
+    xhr.overrideMimeType('application/json');xhr.timeout=15000;
+    xhr.onload=function(){
+        if(xhr.status>=400){callback(new Error('HTTP '+xhr.status));return;}
+        try{var data=JSON.parse(xhr.responseText);if(!Array.isArray(data.data)||!Array.isArray(data.events)||!data.width||!data.height)throw new Error('Invalid map');mapCache[id]=data;callback(null,data);}catch(e){callback(e);}
+    };
+    xhr.onerror=xhr.ontimeout=function(){callback(new Error('Не удалось прочитать карту'));};xhr.send();
+}
+function candidatePoint(data,seeds) {
+    var w=data.width,h=data.height,tiles=$dataTilesets[data.tilesetId];
+    if(!tiles||!Array.isArray(tiles.flags))return null;
+    var flags=tiles.flags,blocked={};data.events.forEach(function(e){if(e)blocked[e.x+','+e.y]=true;});
+    function pass(x,y,d){
+        if(x<0||y<0||x>=w||y>=h)return false;
+        var bit=1<<(d/2-1);
+        for(var z=3;z>=0;z--){var f=flags[data.data[(z*h+y)*w+x]]||0;if(f&16)continue;return !(f&bit);}
+        return false;
+    }
+    function safe(x,y){
+        if(blocked[x+','+y])return false;
+        return [[2,0,1],[4,-1,0],[6,1,0],[8,0,-1]].some(function(d){return pass(x,y,d[0])&&pass(x+d[1],y+d[2],10-d[0]);});
+    }
+    seeds=seeds.concat([[Math.floor(w/2),Math.floor(h/2),2]]);
+    for(var i=0;i<seeds.length;i++){
+        var seed=seeds[i],cx=Math.max(0,Math.min(w-1,seed[0])),cy=Math.max(0,Math.min(h-1,seed[1]));
+        for(var r=0;r<=12;r++)for(var y=Math.max(0,cy-r);y<=Math.min(h-1,cy+r);y++)for(var x=Math.max(0,cx-r);x<=Math.min(w-1,cx+r);x++){
+            if(Math.abs(x-cx)+Math.abs(y-cy)!==r)continue;if(safe(x,y))return [x,y,[2,4,6,8].indexOf(seed[2])>=0?seed[2]:2];
+        }
+    }
+    for(var yy=0;yy<h;yy++)for(var xx=0;xx<w;xx++)if(safe(xx,yy))return [xx,yy,2];
+    return null;
+}
+function knownEntrances(id) {
+    var result=[];
+    var sources=Object.keys(mapCache).map(function(k){return mapCache[k];});
+    if($dataMap)sources.push($dataMap);
+    sources.forEach(function(data){(data.events||[]).forEach(function(e){if(e)(e.pages||[]).forEach(function(pg){(pg.list||[]).forEach(function(cmd){var p=cmd.parameters;if(cmd.code===201&&p[0]===0&&p[1]===id)result.push([p[2],p[3],p[4]]);});});});});
+    if(id===$gameMap.mapId())result.unshift([$gamePlayer.x,$gamePlayer.y,$gamePlayer.direction()]);
+    return result;
+}
+Scene_UniversalControl.prototype.maps=function(visitedOnly,query,replace){
+    var self=this,q=query.toLowerCase(),visited=$gameSystem._universalControlVisited||{};
+    var selected=MAPS.filter(function(m){return (!visitedOnly||visited[m.id])&&(!q||(m.id+' '+m.name+' '+m.internal).toLowerCase().indexOf(q)>=0);});
+    var rows=[{name:'Поиск по названию или ID'+(query?' — '+query:''),run:function(){self.ask('Название карты или ID (пусто — показать все)',query,function(v){self.maps(visitedOnly,v,true);});}}];
+    selected.forEach(function(m){rows.push({name:'#'+m.id+' · '+clean(m.name),help:'Название карты из базы игры. Список может включать служебные карты.\nДанные и координаты будут прочитаны после выбора.\nПеред телепортом сохранись отдельно.',run:function(){self.loadMapDetail(m);}});});
+    this.showPage('Телепорт · найдено '+selected.length,rows,replace);
+};
+Scene_UniversalControl.prototype.loadMapDetail=function(info){
+    var self=this;this._listWindow.deactivate();this._helpWindow.setText('Читаю карту #'+info.id+'…');
+    readMap(info.id,function(error,data){
+        if(SceneManager._scene!==self)return;
+        if(error){self.notice('Карта не прочитана: '+error.message+'. Возможно, игра использует особый формат данных.');return;}
+        var m={id:info.id,name:data.displayName||info.name,width:data.width,height:data.height,point:candidatePoint(data,knownEntrances(info.id))};
+        if(data.displayName)info.name=data.displayName;
+        self.mapDetail(m);
+    });
+};
+Scene_UniversalControl.prototype.mapDetail=function(m){
+    var self=this;this.showPage('#'+m.id+' · '+clean(m.name),[
+        {name:'Перейти в подобранную точку'+(m.point?' ('+m.point[0]+', '+m.point[1]+')':''),enabled:!!m.point,help:'Проходимость рассчитывается по стандартным тайлам.\nПри наличии известных входов выбирается клетка рядом с ними.\nСобытия и нестандартные плагины коллизий могут влиять на переход.',run:function(){self.confirm('Телепорт: '+clean(m.name),'Перед переходом сохранись в отдельный слот.\nДля возвращения открой это меню через F7.\nТелепорт не устанавливает сюжетные флаги.',function(){self.teleport(m.id,m.point[0],m.point[1],m.point[2],true,true);});}},
+        {name:'Указать координаты вручную',help:'Без автоматического смещения. Можно попасть в стену или на событие.',run:function(){self.ask('Координаты X,Y (X: 0–'+(m.width-1)+', Y: 0–'+(m.height-1)+')',m.point?m.point[0]+','+m.point[1]:'0,0',function(s){var match=s.trim().match(/^(\d+)\s*[,; ]\s*(\d+)$/);if(!match||Number(match[1])>=m.width||Number(match[2])>=m.height){self.notice('Неверные координаты. Введи X,Y в границах карты.');return;}self.confirm('Ручной телепорт','В указанной клетке может быть стена или событие.\nF7 → возврат позволит вернуться, если игра продолжает работать.',function(){self.teleport(m.id,Number(match[1]),Number(match[2]),2,true,false);});});}}
+    ]);
+};
+Scene_UniversalControl.prototype.teleport=function(mapId,x,y,direction,remember,adjust){
+    if($gamePlayer.isInVehicle()){this.notice('Сначала выйди из транспорта.');return;}
+    if(remember)$gameSystem._universalControlReturn={mapId:$gameMap.mapId(),x:$gamePlayer.x,y:$gamePlayer.y,direction:$gamePlayer.direction()};
+    $gameTemp._universalControlLanding={mapId:mapId,adjust:adjust};
+    $gamePlayer.reserveTransfer(mapId,x,y,direction||2,0);SceneManager.goto(Scene_Map);
+};
+Scene_UniversalControl.prototype.actors=function(){
+    var self=this;var rows=$gameParty.allMembers().map(function(a){return {name:clean(a.name())+' · уровень '+a.level,help:'Персонаж из текущего отряда, включая резерв.\nНастройка уровня не меняет сюжетные флаги.',run:function(){self.actorMenu(a);}};});
+    if(!rows.length)rows.push({name:'В отряде нет персонажей',enabled:false});this.showPage('Персонажи отряда',rows);
+};
+Scene_UniversalControl.prototype.actorMenu=function(a,replace){
+    var self=this;
+    var rows=[
+        {name:'Установить уровень: '+a.level,help:'Опыт выставляется на начало выбранного уровня; классовые навыки сохраняются.',run:function(){self.askNumber('Уровень: '+clean(a.name()),a.level,1,a.maxLevel(),function(n){a.changeLevel(n,false);self.actorMenu(a,true);});}},
+        {name:'Добавить опыт',run:function(){self.askNumber('Добавить опыт',1000,0,99999999,function(n){a.gainExp(n);self.actorMenu(a,true);});}},
+        {name:'Бессмертие: '+(a.god_mode?'ВКЛ':'ВЫКЛ'),help:'Бессмертие старого Cheat_Menu. После загрузки сохранения его может потребоваться включить снова.',run:function(){if(a.god_mode)Cheat_Menu.god_mode_off(a);else Cheat_Menu.god_mode(a);self.actorMenu(a,true);}},
+        {name:'Установить HP: '+a.hp+' / '+a.mhp,run:function(){self.askNumber('HP',a.hp,0,a.mhp,function(n){a.setHp(n);self.actorMenu(a,true);});}},
+        {name:'Установить MP: '+a.mp+' / '+a.mmp,run:function(){self.askNumber('MP',a.mp,0,a.mmp,function(n){a.setMp(n);self.actorMenu(a,true);});}},
+        {name:'Установить TP: '+a.tp+' / '+a.maxTp(),run:function(){self.askNumber('TP',a.tp,0,a.maxTp(),function(n){a.setTp(n);self.actorMenu(a,true);});}},
+        {name:'Полностью восстановить',run:function(){a.recoverAll();a.setTp(a.maxTp());self.actorMenu(a,true);}},
+        {name:'Снять все состояния',run:function(){Cheat_Menu.clear_actor_states(a);self.actorMenu(a,true);}},
+        {name:'Изменить бонусы характеристик',run:function(){self.extraStats(a);}},
+        {name:'Изучить навык',run:function(){self.skills(a,false,'');}},
+        {name:'Забыть изученный навык',run:function(){self.skills(a,true,'');}}
+    ];
+    this.showPage(clean(a.name())+' · уровень '+a.level,rows,replace);
+};
+Scene_UniversalControl.prototype.skills=function(a,remove,query,replace){
+    var self=this,q=query.toLowerCase();var data=$dataSkills.filter(function(s){return s&&s.name&&(!remove||a.isLearnedSkill(s.id))&&(!q||(s.id+' '+clean(s.name)).toLowerCase().indexOf(q)>=0);});
+    var rows=[{name:'Поиск по названию / ID'+(query?' — '+query:''),run:function(){self.ask('Навык или ID (пусто — все)',query,function(v){self.skills(a,remove,v,true);});}}];
+    data.forEach(function(s){rows.push({name:'#'+s.id+' · '+clean(s.name)+(a.isLearnedSkill(s.id)?' [изучен]':''),help:clean(s.description)+'\n'+(remove?'Удалить из изученных навыков.':'Изучить напрямую, без траты очков дерева навыков.')+'\nСюжетные, классовые и экипировочные условия использования сохраняются.',run:function(){self.confirm((remove?'Забыть: ':'Изучить: ')+clean(s.name),'Персонаж: '+clean(a.name())+'\n'+clean(s.description),function(){if(remove)a.forgetSkill(s.id);else a.learnSkill(s.id);self.back();self.skills(a,remove,query,true);self.notice(remove?'Навык удалён из изученных.':'Навык изучен. Для применения могут требоваться класс, оружие или ресурсы.');});}});});
+    this.showPage((remove?'Забыть':'Изучить')+' · '+clean(a.name()),rows,replace);
+};
+Scene_UniversalControl.prototype.itemCategories=function(){
+    var self=this;this.showPage('Выдача предметов',[
+        {name:'Обычные предметы',run:function(){self.items('items','normal','');}},
+        {name:'Оружие',run:function(){self.items('weapons','normal','');}},
+        {name:'Броня и аксессуары',run:function(){self.items('armors','normal','');}},
+        {name:'Ключевые и скрытые предметы',help:'Могут участвовать в квестовых проверках. Выдача не завершает квест.',run:function(){self.items('items','special','');}},
+        {name:'Все записи базы предметов (включая пустые)',help:'Служебные записи могут не иметь назначения. Для обычной игры используй другие категории.',run:function(){self.items('items','all','');}}
+    ]);
+};
+function database(kind){return kind==='items'?$dataItems:kind==='weapons'?$dataWeapons:$dataArmors;}
+Scene_UniversalControl.prototype.items=function(kind,mode,query,replace){
+    var self=this,q=query.toLowerCase();var data=database(kind).slice(0,BASE_COUNTS[kind]).filter(function(i){return i&&i.id!==ITEM_ID&&!(i.meta && i.meta.UniversalControl)&&(mode==='all'||!!i.name)&&(kind!=='items'||mode==='all'||(mode==='normal'?i.itypeId===1:i.itypeId!==1))&&(!q||(i.id+' '+clean(i.name)).toLowerCase().indexOf(q)>=0);});
+    var rows=[{name:'Поиск по названию / ID'+(query?' — '+query:''),run:function(){self.ask('Название или ID (пусто — все)',query,function(v){self.items(kind,mode,v,true);});}}];
+    data.forEach(function(item){rows.push({name:'#'+item.id+' · '+(clean(item.name)||'[без названия]'),help:clean(item.description)+'\nВыдача через игровую систему предметов. Лимит: '+stackLimitLabel()+'. Уникальные экземпляры и спецлимиты не меняются.',run:function(){self.giveDialog(item);}});});
+    this.showPage('Предметы · найдено '+data.length,rows,replace);
+};
+Scene_UniversalControl.prototype.giveDialog=function(item){
+    var self=this,independent=DataManager.isIndependent&&DataManager.isIndependent(item);
+    if(independent && (typeof $gameParty.numIndependentItems!=='function'||typeof $gameParty.getIndependentItemTypeMax!=='function'||typeof $gameParty.getIndependentItemTypeCur!=='function'||typeof $gameParty.gainIndependentItem!=='function')){this.notice('У этой игры нестандартная система экземпляров предметов. Нужна отдельная адаптация.');return;}
+    var before=independent?$gameParty.numIndependentItems(item):$gameParty.numItems(item);
+    var max=independent?Math.max(0,Math.min(50,$gameParty.getIndependentItemTypeMax(item)-$gameParty.getIndependentItemTypeCur(item))):Math.max(0,Math.min(9999,Number($gameParty.maxItems(item))-before));
+    if(!isFinite(max)){this.notice('Не удалось определить лимит предмета: нестандартный плагин инвентаря.');return;}
+    if(max<1){this.notice('Достигнут лимит этого предмета или категории экипировки.');return;}
+    this.askNumber('Сколько выдать: '+(clean(item.name)||'#'+item.id),1,1,max,function(n){
+        self.confirm('Выдать '+n+' × '+(clean(item.name)||'#'+item.id),'Квестовые и служебные предметы могут менять результаты проверок.\nПредметы не заменяют прохождение соответствующих событий.',function(){
+            var countBefore=independent?$gameParty.numIndependentItems(item):$gameParty.numItems(item);
+            if(independent)$gameParty.gainIndependentItem(item,n,false);else $gameParty.gainItem(item,n,false);
+            var countAfter=independent?$gameParty.numIndependentItems(item):$gameParty.numItems(item);
+            self.back();self.notice('Добавлено: '+(countAfter-countBefore)+' × '+(clean(item.name)||'#'+item.id)+'.');
+        });
+    });
+};
+
+// Utilities shared by actor menu and legacy Cheat_Menu.
+Scene_UniversalControl.prototype.extraStats=function(a,replace){
+    var self=this,names=['Макс. HP','Макс. MP','Атака','Защита','Маг. атака','Маг. защита','Ловкость','Удача'];
+    var rows=names.map(function(name,id){return {name:name+' · бонус '+a._paramPlus[id],run:function(){
+        self.ask('Бонус параметра '+name+' (целое число)',String(a._paramPlus[id]),function(v){
+            if(!/^-?\d+$/.test(v.trim()) || Math.abs(Number(v))>999999){self.notice('Введи целое число от -999999 до 999999.');return;}
+            a.addParam(id,Number(v)-a._paramPlus[id]);self.extraStats(a,true);
+        });
+    }};});
+    this.showPage('Бонусы · '+clean(a.name()),rows,replace);
+};
+Scene_UniversalControl.prototype.extraSwitches=function(query,replace){
+    var self=this,q=query.trim().toLowerCase(),names=$dataSystem.switches||[];
+    var rows=[{name:'Поиск по ID / имени'+(query?' · '+query:''),run:function(){self.ask('Поиск переключателя',query,function(v){self.extraSwitches(v,true);});}}];
+    names.forEach(function(name,i){if(i===0 || !name || (q && (String(i)+' '+name).toLowerCase().indexOf(q)<0))return;
+        rows.push({name:'#'+i+' '+clean(name)+' · '+($gameSwitches.value(i)?'ВКЛ':'ВЫКЛ'),run:function(){
+            $gameSwitches.setValue(i,!$gameSwitches.value(i));self.extraSwitches(query,true);
+        }});
+    });
+    this.showPage('Переключатели · '+(rows.length-1),rows,replace);
+};
+Scene_UniversalControl.prototype.extraVariables=function(query,replace){
+    var self=this,q=query.trim().toLowerCase(),names=$dataSystem.variables||[];
+    var rows=[{name:'Поиск по ID / имени'+(query?' · '+query:''),run:function(){self.ask('Поиск переменной',query,function(v){self.extraVariables(v,true);});}}];
+    names.forEach(function(name,i){if(i===0 || !name || (q && (String(i)+' '+name).toLowerCase().indexOf(q)<0))return;
+        var value=$gameVariables.value(i);
+        rows.push({name:'#'+i+' '+clean(name)+' · '+String(value).slice(0,28),run:function(){
+            self.ask('Новое значение переменной #'+i+' · '+name,String(value),function(v){
+                // Numerical input by default, but preserve ability to use text variables.
+                var next=/^-?\d+(?:\.\d+)?$/.test(v.trim())?Number(v):v;
+                $gameVariables.setValue(i,next);self.extraVariables(query,true);
+            });
+        }});
+    });
+    this.showPage('Переменные · '+(rows.length-1),rows,replace);
+};
+
+// Display the same native control UI *inside* Scene_Battle. Changing scenes
+// would reconstruct the battle scene and could reset input/action windows.
+var _battleOnItemOk=Scene_Battle.prototype.onItemOk;
+Scene_Battle.prototype.onItemOk=function(){
+    if(this._itemWindow && itemIsControl(this._itemWindow.item())) {
+        this.openUniversalControl();
+        return; // Do not consume the item, choose a target or commit an action.
+    }
+    return _battleOnItemOk.apply(this,arguments);
+};
+var _battleUpdate=Scene_Battle.prototype.update;
+Scene_Battle.prototype.update=function(){
+    _battleUpdate.apply(this,arguments);
+    if(openRequested && !this._universalControlBattle && !SceneManager.isSceneChanging()){
+        openRequested=false;ensureItem();this.openUniversalControl();
+    }
+};
+var _battleProcess=Scene_Battle.prototype.updateBattleProcess;
+if (_battleProcess) Scene_Battle.prototype.updateBattleProcess=function(){
+    if(this._universalControlBattle)return;
+    return _battleProcess.apply(this,arguments);
+};
+var _battleEnd=Scene_Battle.prototype.terminate;
+Scene_Battle.prototype.terminate=function(){
+    if(this._universalControlBattle)this.closeUniversalControl(true);
+    Cheat_Menu.close_overlay();
+    return _battleEnd.apply(this,arguments);
+};
+Scene_Battle.prototype.openUniversalControl=function(){
+    if(this._universalControlBattle || SceneManager.isSceneChanging())return;
+    Cheat_Menu.close_overlay();Cheat_Menu.prepare();ensureItem();
+    var ui=Object.create(Scene_UniversalControl.prototype);
+    ui._battleMode=true;ui._battleScene=this;ui._pages=[];ui._modal=null;
+    var oldActive=[];
+    if(this._windowLayer && this._windowLayer.children)this._windowLayer.children.forEach(function(w){
+        if(w.active){oldActive.push(w);w.deactivate();}
+    });
+    ui._previousActive=oldActive;
+    var dark=new Sprite(new Bitmap(Graphics.width,Graphics.height));
+    dark.bitmap.fillAll('#161e2d');dark.opacity=245;
+    this.addChildAt(dark,this.getChildIndex(this._windowLayer));
+    ui._battleBackground=dark;
+    var titleH=72,helpH=144;
+    ui._titleWindow=IS_MZ?new Window_Help(new Rectangle(0,0,Graphics.boxWidth,titleH)):new Window_Help(1);
+    ui._helpWindow=IS_MZ?new Window_Help(new Rectangle(0,Graphics.boxHeight-helpH,Graphics.boxWidth,helpH)):new Window_Help(3);
+    ui._helpWindow.y=Graphics.boxHeight-ui._helpWindow.height;
+    ui._listWindow=new Window_UniversalList(ui._titleWindow.height,ui._helpWindow.y-ui._titleWindow.height);
+    ui._listWindow.setHelpWindow(ui._helpWindow);
+    ui._listWindow.setHandler('choose',ui.choose.bind(ui));
+    ui._listWindow.setHandler('cancel',ui.back.bind(ui));
+    this.addWindow(ui._titleWindow);this.addWindow(ui._helpWindow);this.addWindow(ui._listWindow);
+    this._universalControlBattle=ui;
+    ui.main();
+};
+Scene_Battle.prototype.closeUniversalControl=function(terminating){
+    var ui=this._universalControlBattle;
+    if(!ui)return;
+    this._universalControlBattle=null;
+    if(ui._modal && ui._modal.parentNode)ui._modal.parentNode.removeChild(ui._modal);
+    [ui._listWindow,ui._helpWindow,ui._titleWindow,ui._battleBackground].forEach(function(obj){
+        if(obj && obj.parent) obj.parent.removeChild(obj);
+        if(obj && obj.destroy && IS_MZ)obj.destroy({children:true});
+    });
+    Input.clear();TouchInput.clear();
+    if(!terminating)ui._previousActive.forEach(function(w){if(w && w.activate)w.activate();});
+};
+window.Scene_UniversalControl=Scene_UniversalControl;
+})();
