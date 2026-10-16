@@ -1,105 +1,146 @@
-name: Publish SWF Cheat Menu v2.2.0
+name: Test SWF Cheat Menu native installers
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
-    paths:
-      - 'SWF_CheatMenu.js'
-      - 'Setup.py'
-      - 'Install_*'
-      - 'Remove_*'
-      - 'scripts/build_release.py'
-      - 'tests/**'
-      - 'README.md'
-      - 'Setup_Windows.ps1'
-      - 'tests/test_posix_installers.py'
-      - '.github/workflows/release.yml'
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
-  linux-validation:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Validate POSIX scripts
-        run: |
-          for file in Install_Linux.sh Remove_Linux.sh Install_macOS.command Remove_macOS.command; do bash -n "$file"; done
-      - name: Test Linux and macOS installer CLI
-        run: python3 -m unittest discover -s tests -v
-  macos-validation:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Validate POSIX scripts on macOS
-        run: |
-          for file in Install_macOS.command Remove_macOS.command Install_Linux.sh Remove_Linux.sh; do bash -n "$file"; done
-      - name: Test installer CLI and simulated macOS selection
-        run: python3 -m unittest discover -s tests -v
-  windows-validation:
+  windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verify Windows installer syntax
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: installer/go.mod
+      - name: Test shared install engine
+        run: go -C installer test -v ./...
+      - name: Build Windows installer
         shell: pwsh
         run: |
-          $tokens = $null
-          $errors = $null
+          New-Item -Force -ItemType Directory -Path bin | Out-Null
+          go -C installer build -trimpath -ldflags="-s -w" -o ../bin/swf-setup-windows-amd64.exe .
+      - name: Test script syntax and actual installation on Windows
+        shell: pwsh
+        run: |
+          $tokens = $null; $errors = $null
           [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'Setup_Windows.ps1').Path, [ref]$tokens, [ref]$errors) | Out-Null
-          if ($errors.Count -gt 0) {
-            $errors | Format-List
-            exit 1
-          }
-      - name: Test installer logic on Windows
-        run: python -m unittest discover -s tests -v
-      - name: Smoke-test Windows installer and remover
-        shell: pwsh
-        run: |
+          if ($errors.Count -gt 0) { $errors | Format-List; exit 1 }
           $game = Join-Path $env:RUNNER_TEMP 'RPG Maker [test] 日本語'
           $js = Join-Path $game 'www\js'
           New-Item -Force -ItemType Directory -Path (Join-Path $js 'plugins') | Out-Null
           Set-Content -LiteralPath (Join-Path $js 'main.js') -Value 'PluginManager.setup($plugins);' -Encoding utf8
           Set-Content -LiteralPath (Join-Path $js 'plugins.js') -Value 'var $plugins = [{"name":"Other","status":true}];' -Encoding utf8
           & .\Setup_Windows.ps1 -Action install -GamePath $game
-          if ($LASTEXITCODE -ne 0) { throw 'Windows installer failed' }
+          if ($LASTEXITCODE -ne 0) { throw 'Install failed' }
+          & .\Setup_Windows.ps1 -Action install -GamePath $game
+          if ($LASTEXITCODE -ne 0) { throw 'Repeat install failed' }
           $current = Get-Content -Raw -LiteralPath (Join-Path $js 'plugins.js')
-          if ($current -notmatch '"SWF_CheatMenu"') { throw 'Plugin was not registered' }
-          $cleaner = Join-Path $env:RUNNER_TEMP 'installer without plugin payload'
-          New-Item -Force -ItemType Directory -Path $cleaner | Out-Null
-          Copy-Item -LiteralPath .\Setup_Windows.ps1 -Destination (Join-Path $cleaner 'Setup_Windows.ps1')
-          Copy-Item -LiteralPath .\Setup.py -Destination (Join-Path $cleaner 'Setup.py')
-          & (Join-Path $cleaner 'Setup_Windows.ps1') -Action remove -GamePath $game
-          if ($LASTEXITCODE -ne 0) { throw 'Windows removal without plugin payload failed' }
+          if ($current -notmatch '"SWF_CheatMenu"') { throw 'Registration missing' }
+          & .\Setup_Windows.ps1 -Action remove -GamePath $game
+          if ($LASTEXITCODE -ne 0) { throw 'Remove failed' }
           $current = Get-Content -Raw -LiteralPath (Join-Path $js 'plugins.js')
-          if ($current -match '"SWF_CheatMenu"') { throw 'Plugin registration was not removed' }
+          if ($current -match '"SWF_CheatMenu"') { throw 'Registration remains' }
 
-  publish:
-    needs: [windows-validation, linux-validation, macos-validation]
+  linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Verify plugin and installer
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: installer/go.mod
+      - name: Test shared install engine
+        run: go -C installer test -v ./...
+      - name: Build native Linux binary and test wrappers
         run: |
-          node --check SWF_CheatMenu.js
-          python3 -m py_compile Setup.py
-          python3 -m unittest discover -s tests -v
-      - name: Package
-        run: python3 scripts/build_release.py
-      - name: Verify ZIP contents, CRC and executable permissions
-        run: python3 scripts/verify_release.py
-      - name: Release
+          mkdir -p bin
+          go -C installer build -trimpath -ldflags="-s -w" -o ../bin/swf-setup-linux-amd64 .
+          bash -n Install_Linux.sh Remove_Linux.sh
+          GAME="$RUNNER_TEMP/Game with spaces 日本語"
+          mkdir -p "$GAME/www/js/plugins"
+          printf 'PluginManager.setup($plugins);\n' > "$GAME/www/js/main.js"
+          printf 'var $plugins = [{"name":"Other","status":true}];\n' > "$GAME/www/js/plugins.js"
+          bash Install_Linux.sh "$GAME"
+          bash Install_Linux.sh "$GAME"
+          grep -q '"SWF_CheatMenu"' "$GAME/www/js/plugins.js"
+          bash Remove_Linux.sh "$GAME"
+          ! grep -q '"SWF_CheatMenu"' "$GAME/www/js/plugins.js"
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: installer/go.mod
+      - name: Test shared install engine
+        run: go -C installer test -v ./...
+      - name: Build and ad-hoc sign Mac binaries
+        run: |
+          mkdir -p bin
+          (cd installer && GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o ../bin/swf-setup-macos-arm64 .)
+          (cd installer && GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../bin/swf-setup-macos-amd64 .)
+          codesign --force --sign - bin/swf-setup-macos-arm64
+          codesign --force --sign - bin/swf-setup-macos-amd64
+      - name: Test macOS install and remove wrappers
+        run: |
+          bash -n Install_macOS.command Remove_macOS.command
+          GAME="$RUNNER_TEMP/Game with spaces 日本語"
+          mkdir -p "$GAME/www/js/plugins"
+          printf 'PluginManager.setup($plugins);\n' > "$GAME/www/js/main.js"
+          printf 'var $plugins = [{"name":"Other","status":true}];\n' > "$GAME/www/js/plugins.js"
+          bash Install_macOS.command "$GAME"
+          bash Install_macOS.command "$GAME"
+          grep -q '"SWF_CheatMenu"' "$GAME/www/js/plugins.js"
+          bash Remove_macOS.command "$GAME"
+          ! grep -q '"SWF_CheatMenu"' "$GAME/www/js/plugins.js"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-macos-installers
+          path: |
+            bin/swf-setup-macos-arm64
+            bin/swf-setup-macos-amd64
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [windows, linux, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: installer/go.mod
+      - name: Build Windows and Linux binaries
+        run: |
+          mkdir -p bin
+          (cd installer && GOOS=windows GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../bin/swf-setup-windows-amd64.exe .)
+          (cd installer && GOOS=windows GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o ../bin/swf-setup-windows-arm64.exe .)
+          (cd installer && GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o ../bin/swf-setup-linux-amd64 .)
+          (cd installer && GOOS=linux GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o ../bin/swf-setup-linux-arm64 .)
+      - uses: actions/download-artifact@v4
+        with:
+          name: signed-macos-installers
+          path: bin
+      - name: Package and verify release
+        run: |
+          chmod +x bin/swf-setup-macos-* bin/swf-setup-linux-*
+          python3 scripts/build_release.py
+          python3 scripts/verify_release.py
+      - name: Publish v2.2.0
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           NOTES="$(cat <<'EOF'
           **SWF Cheat Menu v2.2.0** — RPG Maker MV/MZ, Windows, macOS and Linux.
+          - Plugin: SWF_CheatMenu.js. Keys: 1 / F7, plus the control item.
+          - Automatic installation, repeat updates, backups and removal without Python.
+          - Built-in Xenolauncher Cheat Menu must remain disabled.
+          - Authorship and redistribution information: CREDITS.md.
 
-          - Plugin file: `SWF_CheatMenu.js` (avoids Xenolauncher's built-in `Cheat_Menu.js` filename).
-          - Controls: `1` for quick overlay, `F7` or the in-game **Control Menu** key item for the full menu, including battle functions.
-          - Includes automatic installers (Python 3 required) and migration for recognized previous integrated-menu installations; modified files are backed up.
-          - In Xenolauncher, leave its own **Enable Cheat Menu** option disabled.
-          - Source acknowledgements and redistribution caveats: [CREDITS.md](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/blob/main/CREDITS.md).
-
-          **SWF Cheat Menu 2.2.0** — объединённое чит-меню для RPG Maker MV/MZ. Windows, macOS и Linux. Установщики переносят распознаваемые старые подключения и сохраняют резервные копии. Встроенное Cheat Menu в Xenolauncher должно быть выключено.
+          SWF Cheat Menu 2.2.0 — плагин для RPG Maker MV/MZ. Установщики без Python для Windows, macOS и Linux. Установка поверх старых версий и создание резервных копий. В Xenolauncher отключите встроенное Cheat Menu.
           EOF
           )"
           if gh release view v2.2.0 >/dev/null 2>&1; then
