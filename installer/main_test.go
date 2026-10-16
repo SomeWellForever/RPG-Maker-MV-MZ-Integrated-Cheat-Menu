@@ -1,0 +1,136 @@
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "os"
+    "path/filepath"
+    "strings"
+    "testing"
+)
+
+func fixture(t *testing.T, mz bool) (string, string, string) {
+    t.Helper()
+    root := t.TempDir()
+    js := filepath.Join(root, "www", "js")
+    if mz { js = filepath.Join(root, "js") }
+    if err := os.MkdirAll(filepath.Join(js, "plugins"), 0o755); err != nil { t.Fatal(err) }
+    if err := os.WriteFile(filepath.Join(js, "main.js"), []byte("PluginManager.setup($plugins);\n"), 0o644); err != nil { t.Fatal(err) }
+    reg := `var $plugins = [{"name":"OtherPlugin","status":true,"parameters":{"nested":[1,2,3],"bracket":"hello ] world"}}];`
+    if err := os.WriteFile(filepath.Join(js, "plugins.js"), []byte(reg), 0o644); err != nil { t.Fatal(err) }
+    payload := filepath.Join(root, "source.js")
+    if err := os.WriteFile(payload, []byte("/* @plugindesc SWF Cheat Menu Integrated 2.2.0 */\n"), 0o644); err != nil { t.Fatal(err) }
+    return root, js, payload
+}
+
+func names(t *testing.T, js string) []string {
+    t.Helper()
+    data, err := os.ReadFile(filepath.Join(js, "plugins.js"))
+    if err != nil { t.Fatal(err) }
+    records, ok := readRegistry(data)
+    if !ok { t.Fatalf("registry invalid after install: %s", data) }
+    out := []string{}
+    for _, r := range records {
+        var e struct { Name string `json:"name"` }
+        if err := json.Unmarshal(r, &e); err != nil { t.Fatal(err) }
+        out = append(out, e.Name)
+    }
+    return out
+}
+
+func checkNames(t *testing.T, js string, expected ...string) {
+    t.Helper()
+    got := strings.Join(names(t, js), ",")
+    want := strings.Join(expected, ",")
+    if got != want { t.Fatalf("plugin names: got %q, expected %q", got, want) }
+}
+
+func TestInstallAndRemoveMVandMZ(t *testing.T) {
+    for _, mz := range []bool{false,true} {
+        root, js, payload := fixture(t, mz)
+        var log bytes.Buffer
+        if err := run([]string{"install",root,payload}, &log); err != nil { t.Fatal(err) }
+        checkNames(t, js, "OtherPlugin", "SWF_CheatMenu")
+        if err := run([]string{"install",root,payload}, &log); err != nil { t.Fatal(err) }
+        checkNames(t, js, "OtherPlugin", "SWF_CheatMenu")
+        backups, _ := filepath.Glob(filepath.Join(root, "SWF_CheatMenu_Backup", "*"))
+        if len(backups)==0 { t.Fatal("no backup recorded") }
+        if err := os.Remove(payload); err != nil { t.Fatal(err) }
+        if err := run([]string{"remove",root}, &log); err != nil { t.Fatal(err) }
+        checkNames(t, js, "OtherPlugin")
+        if _, err := os.Stat(filepath.Join(js,"plugins",pluginFile)); !os.IsNotExist(err) { t.Fatal("payload still present") }
+    }
+}
+
+func TestUnicodePath(t *testing.T) {
+    root, js, payload := fixture(t, false)
+    newRoot:=filepath.Join(filepath.Dir(root), "日本語 [тест] directory")
+    if err:=os.Rename(root,newRoot);err!=nil{t.Fatal(err)}
+    root=newRoot
+    js=filepath.Join(root,"www","js")
+    payload=filepath.Join(root,"source.js")
+    if err:=run([]string{"install",root,payload},os.Stdout);err!=nil{t.Fatal(err)}
+    checkNames(t,js,"OtherPlugin","SWF_CheatMenu")
+}
+
+func TestLegacyRegistrationRemovedEvenIfXenolauncherDeletedFile(t *testing.T) {
+    root,js,payload:=fixture(t,false)
+    old:=`var $plugins = [{"name":"Cheat_Menu","status":true,"description":"Integrated Cheat Menu"},{"name":"OtherPlugin","status":true}];`
+    os.WriteFile(filepath.Join(js,"plugins.js"),[]byte(old),0o644)
+    main:=`// BEGIN CHEAT_MENU_INTEGRATED_LOADER
+$plugins.push({name:'Cheat_Menu',status:true});
+ // END CHEAT_MENU_INTEGRATED_LOADER
+PluginManager.setup($plugins);
+`
+    // Use canonical block marker without leading whitespace to mimic original.
+    main=strings.Replace(main," // END","// END",1)
+    os.WriteFile(filepath.Join(js,"main.js"),[]byte(main),0o644)
+    if err:=run([]string{"install",root,payload},os.Stdout);err!=nil{t.Fatal(err)}
+    checkNames(t,js,"OtherPlugin","SWF_CheatMenu")
+    actual,_:=os.ReadFile(filepath.Join(js,"main.js"))
+    if bytes.Contains(actual,[]byte("CHEAT_MENU_INTEGRATED_LOADER")) {t.Fatal("old loader not cleaned up")}
+}
+
+func TestUnrelatedOldPluginPreserved(t *testing.T) {
+    root,js,payload:=fixture(t,false)
+    reg:=`var $plugins = [{"name":"Cheat_Menu","status":true,"description":"Completely different plugin"}];`
+    os.WriteFile(filepath.Join(js,"plugins.js"),[]byte(reg),0o644)
+    if err:=run([]string{"install",root,payload},os.Stdout);err!=nil{t.Fatal(err)}
+    checkNames(t,js,"Cheat_Menu","SWF_CheatMenu")
+}
+
+func TestMalformedRegistryFallbackAndIdempotency(t *testing.T) {
+    root,js,payload:=fixture(t,false)
+    os.WriteFile(filepath.Join(js,"plugins.js"),[]byte("var $plugins = invalidJSValue;"),0o644)
+    if err:=run([]string{"install",root,payload},os.Stdout);err!=nil{t.Fatal(err)}
+    content,_:=os.ReadFile(filepath.Join(js,"main.js"))
+    if !bytes.Contains(content,[]byte(newStart)){t.Fatal("managed fallback loader missing")}
+    if err:=run([]string{"install",root,payload},os.Stdout);err!=nil{t.Fatal(err)}
+    content,_=os.ReadFile(filepath.Join(js,"main.js"))
+    if bytes.Count(content,[]byte(newStart))!=1{t.Fatal("duplicate loader")}
+    if err:=run([]string{"remove",root},os.Stdout);err!=nil{t.Fatal(err)}
+    content,_=os.ReadFile(filepath.Join(js,"main.js"))
+    if bytes.Contains(content,[]byte(newStart)){t.Fatal("fallback loader not removed")}
+}
+
+func TestDoNotWriteOnMalformedPayload(t *testing.T) {
+    root,js,payload:=fixture(t,false)
+    os.WriteFile(payload,[]byte("not our plugin"),0o644)
+    before,_:=os.ReadFile(filepath.Join(js,"plugins.js"))
+    if err:=run([]string{"install",root,payload},os.Stdout);err==nil{t.Fatal("invalid payload unexpectedly accepted")}
+    after,_:=os.ReadFile(filepath.Join(js,"plugins.js"))
+    if !bytes.Equal(before,after){t.Fatal("modified on invalid payload")}
+}
+
+func TestOldMainLoaderEvenIfFileMissing(t *testing.T){
+    root,js,payload:=fixture(t,false)
+    main:=`// BEGIN CHEAT_MENU_INTEGRATED_LOADER
+PluginManager.loadScript('Cheat_Menu.js');
+// END CHEAT_MENU_INTEGRATED_LOADER
+PluginManager.setup($plugins);
+`
+    os.WriteFile(filepath.Join(js,"main.js"),[]byte(main),0o644)
+    if err:=run([]string{"install",root,payload},os.Stdout);err!=nil{t.Fatal(err)}
+    data,_:=os.ReadFile(filepath.Join(js,"main.js"))
+    if bytes.Contains(data,[]byte("Cheat_Menu.js")){t.Fatal("old JS loader still present")}
+}
