@@ -1,11 +1,12 @@
 @echo off
 setlocal
-cd /d "%~dp0"
-where py >nul 2>nul
-if %errorlevel% equ 0 (
-  py -3 "%~dp0Setup.py" remove "%~dp0"
+if "%~1"=="" (
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -STA -File "%~dp0Setup_Windows.ps1" -Action remove
 ) else (
-  python "%~dp0Setup.py" remove "%~dp0"
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -STA -File "%~dp0Setup_Windows.ps1" -Action remove -GamePath "%~1"
 )
-if errorlevel 1 echo Removal failed. Python 3 is required and the release must be extracted next to Game.exe.
+set "CODE=%ERRORLEVEL%"
+if not "%CODE%"=="0" echo Operation failed. See the error message above.
+echo.
 pause
+exit /b %CODE%

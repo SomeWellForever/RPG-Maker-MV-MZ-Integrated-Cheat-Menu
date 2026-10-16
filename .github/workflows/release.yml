@@ -10,12 +10,30 @@ on:
       - 'scripts/build_release.py'
       - 'tests/**'
       - 'README.md'
+      - 'Setup_Windows.ps1'
       - '.github/workflows/release.yml'
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
+  windows-validation:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify Windows installer syntax
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path 'Setup_Windows.ps1').Path, [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -gt 0) {
+            $errors | Format-List
+            exit 1
+          }
+      - name: Test installer logic on Windows
+        run: python -m unittest discover -s tests -v
   publish:
+    needs: windows-validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
