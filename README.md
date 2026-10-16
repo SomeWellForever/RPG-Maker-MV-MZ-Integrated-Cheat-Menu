@@ -3,7 +3,9 @@
 **[Русский](#-русский) · [English](#-english)**  
 **Version 2.1 · RPG Maker MV / MZ · Windows / Linux**
 
-> **Latest release / Последняя версия:** [v2.1 — Download ZIP / Скачать ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.1/Cheat_Menu_Integrated_MV_MZ_v2.1.zip).
+[![Release](https://img.shields.io/github/v/release/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu?label=Release)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/tag/v2.1) [![Platform](https://img.shields.io/badge/RPG%20Maker-MV%20%2F%20MZ-blue)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu) [![Issues](https://img.shields.io/github/issues/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/issues)
+
+ > **Latest release / Последняя версия:** [v2.1 — Download ZIP / Скачать ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.1/Cheat_Menu_Integrated_MV_MZ_v2.1.zip).
 
 > An integrated cheat menu for single-player games made with RPG Maker MV and MZ. One JavaScript plugin, one in-game key item, and a quick overlay accessible in and out of battle.
 >
@@ -43,6 +45,10 @@
 
 **Удаление:** закройте игру и запустите `Remove_Windows.cmd` или `bash Remove_Linux.sh`. Резервные копии установщика находятся в `Cheat_Menu_Backup/`.
 
+### Ошибки и предложения
+
+Если мод не работает в конкретной игре, [создайте Issue](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/issues/new/choose). Укажите название и версию игры, MV или MZ, установленную версию мода, шаги воспроизведения и текст ошибки. Скриншот и список других плагинов помогут быстрее разобраться.
+
 ### Ограничения
 
 Совместимость зависит от дополнительных плагинов конкретной игры. Для зашифрованных сборок и изменённых систем боёв, предметов и интерфейса может понадобиться отдельная адаптация. Системные переключатели и телепортация могут нарушить сюжетные события. Проверяйте мод на копии сохранения. Проверки выполнялись на тестовых моделях MV/MZ; универсальная работоспособность во всех играх **не гарантируется**.
@@ -81,6 +87,10 @@ The integrated menu combines features without a duplicate "extra cheats" section
 
 **Uninstall:** close the game and run `Remove_Windows.cmd` or `bash Remove_Linux.sh`. Backups are stored in `Cheat_Menu_Backup/`.
 
+### Bug reports and suggestions
+
+If the mod fails in a specific game, [open an Issue](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/issues/new/choose) and include the game name/version, MV or MZ, mod version, steps to reproduce, and the exact error. Screenshots and a list of other plugins are helpful.
+
 ### Compatibility and caveats
 
 Compatibility varies across game-specific plugins. Encrypted games or heavily modified battle, inventory, and UI systems may require custom fixes. Teleporting and changing progression switches can break scripted events; keep backups. Syntax and test-scene checks were performed for MV/MZ, but support for every game **is not guaranteed**.
@@ -91,6 +101,7 @@ Compatibility varies across game-specific plugins. Encrypted games or heavily mo
 
 - [`Cheat_Menu.js`](Cheat_Menu.js) — combined plugin / объединённый плагин.
 - [Releases](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases) — downloadable ZIP / архив для скачивания.
+- [`RELEASE_NOTES_v2.1.md`](RELEASE_NOTES_v2.1.md) — bilingual release notes / описание выпуска на двух языках.
 - [`CHANGELOG.md`](CHANGELOG.md) — version history / история изменений.
 - [`CREDITS.md`](CREDITS.md) — authorship and redistribution notes / авторство и условия распространения.
 
