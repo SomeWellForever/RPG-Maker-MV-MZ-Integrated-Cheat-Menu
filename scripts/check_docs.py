@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that public instructions match the shipped v2.7.1 release."""
+"""Check that public instructions match the shipped v2.8.0 release."""
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
@@ -12,8 +12,8 @@ credits = (root / "CREDITS.md").read_text(encoding="utf-8")
 
 for language in ("Русский", "English", "Español"):
     assert language in readme, f"Missing language instructions: {language}"
-assert "v2.7.1" in readme
-assert "SWF_CheatMenu_MV_MZ_v2.7.1.zip" in readme
+assert "v2.8.0" in readme
+assert "SWF_CheatMenu_MV_MZ_v2.8.0.zip" in readme
 assert "**прямо в папку игры**" in readme
 assert "**directly into the game folder**" in readme
 assert "**сам найдёт игру**" in readme
@@ -53,6 +53,12 @@ assert "test_map_minigame.cjs" in workflow
 assert "test_value_search.cjs" in workflow
 assert "test_refill_items.cjs" in workflow
 assert "test_quick_teleport.cjs" in workflow
+assert "test_inventory_cap.cjs" in workflow
+assert "10 точек" in readme
+assert "ten saved" in readme
+assert "diez puntos" in readme
+assert "0" in readme and "minus" in readme
+assert "positionSlotCount = 10" in plugin
 assert "RU/EN/ES" in credits
 assert "Español" in (root / "README_PLUGIN_ONLY.txt").read_text(encoding="utf-8")
 assert "eval(\"key\"" not in plugin
@@ -69,7 +75,7 @@ assert "emerladCoder" in credits and "NamelessMagician" in credits
 assert "extract the ZIP **directly into the game folder**" in workflow
 assert "распакуйте ZIP **прямо в папку игры**" in workflow
 assert "go -C installer test ./..." in (root / "installer/README.md").read_text(encoding="utf-8")
-assert "v2.7.1" in (root / "installer/README.md").read_text(encoding="utf-8")
+assert "v2.8.0" in (root / "installer/README.md").read_text(encoding="utf-8")
 assert "CHANGELOG.md" in readme
 assert "Поиск и прокрутка" in readme
 assert "Search and scrolling" in readme
@@ -79,8 +85,8 @@ assert "by category" in readme
 assert "Favorites" in readme
 assert "2×3" in readme
 assert "two-column" in readme
-assert "SWF_CheatMenu_plugin_only_v2.7.1.zip" in readme
-assert "SWF_CheatMenu_plugin_only_v2.7.1.zip" in workflow
+assert "SWF_CheatMenu_plugin_only_v2.8.0.zip" in readme
+assert "SWF_CheatMenu_plugin_only_v2.8.0.zip" in workflow
 assert "2147483000" not in plugin  # Persistent 2.4.0 search overlay must not return.
 assert "без установщика" in readme
 assert "Plugin-only alternative" in readme
