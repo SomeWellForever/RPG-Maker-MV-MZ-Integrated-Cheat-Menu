@@ -5,6 +5,25 @@ const source=fs.readFileSync("SWF_CheatMenu.js","utf8");
 const start=source.indexOf("Cheat_Menu.save_position = function"),end=source.indexOf("// Left and right scrollers for handling switching between target teleport map",start);
 const teleStart=source.indexOf("Cheat_Menu.teleport_current_location = function"),teleEnd=source.indexOf("// append the teleport cheat to the menu",teleStart);
 assert.ok(start>0&&end>start&&teleStart>0&&teleEnd>teleStart);
+const posStart=source.indexOf("Cheat_Menu.positionSlotCount = 10;");
+const posEnd=source.indexOf("Cheat_Menu.teleport_location =",posStart);
+assert.ok(posStart>=0&&posEnd>posStart,"Saved-position upgrade implementation missing");
+const older={Cheat_Menu:{saved_positions:[{m:2,x:2,y:3},{m:3,x:4,y:5},{m:4,x:6,y:7}]}};
+vm.createContext(older);
+vm.runInContext(source.slice(posStart,posEnd),older,{timeout:3000});
+// Loading a v2.7.x save replaces the in-memory array; the upgrader must pad it
+// without overwriting the three old points.
+older.Cheat_Menu.saved_positions=[{m:2,x:2,y:3},{m:3,x:4,y:5},{m:4,x:6,y:7}];
+older.Cheat_Menu.ensureSavedPositions();
+assert.equal(older.Cheat_Menu.saved_positions.length,10);
+assert.equal(older.Cheat_Menu.saved_positions[0].m,2);
+assert.equal(older.Cheat_Menu.saved_positions[2].m,4);
+assert.equal(older.Cheat_Menu.saved_positions[9].m,-1);
+assert.equal(older.Cheat_Menu.initial_values,undefined,"Only data migration should run in this extraction");
+older.Cheat_Menu.saved_position_page=999;
+older.Cheat_Menu.ensureSavedPositions();
+assert.equal(older.Cheat_Menu.saved_position_page,3);
+
 const output=[];
 const music=[];
 const destinations=[];
