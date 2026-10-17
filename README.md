@@ -27,7 +27,7 @@
 | Бой | Изменение HP противников, мгновенная победа |
 | Быстрый оверлей | Оригинальные 18 страниц Cheat Menu, доступные клавишей `1` |
 
-Встроенное меню объединяет функции без отдельной вкладки с дублирующими командами. В бою недоступны телепортация и изменения перемещения, которые могут нарушить игровую сцену.
+В отличие от оригинального Cheat Menu, эта версия дополнена полноценным меню управления с удобным интерфейсом, расширенными настройками инвентаря и дополнительными возможностями в бою. Классическое быстрое меню по клавише `1` при этом сохранено. Во время боя телепортация и настройки перемещения недоступны, чтобы не нарушать игровую сцену.
 
 ### Управление
 
@@ -73,7 +73,7 @@
 | Battle | Modify enemy HP and instantly defeat enemies |
 | Quick overlay | The legacy Cheat Menu with 18 pages, opened with `1` |
 
-The integrated menu combines features without a duplicate "extra cheats" section. Map movement and teleport controls are unavailable during battle to reduce the risk of interrupting combat.
+Unlike the original Cheat Menu, this edition adds a full control interface, expanded inventory settings, and additional battle features while keeping the classic quick overlay on `1`. Teleportation and movement controls are disabled during battle to avoid disrupting the game.
 
 ### Controls
 
