@@ -4,6 +4,11 @@ The entries below describe published functional releases. Documentation and CI-o
 
 Ниже перечислены изменения опубликованных функциональных версий. Последующие правки документации и тестов не меняют архив и тег уже выпущенной версии.
 
+## v2.4.1 — 2026-10
+
+- **RU:** Упрощены поиск и прокрутка: поиск по названию/ID снова вызывается первым пунктом списка, а ползунок создаётся средствами RPG Maker MV/MZ без постоянного HTML-слоя и дополнительных глобальных обработчиков ввода. Добавлен отдельный архив только с JavaScript для обновления ранее установленных версий. Предупреждение антивируса о ZIP v2.4.0 не подтверждено и требует отдельной проверки.
+- **EN:** Simplified list search and scrolling: name/ID search uses the first catalog command and the scrollbar is rendered natively by RPG Maker MV/MZ without a persistent browser overlay or extra global input handlers. Added a plugin-only JavaScript update package. The v2.4.0 archive's antivirus detection remains unverified and requires separate investigation.
+
 ## v2.4.0 — 2026-10
 
 - **RU:** В основное меню добавлены поиск по названию или ID прямо над списком и перетаскиваемая полоса прокрутки. Доступно на карте и во время боя. Исходное быстрое меню по клавише `1` не менялось.
