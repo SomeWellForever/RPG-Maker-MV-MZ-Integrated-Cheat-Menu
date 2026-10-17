@@ -17,7 +17,7 @@ const (
     pluginName = "SWF_CheatMenu"
     pluginFile = pluginName + ".js"
     oldName = "Cheat_Menu"
-    version = "2.3.0"
+    version = "2.3.1"
     oldStart = "// BEGIN CHEAT_MENU_INTEGRATED_LOADER"
     oldEnd = "// END CHEAT_MENU_INTEGRATED_LOADER"
     newStart = "// BEGIN SWF_CHEATMENU_LOADER"
@@ -113,8 +113,8 @@ func run(args []string, output io.Writer) error {
     fmt.Fprintln(output, "Game:", root)
     if location != "" { fmt.Fprintln(output, "Backup:", location) }
     if !parsed { fmt.Fprintln(output, "Nonstandard plugins.js: used the main.js loader.") }
-    if !oldIsOurs && bytes.Contains(registryOriginal, []byte("Cheat_Menu")) {
-        fmt.Fprintln(output, "An unrelated or unrecognized Cheat_Menu entry was preserved.")
+    if installing && bytes.Contains(registryOriginal, []byte("Cheat_Menu")) {
+        fmt.Fprintln(output, "Legacy Cheat_Menu registrations were removed or disabled when identifiable.")
     }
     return nil
 }
@@ -198,11 +198,26 @@ func editRegistry(source []byte, installing, ours bool) ([]byte, bool, error) {
             continue
         }
         if entry.Name == pluginName { continue }
-        if installing && entry.Name == oldName && (ours || integrated(entry.Description)) { continue }
+        if installing && entry.Name == oldName {
+            // Remove identified previous integrated installations.
+            if ours || integrated(entry.Description) { continue }
+            // Some older installs have a blank description. Disable, do not delete,
+            // the record so that its configuration can be restored manually.
+            if strings.TrimSpace(entry.Description) == "" {
+                var fields map[string]json.RawMessage
+                if err := json.Unmarshal(record, &fields); err == nil {
+                    fields["status"] = json.RawMessage("false")
+                    disabled, err := json.Marshal(fields)
+                    if err != nil { return nil, false, err }
+                    updated = append(updated, disabled)
+                    continue
+                }
+            }
+        }
         updated = append(updated, record)
     }
     if installing {
-        updated = append(updated, json.RawMessage(`{"name":"SWF_CheatMenu","status":true,"description":"SWF Cheat Menu Integrated 2.3.0","parameters":{}}`))
+        updated = append(updated, json.RawMessage(`{"name":"SWF_CheatMenu","status":true,"description":"SWF Cheat Menu Integrated 2.3.1","parameters":{}}`))
     }
     output, err := json.MarshalIndent(updated, "", "    ")
     if err != nil { return nil, false, err }
@@ -229,9 +244,11 @@ func editMain(source []byte, installing, registryHandled, ours bool) ([]byte, er
             "  var swfP=$plugins[swfI];",
             "  if (swfP && swfP.name === 'SWF_CheatMenu') $plugins.splice(swfI,1);",
         }
-        if ours { lines = append(lines, "  if (swfP && swfP.name === 'Cheat_Menu') $plugins.splice(swfI,1);") }
+        // For non-JSON registries, prevent an old anonymous Cheat_Menu from
+        // registering alongside SWF_CheatMenu. Leave unrelated named plugins alone.
+        lines = append(lines, "  if (swfP && swfP.name === 'Cheat_Menu' && (!swfP.description || /(?:Integrated Cheat Menu|Cheat Menu Integrated)/.test(swfP.description))) $plugins.splice(swfI,1);")
         lines = append(lines, "}",
-            "$plugins.push({name:'SWF_CheatMenu',status:true,description:'SWF Cheat Menu Integrated 2.3.0',parameters:{}});",
+            "$plugins.push({name:'SWF_CheatMenu',status:true,description:'SWF Cheat Menu Integrated 2.3.1',parameters:{}});",
             newEnd, "")
         output = bytes.Replace(output, marker, append([]byte(strings.Join(lines, "\n")), marker...), 1)
     }
