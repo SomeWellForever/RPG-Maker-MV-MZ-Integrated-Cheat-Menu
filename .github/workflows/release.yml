@@ -195,44 +195,28 @@ jobs:
           cat > release-notes.md <<'EOF'
           ## SWF Cheat Menu v2.8.0
 
-          **RPG Maker MV/MZ · Windows and Linux installers**
+          **RPG Maker MV/MZ · Windows / Linux**
 
-          - **Main menu:** six large native tiles arranged in a two-column grid, regrouping existing features without removing them.
-          - **Category sorting:** group game items, weapons, armor and skills by native database type with visible section headers; keep ID, name and favorites sorting.
-          - **Favorites:** stars in catalogs and a dedicated Favorites main-menu section (per save).
-          - **Two ZIP options:** full Windows/Linux installer package and plugin-only JavaScript update for an already patched game.
-          - **Ten fast-travel points:** ten shared positions across the full menu and paginated quick overlay. Existing three-slot saves are retained; 0/minus browse groups while other hotkeys stay unchanged.
-          - **Inventory compatibility:** explicitly selected 99/999/9999 can override note-defined `itemMaxNum` caps on ordinary stackable items, while preserving unique/no-stack/key-item restrictions. Default respects game limits.
-          - **Switch state search:** filter named switches with `ON` / `OFF` or `=true` / `=false`, including explicit `=1` / `=0`.
-          - **Map mini-game fix:** F7 still opens inside the active map scene, pausing scripted events without reconstructing message/choice windows on return.
-          - **Languages:** Auto / Русский / English / Español applies to both the full control menu (`F7`) and legacy quick overlay (`1`), including when switching while it is open. In-game names are unchanged.
-          - **Fix:** when upgrading, automatically disable an active legacy `Cheat_Menu` with an empty description; preserve its options and all other plugins.
-          - **Fix:** loading the integrated script twice no longer registers two quick-menu hotkey handlers.
-          - **No Python or Go required.** Native Windows and Linux installers, backups and removal.
+          - Full menu (F7), quick menu (1), favorites, sorting, search and RU/EN/ES languages.
+          - **10 fast-travel slots:** older three-slot saves preserved; 0/minus browse quick-menu groups.
+          - **Inventory:** adjustable 99/999/9999 limits and refill of owned normal items. Unique/key items remain protected; custom inventory plugins may need fixes.
+          - **Downloads:** full installer ZIP or plugin-only JavaScript update.
 
-          **Installation:** Close the game, extract the ZIP **directly into the game folder**, then run `Install_Windows.cmd` or `bash Install_Linux.sh`. The installer detects the game automatically. If extracted elsewhere, run the installer and select the game folder. Back up your saves before using the mod.
+          **Installation:** Close the game, extract the ZIP **directly into the game folder**, then run `Install_Windows.cmd` or `bash Install_Linux.sh`. The installer finds the game automatically. No Python or Go required; backups are created.
 
-          **Mac / Xenolauncher:** You can copy an already-patched game from Windows/Linux to a Mac and try launching it through [Xenolauncher](https://github.com/m5kro/Xenolauncher), a third-party macOS game launcher. Disable its `Enable Cheat Menu` option to avoid conflicts. Game compatibility varies.
+          **Mac:** an already-patched game may work with [Xenolauncher](https://github.com/m5kro/Xenolauncher). Disable its `Enable Cheat Menu` option. Game compatibility varies.
 
           ---
-          ## SWF Cheat Menu v2.8.0 — русский
 
-          **RPG Maker MV/MZ · установщики Windows и Linux**
+          ## Русский
 
-          - **Главное меню:** шесть крупных плиток в два столбца с понятными категориями вместо одного длинного списка.
-          - **Сортировка по категориям:** группировка предметов, оружия, брони и навыков по типам из базы игры с разделительными заголовками.
-          - **Избранное:** звёздочки в каталогах и отдельная вкладка; остальные режимы сортировки по ID, названию или избранному сохранены.
-          - **Два архива:** обычный установщик для Windows/Linux и отдельный JavaScript-плагин для обновления уже установленной игры.
-          - **Десять точек перемещения:** десять общих слотов в основном и быстром меню. Старые три точки не теряются, 0/минус перелистывают группы, остальные клавиши не меняются.
-          - **Совместимость инвентаря:** выбранные 99/999/9999 теперь перекрывают ограничения `itemMaxNum` обычных складываемых предметов. Уникальные и нестекаемые предметы, ключевые предметы защищены, стандартный лимит игры сохраняется.
-          - **Мини-игры:** F7 по-прежнему открывает меню поверх текущей карты, не пересоздавая окна выбора.
-          - **Языки:** Auto / Русский / English / Español теперь одновременно переключают основное меню (`F7`) и быстрый оверлей (`1`); текст меняется даже при открытом быстром меню. Имена из игры не переводятся.
-          - **Исправлено:** установка отключает старый `Cheat_Menu` с пустым описанием и сохраняет его настройки и другие плагины.
-          - **Исправлено:** повторная загрузка скрипта не добавляет второй обработчик клавиши `1`.
-          - **Python и Go не нужны.** Автономные установщики, резервные копии и удаление.
+          - Меню F7 и 1, избранное, поиск, сортировка и три языка.
+          - **10 точек:** старые три сохраняются; 0/минус переключают группы быстрого меню.
+          - **Инвентарь:** лимиты 99/999/9999 и пополнение имеющихся обычных предметов. Уникальные и ключевые предметы защищены; возможны ограничения сторонних плагинов.
+          - **Архивы:** полный установщик либо Plugin Only для обновления.
 
-          **Установка:** Закройте игру, распакуйте ZIP **прямо в папку игры**, затем запустите `Install_Windows.cmd` или `bash Install_Linux.sh`. Установщик автоматически найдёт игру. Если архив распакован в другом месте, выберите папку игры при запуске. Перед использованием сделайте резервную копию сохранений.
+          **Установка:** Закройте игру, распакуйте ZIP **прямо в папку игры** и запустите `Install_Windows.cmd` или `bash Install_Linux.sh`. Установщик сам найдёт игру и создаст резервные копии.
 
-          **Mac / Xenolauncher:** Уже пропатченную на Windows/Linux игру можно перенести на Mac и попробовать запустить через [Xenolauncher](https://github.com/m5kro/Xenolauncher) — сторонний лаунчер для macOS. Отключите в нём `Enable Cheat Menu`, чтобы избежать конфликта. Совместимость зависит от игры.
+          **Mac:** пропатченную игру можно попробовать с [Xenolauncher](https://github.com/m5kro/Xenolauncher). Отключите `Enable Cheat Menu`. Совместимость зависит от игры.
           EOF
           gh release create "$RELEASE_TAG" "SWF_CheatMenu_MV_MZ_v${VERSION}.zip" "SWF_CheatMenu_plugin_only_v${VERSION}.zip" --target "$GITHUB_SHA" --title "SWF Cheat Menu $RELEASE_TAG" --notes-file release-notes.md --latest
