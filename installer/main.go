@@ -17,7 +17,7 @@ const (
     pluginName = "SWF_CheatMenu"
     pluginFile = pluginName + ".js"
     oldName = "Cheat_Menu"
-    version = "2.2.0"
+    version = "2.3.0"
     oldStart = "// BEGIN CHEAT_MENU_INTEGRATED_LOADER"
     oldEnd = "// END CHEAT_MENU_INTEGRATED_LOADER"
     newStart = "// BEGIN SWF_CHEATMENU_LOADER"
@@ -203,7 +203,7 @@ func editRegistry(source []byte, installing, ours bool) ([]byte, bool, error) {
         updated = append(updated, record)
     }
     if installing {
-        updated = append(updated, json.RawMessage(`{"name":"SWF_CheatMenu","status":true,"description":"SWF Cheat Menu Integrated 2.2.0","parameters":{}}`))
+        updated = append(updated, json.RawMessage(`{"name":"SWF_CheatMenu","status":true,"description":"SWF Cheat Menu Integrated 2.3.0","parameters":{}}`))
     }
     output, err := json.MarshalIndent(updated, "", "    ")
     if err != nil { return nil, false, err }
@@ -232,7 +232,7 @@ func editMain(source []byte, installing, registryHandled, ours bool) ([]byte, er
         }
         if ours { lines = append(lines, "  if (swfP && swfP.name === 'Cheat_Menu') $plugins.splice(swfI,1);") }
         lines = append(lines, "}",
-            "$plugins.push({name:'SWF_CheatMenu',status:true,description:'SWF Cheat Menu Integrated 2.2.0',parameters:{}});",
+            "$plugins.push({name:'SWF_CheatMenu',status:true,description:'SWF Cheat Menu Integrated 2.3.0',parameters:{}});",
             newEnd, "")
         output = bytes.Replace(output, marker, append([]byte(strings.Join(lines, "\n")), marker...), 1)
     }
