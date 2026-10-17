@@ -60,6 +60,28 @@ jobs:
           $registered = Get-Content -Raw -LiteralPath (Join-Path $js 'plugins.js')
           if ($registered -match '"SWF_CheatMenu"') { throw 'Plugin was not removed' }
 
+      - name: Install automatically when ZIP is extracted into Windows game folder
+        shell: pwsh
+        run: |
+          $game = Join-Path $env:RUNNER_TEMP 'Auto-install RPG Maker MZ 日本語'
+          $js = Join-Path $game 'js'
+          New-Item -Force -ItemType Directory -Path (Join-Path $js 'plugins') | Out-Null
+          New-Item -Force -ItemType Directory -Path (Join-Path $game 'bin') | Out-Null
+          Set-Content -LiteralPath (Join-Path $js 'main.js') -Value 'PluginManager.setup($plugins);' -Encoding utf8
+          Set-Content -LiteralPath (Join-Path $js 'plugins.js') -Value 'var $plugins = []; ' -Encoding utf8
+          Copy-Item -LiteralPath 'Setup_Windows.ps1' -Destination (Join-Path $game 'Setup_Windows.ps1')
+          Copy-Item -LiteralPath 'SWF_CheatMenu.js' -Destination (Join-Path $game 'SWF_CheatMenu.js')
+          Copy-Item -LiteralPath 'bin/swf-setup-windows-amd64.exe' -Destination (Join-Path $game 'bin/swf-setup-windows-amd64.exe')
+          & (Join-Path $game 'Setup_Windows.ps1') -Action install
+          if ($LASTEXITCODE -ne 0) { throw 'In-place installation failed' }
+          $registry = Get-Content -Raw -LiteralPath (Join-Path $js 'plugins.js')
+          if ($registry -notmatch '"SWF_CheatMenu"') { throw 'Auto-detected game was not registered' }
+          if (-not (Test-Path -LiteralPath (Join-Path $js 'plugins/SWF_CheatMenu.js'))) { throw 'Plugin payload missing' }
+          & (Join-Path $game 'Setup_Windows.ps1') -Action remove
+          if ($LASTEXITCODE -ne 0) { throw 'In-place removal failed' }
+          $registry = Get-Content -Raw -LiteralPath (Join-Path $js 'plugins.js')
+          if ($registry -match '"SWF_CheatMenu"') { throw 'In-place removal left registry entry' }
+
   linux:
     runs-on: ubuntu-latest
     steps:
@@ -84,6 +106,20 @@ jobs:
           grep -q SWF_EN_STRINGS "$GAME/www/js/plugins/SWF_CheatMenu.js"
           bash Remove_Linux.sh "$GAME"
           ! grep -q '"SWF_CheatMenu"' "$GAME/www/js/plugins.js"
+
+      - name: Install automatically when ZIP is extracted into Linux game folder
+        run: |
+          GAME="$RUNNER_TEMP/Auto-install RPG Maker MZ 日本語"
+          mkdir -p "$GAME/js/plugins" "$GAME/bin"
+          printf 'PluginManager.setup($plugins);\n' > "$GAME/js/main.js"
+          printf 'var $plugins = [];\n' > "$GAME/js/plugins.js"
+          cp Install_Linux.sh Remove_Linux.sh SWF_CheatMenu.js "$GAME/"
+          cp bin/swf-setup-linux-amd64 "$GAME/bin/"
+          bash "$GAME/Install_Linux.sh"
+          grep -q '"SWF_CheatMenu"' "$GAME/js/plugins.js"
+          test -f "$GAME/js/plugins/SWF_CheatMenu.js"
+          bash "$GAME/Remove_Linux.sh"
+          ! grep -q '"SWF_CheatMenu"' "$GAME/js/plugins.js"
 
   package:
     needs: [plugin, windows, linux]
@@ -120,30 +156,26 @@ jobs:
           cat > release-notes.md <<'EOF'
           ## SWF Cheat Menu v2.3.0
 
-          **Platforms:** Windows and Linux (RPG Maker MV/MZ). macOS is not supported in this release.
+          **RPG Maker MV/MZ · Windows and Linux installers**
 
-          ### What's new
-          - **English and Russian interface:** integrated control menu supports Auto / Русский / English with a saved preference. The legacy quick overlay remains in English; names of items, maps and skills come from the game.
-          - **No Python required:** native Windows and Linux installers. End users do not need Python or Go installed.
-          - **Reliable upgrades:** supported updates from recognized older Integrated Cheat Menu versions, repeated installation without duplicate plugin registrations, automatic backups, and safe removal.
-          - The macOS installer was withdrawn following launch/permissions issues.
-          - **Optional compatibility:** [Xenolauncher](https://github.com/m5kro/Xenolauncher) is a separate macOS game launcher. Only if you already use it, disable its **Enable Cheat Menu** option to avoid conflicts. Xenolauncher is not required for this mod, and macOS is not supported by this release.
-          - Upstream authors and redistribution notes: CREDITS.md.
+          - **English / Русский:** full menu supports Auto / Русский / English. The original quick menu (`1`) remains in English; names from the game retain its language.
+          - **No Python or Go required.** Native Windows and Linux installers, upgrades over recognized older versions, backups and removal.
 
-          ### How to install
-          Extract the **entire ZIP**, keeping the bin folder beside the installers. On Windows run Install_Windows.cmd; on Linux run bash Install_Linux.sh. Select the **game root** (containing www/js for MV or js for MZ), not the js directory itself. Back up your saves first.
+          **Installation:** Close the game, extract the ZIP **directly into the game folder**, then run `Install_Windows.cmd` or `bash Install_Linux.sh`. The installer detects the game automatically. If extracted elsewhere, run the installer and select the game folder. Back up your saves before using the mod.
+
+          **Mac / Xenolauncher:** You can copy an already-patched game from Windows/Linux to a Mac and try launching it through [Xenolauncher](https://github.com/m5kro/Xenolauncher), a third-party macOS game launcher. Disable its `Enable Cheat Menu` option to avoid conflicts. Game compatibility varies.
 
           ---
           ## SWF Cheat Menu v2.3.0 — русский
 
-          **Платформы:** Windows и Linux. Поддержка macOS прекращена из-за проблем с запуском установщика.
+          **RPG Maker MV/MZ · установщики Windows и Linux**
 
-          - **Русский и английский:** переключатель Auto / Русский / English внутри меню F7; выбор сохраняется. Быстрое меню на 1 осталось английским, а названия предметов/карт/навыков берутся из игры.
-          - **Python не нужен:** готовые установщики Windows и Linux; Go устанавливать тоже не требуется.
-          - **Обновление поверх старых версий:** миграция распознаваемых предыдущих установок, резервные копии, повторная установка без дублирования и удаление.
-          - **Только для пользователей Xenolauncher:** это отдельный сторонний лаунчер для macOS. Если вы уже им пользуетесь, отключите его **Enable Cheat Menu**, чтобы два чит-меню не конфликтовали. Устанавливать Xenolauncher не нужно; macOS в этом релизе не поддерживается.
+          - **Русский / English:** полное меню поддерживает Auto / Русский / English. Быстрое меню (`1`) остаётся английским; названия из игры не переводятся.
+          - **Python и Go не нужны.** Автономные установщики, обновление поверх старых версий, резервные копии и удаление.
 
-          Полностью распакуйте ZIP, оставив папку bin рядом с установщиками. В Windows запустите Install_Windows.cmd; в Linux — bash Install_Linux.sh. Выберите корневую папку игры (MV: www/js, MZ: js), а не папку js. Предварительно сохраните резервную копию игровых сохранений.
+          **Установка:** Закройте игру, распакуйте ZIP **прямо в папку игры**, затем запустите `Install_Windows.cmd` или `bash Install_Linux.sh`. Установщик автоматически найдёт игру. Если архив распакован в другом месте, выберите папку игры при запуске. Перед использованием сделайте резервную копию сохранений.
+
+          **Mac / Xenolauncher:** Уже пропатченную на Windows/Linux игру можно перенести на Mac и попробовать запустить через [Xenolauncher](https://github.com/m5kro/Xenolauncher) — сторонний лаунчер для macOS. Отключите в нём `Enable Cheat Menu`, чтобы избежать конфликта. Совместимость зависит от игры.
           EOF
           if gh release view v2.3.0 >/dev/null 2>&1; then
             gh release edit v2.3.0 --title "SWF Cheat Menu v2.3.0" --notes-file release-notes.md --latest
