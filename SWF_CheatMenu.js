@@ -2416,7 +2416,8 @@ function swfQuickText(text){
 }
 Cheat_Menu.quickText=swfQuickText;
 Cheat_Menu.quickNull=function(text){
-    // Preserve database text, actor names and all other dynamic selector values.
+    // Preserve game data; translate only our own slot paginator and NULL.
+    if(typeof text==='string'&&/^Slots \d+/.test(text))return swfQuickText(text);
     if(text==='NULL')return swfQuickText('NULL');
     if(typeof text==='string'&&/^<font\b[^>]*>NULL<\/font>$/i.test(text))
         return text.replace('NULL',swfQuickText('NULL'));
