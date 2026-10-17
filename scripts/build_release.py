@@ -11,10 +11,18 @@ members = [
     "bin/swf-setup-windows-amd64.exe", "bin/swf-setup-windows-arm64.exe",
     "bin/swf-setup-linux-amd64", "bin/swf-setup-linux-arm64",
 ]
-archive = root / "SWF_CheatMenu_MV_MZ_v2.4.0.zip"
+archive = root / "SWF_CheatMenu_MV_MZ_v2.4.1.zip"
 with ZipFile(archive, "w", ZIP_DEFLATED) as z:
     for member in members:
         if not (root / member).is_file():
             raise FileNotFoundError(member)
         z.write(root / member, member)
 print(archive)
+
+# Plain JavaScript distribution for updating an already-patched game.
+# This does not contain .exe, PowerShell, Go binaries, or installer scripts.
+plugin_archive = root / "SWF_CheatMenu_plugin_only_v2.4.1.zip"
+with ZipFile(plugin_archive, "w", ZIP_DEFLATED) as z:
+    for member in ("SWF_CheatMenu.js", "README_PLUGIN_ONLY.txt"):
+        z.write(root / member, member)
+print(plugin_archive)
