@@ -25,8 +25,8 @@ assert (root / "CHANGELOG.md").is_file()
 # Three languages, both UI modes and the essential commands.
 for label in ("## 🇷🇺 Русский", "## 🇬🇧 English", "## 🇪🇸 Español",
               "F7", "English", "Español", "2×3", "Избранное",
-              "Favorites", "по категориям", "by category",
-              "по значению", "by value", "buscar por valor"):
+              "Favorites", "категориям", "category",
+              "по значению", "variable-value", "buscar por valor"):
     assert label.lower() in readme.lower(), f"README missing: {label}"
 for label in ("Русский", "English", "Español"):
     assert label in plugin_guide
@@ -42,11 +42,11 @@ for label in ("прямо в папку игры", "directly into the game folde
               "Install_Windows.cmd", "Install_Linux.sh", "Remove_Windows.cmd",
               "Remove_Linux.sh", "SWF_CheatMenu_Backup", "Xenolauncher",
               "already patched on Windows or Linux", "уже пропатченную на Windows или Linux",
-              "0", "minus", "10 точек", "ten saved", "diez puntos"):
+              "0", "`-`", "10 точек", "ten saved", "diez puntos"):
     assert label.lower() in readme.lower(), f"README missing: {label}"
 assert "github.com/m5kro/Xenolauncher" in readme
 assert "Enable Cheat Menu" in readme
-assert "Python or Go" in readme
+assert "Python nor Go" in readme
 assert "Game compatibility varies" in workflow
 assert "Совместимость зависит от игры" in workflow
 assert "Xenolauncher" not in installer
