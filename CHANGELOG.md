@@ -4,6 +4,11 @@ The entries below describe published functional releases. Documentation and CI-o
 
 Ниже перечислены изменения опубликованных функциональных версий. Последующие правки документации и тестов не меняют архив и тег уже выпущенной версии.
 
+## v2.4.0 — 2026-10
+
+- **RU:** В основное меню добавлены поиск по названию или ID прямо над списком и перетаскиваемая полоса прокрутки. Доступно на карте и во время боя. Исходное быстрое меню по клавише `1` не менялось.
+- **EN:** Added live name/ID search and a draggable scrollbar to the full control menu, both on the map and during battle. The original quick overlay on `1` is unchanged.
+
 ## v2.3.1 — 2026-10
 
 - **RU:** Исправлена миграция `plugins.js`: старый `Cheat_Menu` без описания отключается, сохраняя настройки; добавлена защита от повторной загрузки основного скрипта и конфликта клавиши `1`.
