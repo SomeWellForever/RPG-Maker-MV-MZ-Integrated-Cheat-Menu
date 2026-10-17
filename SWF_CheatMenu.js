@@ -1,6 +1,6 @@
 /*:
  * @target MV MZ
- * @plugindesc SWF Cheat Menu Integrated 2.6.2: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @plugindesc SWF Cheat Menu Integrated 2.7.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help F7 or the 'Control Menu' / 'Меню управления' key item opens the full menu,
  * including during battle. Choose Auto / Русский / English / Español inside that menu.
@@ -1816,7 +1816,7 @@ DataManager.saveGame = function(savefileId) {
 
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
- * @plugindesc SWF Cheat Menu Integrated v2.6.2 — teleport, levels, skills, items and stack limits.
+ * @plugindesc SWF Cheat Menu Integrated v2.7.0 — teleport, levels, skills, items and stack limits.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help Use F7 or the Control Menu / Меню управления key item on the map or in battle.
  * Auto / Русский / English / Español changes both menus (including the quick overlay on 1).
@@ -2055,7 +2055,12 @@ var SWF_EN_STRINGS = {
     "Имя / ID или значение (=125, >100, <50, =true, =text)": "Name / ID or value (=125, >100, <50, =true, =text)",
     "Имя / ID или ON / OFF": "Name / ID or ON / OFF",
     "Поиск: название / ID / значение": "Search: name / ID / value",
-    "Поиск: название / ID / состояние": "Search: name / ID / state"
+    "Поиск: название / ID / состояние": "Search: name / ID / state",
+    "Пополнить имеющиеся обычные предметы": "Refill owned normal items",
+    "Одним нажатием доводит уже имеющиеся обычные предметы до индивидуального лимита. Не создаёт новые виды, не трогает оружие, броню, ключевые предметы и уникальные экземпляры.": "Fill currently owned normal items to each item's maximum with one action. Does not create new item types or change weapons, armor, key items, or unique instances.",
+    "Пополнено видов: ": "Item types refilled: ",
+    " · добавлено предметов: ": " · items added: ",
+    " · пропущено: ": " · skipped: "
 };
 var SWF_ES_STRINGS = {
     'стандартный': "predeterminado",
@@ -2281,7 +2286,12 @@ var SWF_ES_STRINGS = {
     "Имя / ID или значение (=125, >100, <50, =true, =text)": "Nombre / ID o valor (=125, >100, <50, =true, =text)",
     "Имя / ID или ON / OFF": "Nombre / ID u ON / OFF",
     "Поиск: название / ID / значение": "Buscar: nombre / ID / valor",
-    "Поиск: название / ID / состояние": "Buscar: nombre / ID / estado"
+    "Поиск: название / ID / состояние": "Buscar: nombre / ID / estado",
+    "Пополнить имеющиеся обычные предметы": "Rellenar objetos normales que ya tienes",
+    "Одним нажатием доводит уже имеющиеся обычные предметы до индивидуального лимита. Не создаёт новые виды, не трогает оружие, броню, ключевые предметы и уникальные экземпляры.": "Rellena con una acción los objetos normales que ya tienes hasta su límite individual. No crea objetos nuevos ni modifica armas, armaduras, objetos clave o ejemplares únicos.",
+    "Пополнено видов: ": "Tipos rellenados: ",
+    " · добавлено предметов: ": " · objetos añadidos: ",
+    " · пропущено: ": " · omitidos: "
 };
 var SWF_LANG_KEY = 'SWF_CheatMenu.menuLanguage';
 var swfLanguageSetting = 'auto';
@@ -2879,11 +2889,60 @@ Scene_UniversalControl.prototype.sectionActors=function(){
         {name:TR('HP / MP / TP всей группы'),help:TR('Пополнить ресурсы, обнулить их или снять все состояния.'),run:function(){self.partyResources();}}
     ]);
 };
+// Refill only already-owned ordinary database items. Never create a new type,
+// touch key/hidden items, unique instances, weapons, armor or the cheat item.
+// Respect each item's effective maxItems() (including third-party caps).
+function swfRefillableItem(item){
+    if(!item||!item.id||item.itypeId!==1||item.id>=BASE_COUNTS.items||itemIsControl(item))return false;
+    if(!$dataItems||$dataItems[item.id]!==item||!DataManager.isItem(item))return false;
+    if(typeof DataManager.isIndependent==='function'&&DataManager.isIndependent(item))return false;
+    var meta=item.meta||{};
+    if(meta.Independent||meta.IndependentItem||meta.NoStack||meta.NoStacking)return false;
+    var note=String(item.note||'');
+    if(/<\s*(?:independent(?:item)?|no\s*stack(?:ing)?)\s*>/i.test(note))return false;
+    return true;
+}
+function swfRefillOwnedNormalItems(){
+    var result={types:0,added:0,skipped:0};
+    if(!$gameParty||typeof $gameParty.items!=='function'||typeof $gameParty.numItems!=='function'||
+       typeof $gameParty.maxItems!=='function'||typeof $gameParty.gainItem!=='function')return result;
+    var owned=$gameParty.items();
+    if(!Array.isArray(owned))return result;
+    var seen={};
+    owned.forEach(function(item){
+        if(!swfRefillableItem(item)||seen[item.id])return;
+        seen[item.id]=true;
+        var before=$gameParty.numItems(item),max=$gameParty.maxItems(item);
+        if(typeof before!=='number'||!isFinite(before)||before<1||Math.floor(before)!==before||
+           typeof max!=='number'||!isFinite(max)||max<0){result.skipped++;return;}
+        // The plugin itself supports stack limits up to 9,999. Protect against
+        // faulty/custom plugins returning absurd maximums for one item.
+        max=Math.min(9999,Math.floor(max));
+        var amount=max-before;
+        if(amount<1)return;
+        try{
+            $gameParty.gainItem(item,amount,false);
+            var after=$gameParty.numItems(item);
+            var gained=typeof after==='number'&&isFinite(after)?Math.max(0,after-before):0;
+            if(gained>0){result.types++;result.added+=gained;}
+            if(gained<amount)result.skipped++;
+        }catch(error){
+            result.skipped++;
+            console.warn('[SWF Cheat Menu] Unable to refill item #'+item.id,error);
+        }
+    });
+    return result;
+}
 Scene_UniversalControl.prototype.sectionInventory=function(){
     var self=this;
     ['items','weapons','armors'].forEach(function(kind){self._swfOnlyFavorites[kind]=false;self._swfEditingFavorites[kind]=false;});
     this.showPage(TR('Инвентарь'),[
         {name:TR('Предметы, оружие и броня'),run:function(){self.itemCategories();}},
+        {name:TR('Пополнить имеющиеся обычные предметы'),help:TR('Одним нажатием доводит уже имеющиеся обычные предметы до индивидуального лимита. Не создаёт новые виды, не трогает оружие, броню, ключевые предметы и уникальные экземпляры.'),run:function(){
+            var result=swfRefillOwnedNormalItems();
+            self.notice(TR('Пополнено видов: ')+result.types+TR(' · добавлено предметов: ')+result.added+
+                (result.skipped?TR(' · пропущено: ')+result.skipped:''));
+        }},
         {name:TR('Лимит предметов: ')+stackLimitLabel(),run:function(){self.stackLimits();}}
     ]);
 };

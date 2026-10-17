@@ -28,6 +28,8 @@ jobs:
         run: node tests/test_map_minigame.cjs
       - name: Check variable values and switch-state search
         run: node tests/test_value_search.cjs
+      - name: Check owned ordinary items refill
+        run: node tests/test_refill_items.cjs
       - name: Check live search and scrollbar behavior
         run: node tests/test_search_scroll.cjs
       - name: Check favorites, sorting and six-tile grid
@@ -156,10 +158,10 @@ jobs:
           python3 scripts/verify_release.py
       - uses: actions/upload-artifact@v4
         with:
-          name: SWF-CheatMenu-v2.6.2-Windows-Linux
+          name: SWF-CheatMenu-v2.7.0-Windows-Linux
           path: |
-            SWF_CheatMenu_MV_MZ_v2.6.2.zip
-            SWF_CheatMenu_plugin_only_v2.6.2.zip
+            SWF_CheatMenu_MV_MZ_v2.7.0.zip
+            SWF_CheatMenu_plugin_only_v2.7.0.zip
           if-no-files-found: error
       - name: Validate current release versions
         run: python3 scripts/check_version.py
@@ -187,7 +189,7 @@ jobs:
             exit 1
           fi
           cat > release-notes.md <<'EOF'
-          ## SWF Cheat Menu v2.6.2
+          ## SWF Cheat Menu v2.7.0
 
           **RPG Maker MV/MZ · Windows and Linux installers**
 
@@ -195,7 +197,7 @@ jobs:
           - **Category sorting:** group game items, weapons, armor and skills by native database type with visible section headers; keep ID, name and favorites sorting.
           - **Favorites:** stars in catalogs and a dedicated Favorites main-menu section (per save).
           - **Two ZIP options:** full Windows/Linux installer package and plugin-only JavaScript update for an already patched game.
-          - **Variable value search:** exact `=125`, `=true`, `=quest_started`, and numeric comparisons `>100`, `<50`, `>=`, `<=` with unchanged plain name/ID search.
+          - **Owned-item refill:** one action refills only already-owned ordinary items to their individual effective maximum without generating missing items, modifying equipment or key items; skips unsafe unique instances.
           - **Switch state search:** filter named switches with `ON` / `OFF` or `=true` / `=false`, including explicit `=1` / `=0`.
           - **Map mini-game fix:** F7 still opens inside the active map scene, pausing scripted events without reconstructing message/choice windows on return.
           - **Languages:** Auto / Русский / English / Español applies to both the full control menu (`F7`) and legacy quick overlay (`1`), including when switching while it is open. In-game names are unchanged.
@@ -208,7 +210,7 @@ jobs:
           **Mac / Xenolauncher:** You can copy an already-patched game from Windows/Linux to a Mac and try launching it through [Xenolauncher](https://github.com/m5kro/Xenolauncher), a third-party macOS game launcher. Disable its `Enable Cheat Menu` option to avoid conflicts. Game compatibility varies.
 
           ---
-          ## SWF Cheat Menu v2.6.2 — русский
+          ## SWF Cheat Menu v2.7.0 — русский
 
           **RPG Maker MV/MZ · установщики Windows и Linux**
 
@@ -216,7 +218,7 @@ jobs:
           - **Сортировка по категориям:** группировка предметов, оружия, брони и навыков по типам из базы игры с разделительными заголовками.
           - **Избранное:** звёздочки в каталогах и отдельная вкладка; остальные режимы сортировки по ID, названию или избранному сохранены.
           - **Два архива:** обычный установщик для Windows/Linux и отдельный JavaScript-плагин для обновления уже установленной игры.
-          - **Поиск по значениям:** `=125`, `>100`, `<50`, `=true`, `=quest_started` для переменных; `ON` / `OFF`, `=true` / `=false` для переключателей. Обычный поиск по названию и ID сохранён.
+          - **Пополнение имеющихся предметов:** одна команда доводит количество только уже полученных обычных предметов до индивидуального лимита без выдачи новых видов, изменения экипировки и ключевых предметов.
           - **Мини-игры:** F7 по-прежнему открывает меню поверх текущей карты, не пересоздавая окна выбора.
           - **Языки:** Auto / Русский / English / Español теперь одновременно переключают основное меню (`F7`) и быстрый оверлей (`1`); текст меняется даже при открытом быстром меню. Имена из игры не переводятся.
           - **Исправлено:** установка отключает старый `Cheat_Menu` с пустым описанием и сохраняет его настройки и другие плагины.

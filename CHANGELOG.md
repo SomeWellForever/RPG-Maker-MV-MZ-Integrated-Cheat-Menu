@@ -4,6 +4,11 @@ The entries below describe published functional releases. Documentation and CI-o
 
 Ниже перечислены изменения опубликованных функциональных версий. Последующие правки документации и тестов не меняют архив и тег уже выпущенной версии.
 
+## v2.7.0 — 2026-10
+
+- **RU:** Добавлена команда однократного пополнения до максимума всех уже имеющихся обычных предметов. Не затрагивает оружие, броню, ключевые и скрытые предметы, уникальные экземпляры, нестекаемые предметы и отсутствующие в инвентаре виды. Использует игровые ограничения количества предметов, обрабатывает нестандартные лимиты и ошибки отдельных предметов. Названия переменных из базы игры не менялись.
+- **EN:** Added one-click refill of already-owned normal inventory items up to their effective per-item limits. Excludes missing types, weapons, armor, key/hidden items, unique instances and non-stackable objects. Uses the game's own inventory API, honoring item caps and isolating individual failures. Game-provided variable names remain unchanged.
+
 ## v2.6.2 — 2026-10
 
 - **RU:** В каталоге переменных добавлен поиск по текущему значению (`=125`, `>100`, `<50`, `>=`, `<=`, `=true`, `=false`, `=quest_started`). В переключателях доступен поиск по состоянию `ON` / `OFF` или `=true` / `=false`; поисковые значения не изменяют игровое состояние. Обычный поиск по ID и названию, избранное и сортировка сохранены. Обновлены подсказки на русском, английском и испанском.
