@@ -2,7 +2,7 @@
 "use strict";
 const assert=require("node:assert/strict"),fs=require("node:fs"),vm=require("node:vm");
 const source=fs.readFileSync("SWF_CheatMenu.js","utf8");
-const start=source.indexOf("Cheat_Menu.recall_position = function"),end=source.indexOf("// Left and right scrollers for handling switching between target teleport map",start);
+const start=source.indexOf("Cheat_Menu.save_position = function"),end=source.indexOf("// Left and right scrollers for handling switching between target teleport map",start);
 const teleStart=source.indexOf("Cheat_Menu.teleport_current_location = function"),teleEnd=source.indexOf("// append the teleport cheat to the menu",teleStart);
 assert.ok(start>0&&end>start&&teleStart>0&&teleEnd>teleStart);
 const output=[];
@@ -53,6 +53,9 @@ output.length=0;
 menu.append_save_recall(1,2,3,4,5,6);
 assert.equal(output.filter(x=>x[0]==="cheat").length,6);
 assert.equal(output.find(x=>x[0]==="cheat")[2],"NULL");
+menu.save_position(0);
+assert.equal(menu.saved_positions[0].m,1,"Malformed slot should be reconstructed before save");
+assert.equal(menu.saved_positions[0].x,4);
 menu.saved_positions.push({m:3,x:0,y:0});
 output.length=0;menu.append_save_recall(1,2,3,4,5,6);
 assert.equal(output.filter(x=>x[0]==="cheat").length,6,"More corrupted slots must not create an undefined hotkey");
