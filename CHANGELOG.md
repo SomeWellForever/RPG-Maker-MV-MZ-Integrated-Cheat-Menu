@@ -4,6 +4,11 @@ The entries below describe published functional releases. Documentation and CI-o
 
 Ниже перечислены изменения опубликованных функциональных версий. Последующие правки документации и тестов не меняют архив и тег уже выпущенной версии.
 
+## v2.6.2 — 2026-10
+
+- **RU:** В каталоге переменных добавлен поиск по текущему значению (`=125`, `>100`, `<50`, `>=`, `<=`, `=true`, `=false`, `=quest_started`). В переключателях доступен поиск по состоянию `ON` / `OFF` или `=true` / `=false`; поисковые значения не изменяют игровое состояние. Обычный поиск по ID и названию, избранное и сортировка сохранены. Обновлены подсказки на русском, английском и испанском.
+- **EN:** Added safe exact/comparison searches for variable values (`=125`, `>100`, `<50`, `>=`, `<=`, `=true`, `=false`, `=quest_started`) and switch state filters (`ON` / `OFF`, `=true` / `=false`). Plain name/ID search, favorites and sorting are preserved. Updated RU/EN/ES prompts.
+
 ## v2.6.1 — 2026-10
 
 - **RU:** Исправлен вероятный сбой `Window_ChoiceList` (`Cannot read properties of undefined (reading 'bitmap')`) при выходе из полного чит-меню во время мини-игр и игровых событий. Теперь `F7` открывает меню поверх текущей сцены карты без её пересоздания и приостанавливает игровую логику до выхода. Диалоговые окна и окна выбора остаются прежними.
