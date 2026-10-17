@@ -143,45 +143,49 @@ jobs:
           python3 scripts/verify_release.py
       - uses: actions/upload-artifact@v4
         with:
-          name: SWF-CheatMenu-v2.3.0-Windows-Linux
-          path: SWF_CheatMenu_MV_MZ_v2.3.0.zip
+          name: SWF-CheatMenu-v2.3.1-Windows-Linux
+          path: SWF_CheatMenu_MV_MZ_v2.3.1.zip
           if-no-files-found: error
       - name: Validate current release versions
         run: python3 scripts/check_version.py
-      - name: Publish GitHub release v2.3.0
+      - name: Publish GitHub release v2.3.1
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cat > release-notes.md <<'EOF'
-          ## SWF Cheat Menu v2.3.0
+          ## SWF Cheat Menu v2.3.1
 
           **RPG Maker MV/MZ · Windows and Linux installers**
 
           - **English / Русский:** full menu supports Auto / Русский / English. The original quick menu (`1`) remains in English; names from the game retain its language.
-          - **No Python or Go required.** Native Windows and Linux installers, upgrades over recognized older versions, backups and removal.
+          - **Fix:** when upgrading, automatically disable an active legacy `Cheat_Menu` with an empty description; preserve its options and all other plugins.
+          - **Fix:** loading the integrated script twice no longer registers two quick-menu hotkey handlers.
+          - **No Python or Go required.** Native Windows and Linux installers, backups and removal.
 
           **Installation:** Close the game, extract the ZIP **directly into the game folder**, then run `Install_Windows.cmd` or `bash Install_Linux.sh`. The installer detects the game automatically. If extracted elsewhere, run the installer and select the game folder. Back up your saves before using the mod.
 
           **Mac / Xenolauncher:** You can copy an already-patched game from Windows/Linux to a Mac and try launching it through [Xenolauncher](https://github.com/m5kro/Xenolauncher), a third-party macOS game launcher. Disable its `Enable Cheat Menu` option to avoid conflicts. Game compatibility varies.
 
           ---
-          ## SWF Cheat Menu v2.3.0 — русский
+          ## SWF Cheat Menu v2.3.1 — русский
 
           **RPG Maker MV/MZ · установщики Windows и Linux**
 
           - **Русский / English:** полное меню поддерживает Auto / Русский / English. Быстрое меню (`1`) остаётся английским; названия из игры не переводятся.
-          - **Python и Go не нужны.** Автономные установщики, обновление поверх старых версий, резервные копии и удаление.
+          - **Исправлено:** установка отключает старый `Cheat_Menu` с пустым описанием и сохраняет его настройки и другие плагины.
+          - **Исправлено:** повторная загрузка скрипта не добавляет второй обработчик клавиши `1`.
+          - **Python и Go не нужны.** Автономные установщики, резервные копии и удаление.
 
           **Установка:** Закройте игру, распакуйте ZIP **прямо в папку игры**, затем запустите `Install_Windows.cmd` или `bash Install_Linux.sh`. Установщик автоматически найдёт игру. Если архив распакован в другом месте, выберите папку игры при запуске. Перед использованием сделайте резервную копию сохранений.
 
           **Mac / Xenolauncher:** Уже пропатченную на Windows/Linux игру можно перенести на Mac и попробовать запустить через [Xenolauncher](https://github.com/m5kro/Xenolauncher) — сторонний лаунчер для macOS. Отключите в нём `Enable Cheat Menu`, чтобы избежать конфликта. Совместимость зависит от игры.
           EOF
-          if gh release view v2.3.0 >/dev/null 2>&1; then
-            gh release edit v2.3.0 --title "SWF Cheat Menu v2.3.0" --notes-file release-notes.md --latest
-            gh release upload v2.3.0 SWF_CheatMenu_MV_MZ_v2.3.0.zip --clobber
+          if gh release view v2.3.1 >/dev/null 2>&1; then
+            gh release edit v2.3.1 --title "SWF Cheat Menu v2.3.1" --notes-file release-notes.md --latest
+            gh release upload v2.3.1 SWF_CheatMenu_MV_MZ_v2.3.1.zip --clobber
           else
-            gh release create v2.3.0 SWF_CheatMenu_MV_MZ_v2.3.0.zip --target "$GITHUB_SHA" --title "SWF Cheat Menu v2.3.0" --notes-file release-notes.md --latest
+            gh release create v2.3.1 SWF_CheatMenu_MV_MZ_v2.3.1.zip --target "$GITHUB_SHA" --title "SWF Cheat Menu v2.3.1" --notes-file release-notes.md --latest
           fi
       - name: Restore historical v2.2.0 release and source tag
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -201,25 +205,25 @@ jobs:
           cat > historical-release-notes.md <<'EOF'
           ## SWF Cheat Menu v2.2.0 — historical release
           
-          Archived original v2.2.0 build from before native installers and bilingual interface. Earlier ZIP bundled Python-based installers. macOS appeared in this historical build but is **not supported** in the current v2.3.0 release.
+          Archived original v2.2.0 build from before native installers and bilingual interface. Earlier ZIP bundled Python-based installers. macOS appeared in this historical build but is **not supported** in the current v2.3.1 release.
           
-          For Windows/Linux, **use v2.3.0** for the latest fixes, English/Russian interface and standalone installers.
+          For Windows/Linux, **use v2.3.1** for the latest fixes, English/Russian interface and standalone installers.
           
           ---
           ## SWF Cheat Menu v2.2.0 — предыдущая версия
           
-          Восстановлена исходная сборка v2.2.0: установщики на Python, без двуязычного меню. macOS присутствовала в старом архиве, но в актуальной v2.3.0 эта платформа **не поддерживается**.
+          Восстановлена исходная сборка v2.2.0: установщики на Python, без двуязычного меню. macOS присутствовала в старом архиве, но в актуальной v2.3.1 эта платформа **не поддерживается**.
           
-          **Рекомендуется версия v2.3.0** для Windows и Linux.
+          **Рекомендуется версия v2.3.1** для Windows и Linux.
           EOF
           gh release upload v2.2.0 "$RUNNER_TEMP/swf-legacy-v2.2/SWF_CheatMenu_MV_MZ_v2.2.0.zip" --clobber
           gh release edit v2.2.0 --notes-file historical-release-notes.md --latest=false
           git tag -f v2.2.0 "$PREVIOUS_COMMIT"
           git push --force origin refs/tags/v2.2.0
-      - name: Align current v2.3.0 source tag with published revision
+      - name: Align current v2.3.1 source tag with published revision
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git tag -f v2.3.0 "$GITHUB_SHA"
-          git push --force origin refs/tags/v2.3.0
+          git tag -f v2.3.1 "$GITHUB_SHA"
+          git push --force origin refs/tags/v2.3.1
