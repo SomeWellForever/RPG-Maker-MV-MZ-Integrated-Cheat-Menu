@@ -2176,17 +2176,100 @@ Game_Player.prototype.performTransfer = function() {
         $gameTemp._universalControlLanding=null;
     }
 };
+
+/* Favorites are stored in $gameSystem so they belong to a specific save file.
+ * Category + database ID (not a localized name) is the stable lookup key. */
+function swfFavorites(kind){
+    if(!$gameSystem)return {};
+    var all=$gameSystem._swfFavorites;
+    if(!all || typeof all!=='object' || Array.isArray(all))all=$gameSystem._swfFavorites={};
+    var group=all[kind];
+    if(!group || typeof group!=='object' || Array.isArray(group))group=all[kind]={};
+    return group;
+}
+function swfIsFavorite(kind,id){return swfFavorites(kind)[id]===true;}
+function swfToggleFavorite(kind,id){
+    if(!$gameSystem || !isFinite(Number(id)) || Number(id)<1)return;
+    var group=swfFavorites(kind);
+    if(group[id]===true)delete group[id];
+    else group[id]=true;
+}
+function swfFavoriteCount(kind){
+    return Object.keys(swfFavorites(kind)).filter(function(id){return swfIsFavorite(kind,id);}).length;
+}
+function swfSortMode(kind){
+    var all=$gameSystem && $gameSystem._swfSortModes;
+    var result=all&&all[kind];
+    return result==='name'||result==='favorites' ? result : 'id';
+}
+function swfCycleSort(kind){
+    if(!$gameSystem)return;
+    var all=$gameSystem._swfSortModes;
+    if(!all || typeof all!=='object' || Array.isArray(all))all=$gameSystem._swfSortModes={};
+    all[kind]=swfSortMode(kind)==='id'?'name':swfSortMode(kind)==='name'?'favorites':'id';
+}
+function swfSortCatalog(data,kind){
+    var mode=swfSortMode(kind),out=data.slice();
+    out.sort(function(a,b){
+        if(mode==='favorites'){
+            var favoriteDiff=Number(swfIsFavorite(kind,b.id))-Number(swfIsFavorite(kind,a.id));
+            if(favoriteDiff)return favoriteDiff;
+        }
+        if(mode==='name'){
+            var nameDiff=clean(a.name).localeCompare(clean(b.name));
+            if(nameDiff)return nameDiff;
+        }
+        return a.id-b.id;
+    });
+    return out;
+}
+function swfSortLabel(kind){
+    var mode=swfSortMode(kind);
+    return mode==='name'?TR('по названию'):mode==='favorites'?TR('избранное сверху'):TR('по ID');
+}
+function swfStar(kind,id){return swfIsFavorite(kind,id)?'★':'☆';}
+
 function Window_UniversalList() { this.initialize.apply(this,arguments); }
 Window_UniversalList.prototype=Object.create(Window_Command.prototype);
 Window_UniversalList.prototype.constructor=Window_UniversalList;
 Window_UniversalList.prototype.initialize=function(y,h) { this._rows=[];this._height=h;if(IS_MZ)Window_Command.prototype.initialize.call(this,new Rectangle(0,y,Graphics.boxWidth,h));else Window_Command.prototype.initialize.call(this,0,y); };
 Window_UniversalList.prototype.windowWidth=function(){return Graphics.boxWidth;};
+Window_UniversalList.prototype.maxCols=function(){return this._swfGrid?2:1;};
+Window_UniversalList.prototype.itemHeight=function(){
+    if(this._swfGrid)return Math.max(80,Math.min(108,Math.floor((this.height-(this.padding||12)*2)/3)));
+    return Window_Command.prototype.itemHeight.call(this);
+};
+Window_UniversalList.prototype.drawItem=function(index){
+    if(!this._swfGrid){Window_Command.prototype.drawItem.call(this,index);return;}
+    var row=this._rows[index],rect=this.itemRect(index),gutter=5;
+    if(!row)return;
+    this.contents.fillRect(rect.x+gutter,rect.y+gutter,rect.width-2*gutter,rect.height-2*gutter,'#28364c');
+    this.contents.fillRect(rect.x+gutter,rect.y+gutter,3,rect.height-2*gutter,'#7498cb');
+    var oldSize=this.contents.fontSize,oldColor=this.contents.textColor;
+    this.changePaintOpacity(row.enabled!==false);
+    this.resetTextColor();
+    var title=String(row.name),available=Math.max(40,rect.width-28);
+    this.contents.fontSize=Math.max(16,Math.min(23,Math.floor(available/Math.max(1,title.length*0.59))));
+    this.drawText(title,rect.x+17,rect.y+12,available,'left');
+    this.contents.fontSize=Math.max(12,Math.min(16,Math.floor(available/Math.max(1,String(row.subtitle||'').length*0.53))));
+    this.changeTextColor('#c0cee0');
+    this.drawText(row.subtitle||'',rect.x+17,rect.y+47,available,'left');
+    this.contents.fontSize=oldSize;
+    this.contents.textColor=oldColor;
+    this.changePaintOpacity(true);
+};
 Window_UniversalList.prototype.windowHeight=function(){return this._height;};
 Window_UniversalList.prototype.standardFontSize=function(){return 23;};
 Window_UniversalList.prototype.makeCommandList=function(){
     this._rows.forEach(function(r){this.addCommand(r.name,'choose',r.enabled!==false,r);},this);
 };
-Window_UniversalList.prototype.setRows=function(rows,index){this._rows=rows;this.refresh();this.select(Math.min(index||0,Math.max(0,rows.length-1)));this.activate();};
+Window_UniversalList.prototype.setRows=function(rows,index,grid){
+    this._swfGrid=!!grid;
+    this._rows=rows;
+    this.refresh();
+    this.select(Math.min(Math.max(0,index||0),Math.max(0,rows.length-1)));
+    this.activate();
+};
 Window_UniversalList.prototype.updateHelp=function(){if(this._helpWindow){var r=this.currentExt();this._helpWindow.setText(r&&r.help?r.help:TR('Enter — выбрать · Esc / правая кнопка — назад · PageUp / PageDown — листать'));}};
 
 // Scroll indicator rendered by RPG Maker itself (MV/MZ Pixi), with no
@@ -2254,7 +2337,7 @@ Window_UniversalList.prototype.update=function(){
 function Scene_UniversalControl(){this.initialize.apply(this,arguments);}
 Scene_UniversalControl.prototype=Object.create(Scene_MenuBase.prototype);
 Scene_UniversalControl.prototype.constructor=Scene_UniversalControl;
-Scene_UniversalControl.prototype.initialize=function(){Scene_MenuBase.prototype.initialize.call(this);this._pages=[];this._battleMode=false;};
+Scene_UniversalControl.prototype.initialize=function(){Scene_MenuBase.prototype.initialize.call(this);this._pages=[];this._battleMode=false;this._swfOnlyFavorites={};this._swfEditingFavorites={};};
 // Built-in background: does not require img/pictures/Scene_UniversalControl_back.png.
 // Deliberately bypasses image-based background plugins (including MOG_MenuBackground).
 Scene_UniversalControl.prototype.createBackground=function(){
@@ -2279,11 +2362,50 @@ Scene_UniversalControl.prototype.create=function(){
 };
 Scene_UniversalControl.prototype.terminate=function(){if(this._modal)this._modal.remove();this._modal=null;Scene_MenuBase.prototype.terminate.call(this);};
 Scene_UniversalControl.prototype.choose=function(){var row=this._listWindow.currentExt();try{if(row&&row.run)row.run();else this._listWindow.activate();}catch(e){console.error('[UniversalControlMenu]',e);this.notice(TR('Операция не выполнена: ')+e.message+TR('\nВозможно, нужна адаптация под плагины этой игры.'));}};
-Scene_UniversalControl.prototype.showPage=function(title,rows,replace){
+Scene_UniversalControl.prototype.showPage=function(title,rows,replace,grid){
     if(!replace&&this._page){this._page.index=this._listWindow.index();this._pages.push(this._page);}
-    this._page={title:title,rows:rows,index:0};this.renderPage();
+    var index=this._swfKeepIndex||0;this._swfKeepIndex=0;
+    this._page={title:title,rows:rows,index:index,grid:!!grid};this.renderPage();
 };
-Scene_UniversalControl.prototype.renderPage=function(){this._titleWindow.setText(this._page.title);this._listWindow.setRows(this._page.rows,this._page.index);};
+Scene_UniversalControl.prototype.renderPage=function(){
+    this._titleWindow.setText(this._page.title);
+    this._listWindow.setRows(this._page.rows,this._page.index,this._page.grid);
+};
+Scene_UniversalControl.prototype._swfRefreshCatalog=function(callback){
+    this._swfKeepIndex=this._listWindow.index();
+    callback();
+};
+Scene_UniversalControl.prototype._swfCatalogTools=function(kind,query,refresh){
+    var self=this;
+    this._swfOnlyFavorites=this._swfOnlyFavorites||{};
+    this._swfEditingFavorites=this._swfEditingFavorites||{};
+    return [
+        {name:TR('Поиск по названию / ID')+(query?' — '+query:''),help:TR('Поиск по названию или числовому идентификатору.'),run:function(){self.ask(TR('Название или ID (пусто — все)'),query,function(v){refresh(v);});}},
+        {name:TR('Сортировка: ')+swfSortLabel(kind),help:TR('Переключить: по ID, по названию или избранное сверху.'),run:function(){swfCycleSort(kind);self._swfRefreshCatalog(function(){refresh(query);});}},
+        {name:TR('Только избранное: ')+(this._swfOnlyFavorites[kind]?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Показать только записи, отмеченные звёздочкой.'),run:function(){self._swfOnlyFavorites[kind]=!self._swfOnlyFavorites[kind];self._swfRefreshCatalog(function(){refresh(query);});}},
+        {name:TR('Редактирование ★: ')+(this._swfEditingFavorites[kind]?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Когда включено, выбор записи меняет ★ вместо выполнения действия.'),run:function(){self._swfEditingFavorites[kind]=!self._swfEditingFavorites[kind];self._swfRefreshCatalog(function(){refresh(query);});}}
+    ];
+};
+Scene_UniversalControl.prototype._swfCatalogRows=function(kind,data,renderRow,refresh,query){
+    var self=this,tools=this._swfCatalogTools(kind,query,refresh);
+    var selected=swfSortCatalog(data,kind).filter(function(entry){
+        return !self._swfOnlyFavorites[kind]||swfIsFavorite(kind,entry.id);
+    });
+    selected.forEach(function(entry){
+        var row=renderRow(entry);
+        var original=row.run;
+        row.name=swfStar(kind,entry.id)+' '+row.name;
+        row.help=(row.help||'')+TR('\n★: добавь в избранное через режим редактирования.');
+        row.run=function(){
+            if(self._swfEditingFavorites[kind]){
+                swfToggleFavorite(kind,entry.id);
+                self._swfRefreshCatalog(function(){refresh(query);});
+            }else if(original)original();
+        };
+        tools.push(row);
+    });
+    return tools;
+};
 Scene_UniversalControl.prototype.back=function(){if(this._pages.length){this._page=this._pages.pop();this.renderPage();}else this.close();};
 Scene_UniversalControl.prototype.close=function(){
     if (this._battleMode && this._battleScene) this._battleScene.closeUniversalControl();
