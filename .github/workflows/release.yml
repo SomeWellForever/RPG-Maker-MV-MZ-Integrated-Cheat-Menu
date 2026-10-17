@@ -22,6 +22,8 @@ jobs:
         run: node --check SWF_CheatMenu.js
       - name: Check language switching, Russian and English translations
         run: node tests/test_i18n.cjs
+      - name: Check duplicate-load quick-menu hotkeys
+        run: node tests/test_single_load.cjs
 
   windows:
     runs-on: windows-latest
