@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check that public instructions match the shipped v2.3.0 release."""
+"""Check that public instructions match the shipped v2.3.1 release."""
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
@@ -12,8 +12,8 @@ credits = (root / "CREDITS.md").read_text(encoding="utf-8")
 
 for language in ("Русский", "English"):
     assert language in readme, f"Missing language instructions: {language}"
-assert "v2.3.0" in readme
-assert "SWF_CheatMenu_MV_MZ_v2.3.0.zip" in readme
+assert "v2.3.1" in readme
+assert "SWF_CheatMenu_MV_MZ_v2.3.1.zip" in readme
 assert "**прямо в папку игры**" in readme
 assert "**directly into the game folder**" in readme
 assert "**сам найдёт игру**" in readme

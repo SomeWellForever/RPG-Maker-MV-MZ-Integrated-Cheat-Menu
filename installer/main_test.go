@@ -19,7 +19,7 @@ func fixture(t *testing.T, mz bool) (string, string, string) {
     reg := `var $plugins = [{"name":"OtherPlugin","status":true,"parameters":{"nested":[1,2,3],"bracket":"hello ] world"}}];`
     if err := os.WriteFile(filepath.Join(js, "plugins.js"), []byte(reg), 0o644); err != nil { t.Fatal(err) }
     payload := filepath.Join(root, "source.js")
-    if err := os.WriteFile(payload, []byte("/* @plugindesc SWF Cheat Menu Integrated 2.3.0 */\n"), 0o644); err != nil { t.Fatal(err) }
+    if err := os.WriteFile(payload, []byte("/* @plugindesc SWF Cheat Menu Integrated 2.3.1 */\n"), 0o644); err != nil { t.Fatal(err) }
     return root, js, payload
 }
 
@@ -62,7 +62,7 @@ func TestInstallAndRemoveMVandMZ(t *testing.T) {
     }
 }
 
-func TestUpdateFrom220To230PreservesBackupsAndOtherPlugins(t *testing.T) {
+func TestUpdateFrom220To231PreservesBackupsAndOtherPlugins(t *testing.T) {
     root, js, payload := fixture(t, false)
     previous := []byte("/* @plugindesc SWF Cheat Menu Integrated 2.2.0 */\n// old release\n")
     destination := filepath.Join(js, "plugins", pluginFile)
@@ -73,7 +73,7 @@ func TestUpdateFrom220To230PreservesBackupsAndOtherPlugins(t *testing.T) {
     checkNames(t, js, "OtherPlugin", "SWF_CheatMenu")
     installed, err := os.ReadFile(destination)
     if err != nil { t.Fatal(err) }
-    if !bytes.Contains(installed, []byte("2.3.0")) { t.Fatal("old plugin was not upgraded") }
+    if !bytes.Contains(installed, []byte("2.3.1")) { t.Fatal("old plugin was not upgraded") }
     backups, err := filepath.Glob(filepath.Join(root, "SWF_CheatMenu_Backup", "*", "www", "js", "plugins", pluginFile))
     if err != nil || len(backups) != 1 { t.Fatalf("expected exactly one old plugin backup: %v %v", backups, err) }
     stored, err := os.ReadFile(backups[0])
@@ -120,6 +120,67 @@ func TestUnrelatedOldPluginPreserved(t *testing.T) {
     os.WriteFile(filepath.Join(js,"plugins.js"),[]byte(reg),0o644)
     if err:=run([]string{"install",root,payload},os.Stdout);err!=nil{t.Fatal(err)}
     checkNames(t,js,"Cheat_Menu","SWF_CheatMenu")
+}
+
+
+func TestUpgradeDisablesBlankDescriptionLegacyAndPreservesSettings(t *testing.T) {
+    for _, mz := range []bool{false, true} {
+        root, js, payload := fixture(t, mz)
+        // Regression: both legacy and SWF were active, but the old description was empty.
+        reg := `var $plugins = [
+            {"name":"OtherPlugin","status":true,"parameters":{"nested":[1,2,3],"message":"keep me"}},
+            {"name":"Cheat_Menu","status":true,"description":"","parameters":{"custom":"preserve"}},
+            {"name":"AnotherPlugin","status":false,"parameters":{"value":10}},
+            {"name":"SWF_CheatMenu","status":true,"description":"SWF Cheat Menu Integrated 2.3.0","parameters":{}}
+        ];`
+        if err := os.WriteFile(filepath.Join(js, "plugins.js"), []byte(reg), 0o644); err != nil { t.Fatal(err) }
+        if err := run([]string{"install", root, payload}, os.Stdout); err != nil { t.Fatal(err) }
+        records, ok := readRegistry(mustRead(t, filepath.Join(js, "plugins.js")))
+        if !ok { t.Fatal("registry cannot be parsed") }
+        if len(records) != 4 { t.Fatalf("unexpected plugin count: %d", len(records)) }
+        activeSWF, activeLegacy := 0, 0
+        for _, raw := range records {
+            var entry struct {
+                Name string `json:"name"`
+                Status bool `json:"status"`
+                Description string `json:"description"`
+                Parameters map[string]interface{} `json:"parameters"`
+            }
+            if err := json.Unmarshal(raw, &entry); err != nil { t.Fatal(err) }
+            switch entry.Name {
+            case "Cheat_Menu":
+                if entry.Status { activeLegacy++ }
+                if entry.Description != "" || entry.Parameters["custom"] != "preserve" {
+                    t.Fatal("legacy settings not preserved")
+                }
+            case "SWF_CheatMenu":
+                if entry.Status { activeSWF++ }
+                if entry.Description != "SWF Cheat Menu Integrated 2.3.1" { t.Fatal("incorrect new version") }
+            case "OtherPlugin":
+                if !entry.Status || entry.Parameters["message"] != "keep me" { t.Fatal("other plugin modified") }
+            case "AnotherPlugin":
+                if entry.Status || entry.Parameters["value"] != float64(10) { t.Fatal("disabled plugin modified") }
+            default:
+                t.Fatalf("unexpected plugin: %s", entry.Name)
+            }
+        }
+        if activeSWF != 1 || activeLegacy != 0 { t.Fatalf("conflict remains: SWF=%d legacy=%d", activeSWF, activeLegacy) }
+        backup, err := filepath.Glob(filepath.Join(root, "SWF_CheatMenu_Backup", "*", filepath.Base(filepath.Dir(js)), "js", "plugins.js"))
+        // Independently check that repeat installation is idempotent.
+        _ = backup
+        _ = err
+        before := mustRead(t, filepath.Join(js, "plugins.js"))
+        if err := run([]string{"install", root, payload}, os.Stdout); err != nil { t.Fatal(err) }
+        after := mustRead(t, filepath.Join(js, "plugins.js"))
+        if !bytes.Equal(before, after) { t.Fatal("repeated upgrade modified registry") }
+    }
+}
+
+func mustRead(t *testing.T, path string) []byte {
+    t.Helper()
+    b, err := os.ReadFile(path)
+    if err != nil { t.Fatal(err) }
+    return b
 }
 
 func TestMalformedRegistryFallbackAndIdempotency(t *testing.T) {
