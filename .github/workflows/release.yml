@@ -184,3 +184,10 @@ jobs:
           gh release edit v2.2.0 --notes-file historical-release-notes.md --latest=false
           git tag -f v2.2.0 "$PREVIOUS_COMMIT"
           git push --force origin refs/tags/v2.2.0
+      - name: Align current v2.3.0 source tag with published revision
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -f v2.3.0 "$GITHUB_SHA"
+          git push --force origin refs/tags/v2.3.0
