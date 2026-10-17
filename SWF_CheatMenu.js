@@ -1,6 +1,6 @@
 /*:
  * @target MV MZ
- * @plugindesc SWF Cheat Menu Integrated 2.5.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @plugindesc SWF Cheat Menu Integrated 2.5.1: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help F7 or the 'Control Menu' / 'Меню управления' key item opens the full menu,
  * including during battle. Choose Auto / Русский / English inside that menu.
@@ -1814,7 +1814,7 @@ DataManager.saveGame = function(savefileId) {
 
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
- * @plugindesc SWF Cheat Menu Integrated v2.5.0 — teleport, levels, skills, items and stack limits.
+ * @plugindesc SWF Cheat Menu Integrated v2.5.1 — teleport, levels, skills, items and stack limits.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help Use F7 or the Control Menu / Меню управления key item on the map or in battle.
  * Auto / Русский / English changes the full menu only; key 1 remains in English.
@@ -2040,7 +2040,14 @@ var SWF_EN_STRINGS = {
     'Редактирование ★: ': 'Edit ★: ',
     'Когда включено, выбор записи меняет ★ вместо выполнения действия.': 'When enabled, choosing an entry toggles ★ without executing its action.',
     '\n★: добавь в избранное через режим редактирования.': '\n★: use Edit ★ to add or remove favorites.',
-    'SWF Cheat Menu · ': 'SWF Cheat Menu · '
+    'SWF Cheat Menu · ': 'SWF Cheat Menu · ',
+    'по категориям': 'category',
+    'Переключить: по ID, по названию, по категориям или избранное сверху.': 'Switch between ID, name, category and favorites first.',
+    'Ключевые предметы': 'Key items',
+    'Скрытые предметы A': 'Hidden items A',
+    'Скрытые предметы B': 'Hidden items B',
+    'Другой тип': 'Other type',
+    'Категории определяются по базе данных игры.': 'Categories are defined by the game database.'
 };
 var SWF_LANG_KEY = 'SWF_CheatMenu.menuLanguage';
 var swfLanguageSetting = 'auto';
@@ -2234,27 +2241,49 @@ function swfToggleFavorite(kind,id){
 function swfFavoriteCount(kind){
     return Object.keys(swfFavorites(kind)).filter(function(id){return swfIsFavorite(kind,id);}).length;
 }
+// RPG Maker assigns types to database items, weapons, armor and skills.
+// Other catalogs (maps, switches, variables) have no native type groups.
+function swfHasCategories(kind){return ['items','weapons','armors','skills'].indexOf(kind)>=0;}
+function swfCategoryInfo(kind,entry){
+    if(!swfHasCategories(kind))return null;
+    var field=kind==='items'?'itypeId':kind==='weapons'?'wtypeId':kind==='armors'?'atypeId':'stypeId';
+    var id=Number(entry&&entry[field]);
+    if(!isFinite(id)||id<1||Math.floor(id)!==id)id=0;
+    var system=typeof $dataSystem!=='undefined'&&$dataSystem?$dataSystem:{};
+    var types=kind==='weapons'?system.weaponTypes:kind==='armors'?system.armorTypes:system.skillTypes;
+    var label='';
+    if(kind==='items'){
+        var names=['',TR('Обычные предметы'),TR('Ключевые предметы'),TR('Скрытые предметы A'),TR('Скрытые предметы B')];
+        label=names[id]||'';
+    }else if(types&&types[id])label=String(types[id]);
+    return {id:id||999999,label:clean(label||TR('Другой тип'))};
+}
+function swfSortChoices(kind){return swfHasCategories(kind)?['id','name','category','favorites']:['id','name','favorites'];}
 function swfSortMode(kind){
-    var all=$gameSystem && $gameSystem._swfSortModes;
-    var result=all&&all[kind];
-    return result==='name'||result==='favorites' ? result : 'id';
+    var all=$gameSystem&&$gameSystem._swfSortModes,result=all&&all[kind];
+    return swfSortChoices(kind).indexOf(result)>=0?result:'id';
 }
 function swfCycleSort(kind){
     if(!$gameSystem)return;
     var all=$gameSystem._swfSortModes;
-    if(!all || typeof all!=='object' || Array.isArray(all))all=$gameSystem._swfSortModes={};
-    all[kind]=swfSortMode(kind)==='id'?'name':swfSortMode(kind)==='name'?'favorites':'id';
+    if(!all||typeof all!=='object'||Array.isArray(all))all=$gameSystem._swfSortModes={};
+    var choices=swfSortChoices(kind);
+    all[kind]=choices[(choices.indexOf(swfSortMode(kind))+1)%choices.length];
 }
 function swfSortCatalog(data,kind){
     var mode=swfSortMode(kind),out=data.slice();
     out.sort(function(a,b){
         if(mode==='favorites'){
-            var favoriteDiff=Number(swfIsFavorite(kind,b.id))-Number(swfIsFavorite(kind,a.id));
-            if(favoriteDiff)return favoriteDiff;
+            var diff=Number(swfIsFavorite(kind,b.id))-Number(swfIsFavorite(kind,a.id));
+            if(diff)return diff;
+        }
+        if(mode==='category'){
+            var left=swfCategoryInfo(kind,a),right=swfCategoryInfo(kind,b);
+            if(left.id!==right.id)return left.id-right.id;
         }
         if(mode==='name'){
-            var nameDiff=clean(a.name).localeCompare(clean(b.name));
-            if(nameDiff)return nameDiff;
+            var names=clean(a.name).localeCompare(clean(b.name));
+            if(names)return names;
         }
         return a.id-b.id;
     });
@@ -2262,7 +2291,10 @@ function swfSortCatalog(data,kind){
 }
 function swfSortLabel(kind){
     var mode=swfSortMode(kind);
-    return mode==='name'?TR('по названию'):mode==='favorites'?TR('избранное сверху'):TR('по ID');
+    return mode==='name'?TR('по названию'):mode==='category'?TR('по категориям'):mode==='favorites'?TR('избранное сверху'):TR('по ID');
+}
+function swfCatalogResultCount(rows){
+    return rows.filter(function(row){return !row._swfTool&&!row._swfHeader;}).length;
 }
 function swfStar(kind,id){return swfIsFavorite(kind,id)?'★':'☆';}
 
@@ -2277,7 +2309,7 @@ Window_UniversalList.prototype.itemHeight=function(){
     return Window_Command.prototype.itemHeight.call(this);
 };
 Window_UniversalList.prototype.drawItem=function(index){
-    if(!this._swfGrid){var entry=this._rows[index];if(entry&&entry._swfTool){var box=this.itemRect(index);this.contents.fillRect(box.x+3,box.y+2,Math.max(2,box.width-12),Math.max(2,box.height-4),'#253852');}Window_Command.prototype.drawItem.call(this,index);return;}
+    if(!this._swfGrid){var entry=this._rows[index];if(entry&&(entry._swfTool||entry._swfHeader)){var box=this.itemRect(index);this.contents.fillRect(box.x+3,box.y+2,Math.max(2,box.width-12),Math.max(2,box.height-4),entry._swfHeader?'#31465b':'#253852');}Window_Command.prototype.drawItem.call(this,index);return;}
     var row=this._rows[index],rect=this.itemRect(index),gutter=5;
     if(!row)return;
     this.contents.fillRect(rect.x+gutter,rect.y+gutter,rect.width-2*gutter,rect.height-2*gutter,'#28364c');
@@ -2418,7 +2450,7 @@ Scene_UniversalControl.prototype._swfCatalogTools=function(kind,query,refresh){
     this._swfEditingFavorites=this._swfEditingFavorites||{};
     return [
         {_swfTool:true,name:TR('Поиск по названию / ID')+(query?' — '+query:''),help:TR('Поиск по названию или числовому идентификатору.'),run:function(){self.ask(TR('Название или ID (пусто — все)'),query,function(v){refresh(v);});}},
-        {_swfTool:true,name:TR('Сортировка: ')+swfSortLabel(kind),help:TR('Переключить: по ID, по названию или избранное сверху.'),run:function(){swfCycleSort(kind);self._swfRefreshCatalog(function(){refresh(query);});}},
+        {_swfTool:true,name:TR('Сортировка: ')+swfSortLabel(kind),help:TR(swfHasCategories(kind)?'Переключить: по ID, по названию, по категориям или избранное сверху.':'Переключить: по ID, по названию или избранное сверху.'),run:function(){swfCycleSort(kind);self._swfRefreshCatalog(function(){refresh(query);});}},
         {_swfTool:true,name:TR('Только избранное: ')+(this._swfOnlyFavorites[kind]?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Показать только записи, отмеченные звёздочкой.'),run:function(){self._swfOnlyFavorites[kind]=!self._swfOnlyFavorites[kind];self._swfRefreshCatalog(function(){refresh(query);});}},
         {_swfTool:true,name:TR('Редактирование ★: ')+(this._swfEditingFavorites[kind]?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Когда включено, выбор записи меняет ★ вместо выполнения действия.'),run:function(){self._swfEditingFavorites[kind]=!self._swfEditingFavorites[kind];self._swfRefreshCatalog(function(){refresh(query);});}}
     ];
@@ -2428,7 +2460,19 @@ Scene_UniversalControl.prototype._swfCatalogRows=function(kind,data,renderRow,re
     var selected=swfSortCatalog(data,kind).filter(function(entry){
         return !self._swfOnlyFavorites[kind]||swfIsFavorite(kind,entry.id);
     });
+    var counts={};
+    if(swfSortMode(kind)==='category'){
+        selected.forEach(function(entry){var category=swfCategoryInfo(kind,entry);counts[category.id]=(counts[category.id]||0)+1;});
+    }
+    var groupHeaders=Object.keys(counts).length>1,previousCategory=null;
     selected.forEach(function(entry){
+        if(groupHeaders){
+            var category=swfCategoryInfo(kind,entry);
+            if(previousCategory!==category.id){
+                tools.push({_swfHeader:true,name:'── '+category.label+' ('+counts[category.id]+') ──',enabled:false,help:TR('Категории определяются по базе данных игры.')});
+                previousCategory=category.id;
+            }
+        }
         var row=renderRow(entry);
         var original=row.run;
         row.name=swfStar(kind,entry.id)+' '+row.name;
@@ -2701,7 +2745,7 @@ Scene_UniversalControl.prototype.maps=function(visitedOnly,query,replace){
     var rows=this._swfCatalogRows('maps',selected,function(m){
         return {name:'#'+m.id+' · '+clean(m.name),help:TR('Название карты из базы игры. Список может включать служебные карты.\nДанные и координаты будут прочитаны после выбора.\nПеред телепортом сохранись отдельно.'),run:function(){self.loadMapDetail(m);}};
     },function(v){self.maps(visitedOnly,v,true);},query);
-    this.showPage(TR('Телепорт · найдено ')+(rows.length-4),rows,replace);
+    this.showPage(TR('Телепорт · найдено ')+(swfCatalogResultCount(rows)),rows,replace);
 };
 Scene_UniversalControl.prototype.loadMapDetail=function(info){
     var self=this;this._listWindow.deactivate();this._helpWindow.setText(TR('Читаю карту #')+info.id+'…');
@@ -2783,7 +2827,7 @@ Scene_UniversalControl.prototype.items=function(kind,mode,query,replace){
             help:clean(item.description)+TR('\nВыдача через игровую систему предметов. Лимит: ')+stackLimitLabel()+TR('. Уникальные экземпляры и спецлимиты не меняются.'),
             run:function(){self.giveDialog(item);}};
     },function(v){self.items(kind,mode,v,true);},query);
-    this.showPage(TR('Предметы · найдено ')+(rows.length-4),rows,replace);
+    this.showPage(TR('Предметы · найдено ')+(swfCatalogResultCount(rows)),rows,replace);
 };
 Scene_UniversalControl.prototype.giveDialog=function(item){
     var self=this,independent=DataManager.isIndependent&&DataManager.isIndependent(item);
@@ -2822,7 +2866,7 @@ Scene_UniversalControl.prototype.extraSwitches=function(query,replace){
             $gameSwitches.setValue(entry.id,!$gameSwitches.value(entry.id));self._swfRefreshCatalog(function(){self.extraSwitches(query,true);});
         }};
     },function(v){self.extraSwitches(v,true);},query);
-    this.showPage(TR('Переключатели · ')+(rows.length-4),rows,replace);
+    this.showPage(TR('Переключатели · ')+(swfCatalogResultCount(rows)),rows,replace);
 };
 Scene_UniversalControl.prototype.extraVariables=function(query,replace){
     var self=this,q=String(query||'').trim().toLowerCase(),names=$dataSystem.variables||[];
@@ -2837,7 +2881,7 @@ Scene_UniversalControl.prototype.extraVariables=function(query,replace){
             });
         }};
     },function(v){self.extraVariables(v,true);},query);
-    this.showPage(TR('Переменные · ')+(rows.length-4),rows,replace);
+    this.showPage(TR('Переменные · ')+(swfCatalogResultCount(rows)),rows,replace);
 };
 
 

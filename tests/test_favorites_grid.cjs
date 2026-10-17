@@ -1,4 +1,4 @@
-/* v2.5.0: per-save favorites, native two-column menu and catalog commands. */
+/* v2.5.1: per-save favorites, native two-column menu and catalog commands. */
 "use strict";
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
@@ -34,18 +34,47 @@ ctx.swfToggleFavorite("items",7);
 assert.equal(ctx.swfFavoriteCount("items"),1);
 ctx.$gameSystem=saved1;
 
-const items=[{id:10,name:"Яблоко"},{id:2,name:"Броня"},{id:3,name:"меч"}];
+const items=[{id:10,name:"Яблоко",itypeId:2},{id:2,name:"Броня",itypeId:1},{id:3,name:"меч",itypeId:2}];
 const ids=x=>Array.from(x,entry=>entry.id);
 assert.deepEqual(ids(ctx.swfSortCatalog(items,"items")),[2,3,10],"Default order must be numeric ID");
 ctx.swfCycleSort("items");
 assert.equal(ctx.swfSortMode("items"),"name");
 assert.deepEqual(ids(ctx.swfSortCatalog(items,"items")),[2,3,10],"Russian alphabetical names sorted");
 ctx.swfCycleSort("items");
+assert.equal(ctx.swfSortMode("items"),"category");
+assert.deepEqual(ids(ctx.swfSortCatalog(items,"items")),[2,3,10],"Item types should follow RPG Maker category IDs");
+ctx.swfCycleSort("items");
 assert.equal(ctx.swfSortMode("items"),"favorites");
 assert.deepEqual(ids(ctx.swfSortCatalog(items,"items")),[3,2,10],"Starred entry should come first");
 ctx.swfCycleSort("items");
 assert.equal(ctx.swfSortMode("items"),"id");
 assert.ok(JSON.stringify(saved1).includes("_swfSortModes"),"Sort settings not stored in save");
+
+assert.equal(ctx.swfHasCategories("items"),true);
+assert.equal(ctx.swfHasCategories("weapons"),true);
+assert.equal(ctx.swfHasCategories("armors"),true);
+assert.equal(ctx.swfHasCategories("skills"),true);
+assert.equal(ctx.swfHasCategories("maps"),false);
+assert.equal(ctx.swfHasCategories("variables"),false);
+ctx.$dataSystem={weaponTypes:["","Мечи","Луки"],armorTypes:["","Лёгкая броня","Тяжёлая броня"],skillTypes:["","Магия","Особые"]};
+const weapons=[{id:7,name:"Лук",wtypeId:2},{id:3,name:"Меч",wtypeId:1},{id:1,name:"Базовый",wtypeId:1}];
+const armors=[{id:8,name:"Шлем",atypeId:2},{id:2,name:"Плащ",atypeId:1}];
+const skills=[{id:4,name:"Удар",stypeId:2},{id:2,name:"Огонь",stypeId:1}];
+for(const [kind,data,expect,fieldName] of [
+    ["weapons",weapons,[1,3,7],"Мечи"],["armors",armors,[2,8],"Лёгкая броня"],["skills",skills,[2,4],"Магия"]
+]){
+    ctx.swfCycleSort(kind);ctx.swfCycleSort(kind);
+    assert.equal(ctx.swfSortMode(kind),"category");
+    assert.deepEqual(ids(ctx.swfSortCatalog(data,kind)),expect,kind+" category order");
+    assert.equal(ctx.swfCategoryInfo(kind,data.find(d=>d.id===expect[0])).label,fieldName);
+    assert.equal(ctx.swfSortLabel(kind),"по категориям");
+}
+assert.deepEqual(ids(ctx.swfSortCatalog([{id:9,name:"Unknown",wtypeId:99},...weapons],"weapons")),[1,3,7,9],"Unrecognized category must sort last");
+ctx.swfCycleSort("maps");ctx.swfCycleSort("maps");
+assert.equal(ctx.swfSortMode("maps"),"favorites","Maps must not expose unsupported categories");
+ctx.swfCycleSort("maps");
+assert.equal(ctx.swfSortMode("maps"),"id");
+
 
 // Catalog row click must be harmless when editing favorites and normal otherwise.
 vm.runInContext(part("Scene_UniversalControl.prototype.showPage=","Scene_UniversalControl.prototype.back="),ctx,{timeout:3000});
@@ -58,6 +87,18 @@ const refresh=()=>{refreshCalls++;};
 function render(item){return {name:"#"+item.id+" "+item.name,run:()=>{actionCalls++;}};}
 let rows=ui._swfCatalogRows("weapons",items,render,refresh,"");
 assert.equal(rows.length,7,"Four controls plus three catalog entries");
+
+// In category mode, insert non-clickable dividers for each real database group.
+ctx.$gameSystem._swfSortModes.items="category";
+let grouped=ui._swfCatalogRows("items",items,render,refresh,"");
+assert.equal(ctx.swfCatalogResultCount(grouped),3,"Group headers must not count as items");
+const headers=Array.from(grouped.filter(row=>row._swfHeader));
+assert.equal(headers.length,2,"Expected item-type headings");
+assert.ok(headers.every(h=>h.enabled===false&&typeof h.run==="undefined"),"Category headings must not perform actions");
+assert.ok(headers[0].name.includes("Обычные предметы"));
+assert.ok(headers[1].name.includes("Ключевые предметы"));
+ctx.$gameSystem._swfSortModes.items="id";
+
 assert.ok(rows[4].name.startsWith("☆"),"Unstarred entries must show empty star");
 rows[4].run();
 assert.equal(actionCalls,1,"Ordinary click should execute normal action");
