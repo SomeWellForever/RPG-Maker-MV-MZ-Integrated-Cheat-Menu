@@ -378,7 +378,7 @@ Cheat_Menu.position_menu = function(event) {
 		Cheat_Menu.overlay_box.style.right = "";
 		Cheat_Menu.overlay_box.style.bottom = "";
 
-		Cheat_Menu.overlay_box.style.marginLeft = "-110px";
+		Cheat_Menu.overlay_box.style.marginLeft = (Cheat_Menu.quickLayout && Cheat_Menu.overlay_box.style.width==="350px") ? "-175px" : "-110px";
 		Cheat_Menu.overlay_box.style.marginTop = "-50px";
 
 		Cheat_Menu.overlay.style.left = "" + (window.innerWidth / 2) + "px";
@@ -386,7 +386,7 @@ Cheat_Menu.position_menu = function(event) {
 		Cheat_Menu.overlay.style.right = "";
 		Cheat_Menu.overlay.style.bottom = "";
 
-		Cheat_Menu.overlay.style.marginLeft = "-110px";
+		Cheat_Menu.overlay.style.marginLeft = (Cheat_Menu.quickLayout && Cheat_Menu.overlay.style.width==="370px") ? "-185px" : "-110px";
 		Cheat_Menu.overlay.style.marginTop = "-50px";
 	}
 	// top left corner
@@ -1627,6 +1627,7 @@ Cheat_Menu.update_menu = function() {
 	Cheat_Menu.key_listeners = {};
 
 	Cheat_Menu.menus[Cheat_Menu.cheat_selected]();
+	if(Cheat_Menu.quickLayout)Cheat_Menu.quickLayout();
 
 	Cheat_Menu.position_menu();
 };
@@ -2369,7 +2370,12 @@ Cheat_Menu.quickStatus=function(status){
             return start+swfQuickText(value)+end;
         });
     }
-    return swfQuickText(status);
+    return swfQuickText(String(status));
+};
+Cheat_Menu.quickLayout=function(){
+    var wider=swfCurrentLanguage()!=='en';
+    Cheat_Menu.overlay_box.style.width=wider?'350px':'280px';
+    Cheat_Menu.overlay.style.width=wider?'370px':'300px';
 };
 
 var openRequested = false;
