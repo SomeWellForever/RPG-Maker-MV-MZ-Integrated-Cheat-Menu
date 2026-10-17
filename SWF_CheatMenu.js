@@ -2039,7 +2039,7 @@ var SWF_EN_STRINGS = {
     'Показать только записи, отмеченные звёздочкой.': 'Show only starred entries.',
     'Редактирование ★: ': 'Edit ★: ',
     'Когда включено, выбор записи меняет ★ вместо выполнения действия.': 'When enabled, choosing an entry toggles ★ without executing its action.',
-    '\\n★: добавь в избранное через режим редактирования.': '\\n★: use Edit ★ to add or remove favorites.',
+    '\n★: добавь в избранное через режим редактирования.': '\n★: use Edit ★ to add or remove favorites.',
     'SWF Cheat Menu · ': 'SWF Cheat Menu · '
 };
 var SWF_LANG_KEY = 'SWF_CheatMenu.menuLanguage';
