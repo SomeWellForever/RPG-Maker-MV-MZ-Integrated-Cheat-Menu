@@ -3064,7 +3064,12 @@ Scene_UniversalControl.prototype.maps=function(visitedOnly,query,replace){
 Scene_UniversalControl.prototype.loadMapDetail=function(info){
     var self=this;this._listWindow.deactivate();this._helpWindow.setText(TR('Читаю карту #')+info.id+'…');
     readMap(info.id,function(error,data){
-        if(SceneManager._scene!==self)return;
+        // Map-mode F7 lives inside Scene_Map instead of being a separate scene.
+        // Ignore map data arriving after the overlay has closed or the map changed.
+        var editorIsActive=SceneManager._scene===self ||
+            (self._mapScene && SceneManager._scene===self._mapScene &&
+             self._mapScene._universalControlMap===self);
+        if(!editorIsActive)return;
         if(error){self.notice(TR('Карта не прочитана: ')+error.message+TR('. Возможно, игра использует особый формат данных.'));return;}
         var m={id:info.id,name:data.displayName||info.name,width:data.width,height:data.height,point:candidatePoint(data,knownEntrances(info.id))};
         if(data.displayName)info.name=data.displayName;
