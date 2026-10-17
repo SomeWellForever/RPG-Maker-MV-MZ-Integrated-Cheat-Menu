@@ -50,7 +50,7 @@ A cheat menu for single-player RPG Maker MV/MZ games. Open the full menu with `F
 
 **Архив без установщика:** подходит только для уже установленного мода. Замените `www/js/plugins/SWF_CheatMenu.js` (или `js/plugins/SWF_CheatMenu.js`) файлом из архива, предварительно сохранив копию.
 
-**Перенос мода:** если он уже установлен, замените только `SWF_CheatMenu.js` в папке `js/plugins/` (или `www/js/plugins/`). Если нет — используйте установщик на Windows/Linux или перенесите уже пропатченную игру на Mac. Сохранения копируйте отдельно.
+**Перенос и обновление:** если мод уже есть **в целевой копии игры**, замените в ней `js/plugins/SWF_CheatMenu.js` (или `www/js/plugins/SWF_CheatMenu.js`). Если мода там нет, запустите установщик на Windows/Linux либо перенесите целиком уже пропатченную игру. Сохранения копируйте отдельно.
 
 **Mac и Xenolauncher:** уже пропатченную на Windows или Linux игру можно перенести на Mac и попробовать запустить через [Xenolauncher](https://github.com/m5kro/Xenolauncher). Отключите его `Enable Cheat Menu` во избежание конфликта. Совместимость зависит от игры и её плагинов.
 
@@ -96,7 +96,7 @@ If you extracted the ZIP somewhere else, select the game folder when prompted. N
 
 **Plugin-only alternative:** for existing installations only. Back up and replace `www/js/plugins/SWF_CheatMenu.js` (or `js/plugins/SWF_CheatMenu.js`) with the file in the plugin-only ZIP.
 
-**Transfer the mod:** if already installed, replace only `SWF_CheatMenu.js` in `js/plugins/` (or `www/js/plugins/`). Otherwise, run the installer on Windows/Linux or transfer an already-patched game to Mac. Copy saves separately.
+**Transfer or update:** if the **destination game copy** already has the mod, replace its `js/plugins/SWF_CheatMenu.js` (or `www/js/plugins/SWF_CheatMenu.js`). Otherwise, run the installer on Windows/Linux or transfer the entire already-patched game. Copy saves separately.
 
 **Mac and Xenolauncher:** a game already patched on Windows or Linux can be transferred to macOS and tried with [Xenolauncher](https://github.com/m5kro/Xenolauncher). Disable its `Enable Cheat Menu` option to avoid conflicts. Compatibility depends on the game and its plugins.
 
@@ -128,7 +128,7 @@ Back up your save: teleportation and changing switches can disrupt events. Some 
 
 Para actualizar, ejecuta de nuevo el instalador. Si el mod ya estaba instalado, también puedes reemplazar `www/js/plugins/SWF_CheatMenu.js` (o `js/plugins/SWF_CheatMenu.js`) con el archivo del ZIP **Plugin only**, guardando una copia anterior. Para desinstalar, usa `Remove_Windows.cmd` o `bash Remove_Linux.sh`.
 
-**Transferir el mod:** si ya está instalado, sustituye solo `SWF_CheatMenu.js` en `js/plugins/` (o `www/js/plugins/`). Si no, usa el instalador en Windows/Linux o copia un juego ya modificado a Mac. Copia las partidas guardadas por separado.
+**Transferir o actualizar:** si el mod ya está instalado **en la copia de destino**, sustituye `js/plugins/SWF_CheatMenu.js` (o `www/js/plugins/SWF_CheatMenu.js`). Si no, usa el instalador en Windows/Linux o transfiere el juego completo ya modificado. Copia las partidas guardadas por separado.
 
 **Precaución:** haz una copia de tu partida antes de modificar el inventario o los eventos. Algunos juegos necesitan adaptaciones de compatibilidad. Si utilizas [Xenolauncher](https://github.com/m5kro/Xenolauncher) en macOS con una copia ya modificada en Windows o Linux, desactiva `Enable Cheat Menu`.
 
