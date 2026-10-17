@@ -110,7 +110,7 @@ Compatibility varies across game-specific plugins. Encrypted games or heavily mo
 - [`SWF_CheatMenu.js`](SWF_CheatMenu.js) — combined plugin / объединённый плагин.
 - [Releases](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases) — downloadable ZIP / архив для скачивания.
 - [`CREDITS.md`](CREDITS.md) — authorship and redistribution notes / авторство и условия распространения.
-- [`CHANGELOG.md`](CHANGELOG.md) — release history / история версий.
+- [`CHANGELOG.md`](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/blob/main/CHANGELOG.md) — release history / история версий.
 
 ### Credits / Благодарности
 
