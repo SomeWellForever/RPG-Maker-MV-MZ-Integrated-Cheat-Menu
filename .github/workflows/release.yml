@@ -60,6 +60,28 @@ jobs:
           $registered = Get-Content -Raw -LiteralPath (Join-Path $js 'plugins.js')
           if ($registered -match '"SWF_CheatMenu"') { throw 'Plugin was not removed' }
 
+      - name: Install automatically when ZIP is extracted into Windows game folder
+        shell: pwsh
+        run: |
+          $game = Join-Path $env:RUNNER_TEMP 'Auto-install RPG Maker MZ 日本語'
+          $js = Join-Path $game 'js'
+          New-Item -Force -ItemType Directory -Path (Join-Path $js 'plugins') | Out-Null
+          New-Item -Force -ItemType Directory -Path (Join-Path $game 'bin') | Out-Null
+          Set-Content -LiteralPath (Join-Path $js 'main.js') -Value 'PluginManager.setup($plugins);' -Encoding utf8
+          Set-Content -LiteralPath (Join-Path $js 'plugins.js') -Value 'var $plugins = []; ' -Encoding utf8
+          Copy-Item -LiteralPath 'Setup_Windows.ps1' -Destination (Join-Path $game 'Setup_Windows.ps1')
+          Copy-Item -LiteralPath 'SWF_CheatMenu.js' -Destination (Join-Path $game 'SWF_CheatMenu.js')
+          Copy-Item -LiteralPath 'bin/swf-setup-windows-amd64.exe' -Destination (Join-Path $game 'bin/swf-setup-windows-amd64.exe')
+          & (Join-Path $game 'Setup_Windows.ps1') -Action install
+          if ($LASTEXITCODE -ne 0) { throw 'In-place installation failed' }
+          $registry = Get-Content -Raw -LiteralPath (Join-Path $js 'plugins.js')
+          if ($registry -notmatch '"SWF_CheatMenu"') { throw 'Auto-detected game was not registered' }
+          if (-not (Test-Path -LiteralPath (Join-Path $js 'plugins/SWF_CheatMenu.js'))) { throw 'Plugin payload missing' }
+          & (Join-Path $game 'Setup_Windows.ps1') -Action remove
+          if ($LASTEXITCODE -ne 0) { throw 'In-place removal failed' }
+          $registry = Get-Content -Raw -LiteralPath (Join-Path $js 'plugins.js')
+          if ($registry -match '"SWF_CheatMenu"') { throw 'In-place removal left registry entry' }
+
   linux:
     runs-on: ubuntu-latest
     steps:
@@ -84,6 +106,20 @@ jobs:
           grep -q SWF_EN_STRINGS "$GAME/www/js/plugins/SWF_CheatMenu.js"
           bash Remove_Linux.sh "$GAME"
           ! grep -q '"SWF_CheatMenu"' "$GAME/www/js/plugins.js"
+
+      - name: Install automatically when ZIP is extracted into Linux game folder
+        run: |
+          GAME="$RUNNER_TEMP/Auto-install RPG Maker MZ 日本語"
+          mkdir -p "$GAME/js/plugins" "$GAME/bin"
+          printf 'PluginManager.setup($plugins);\n' > "$GAME/js/main.js"
+          printf 'var $plugins = [];\n' > "$GAME/js/plugins.js"
+          cp Install_Linux.sh Remove_Linux.sh SWF_CheatMenu.js "$GAME/"
+          cp bin/swf-setup-linux-amd64 "$GAME/bin/"
+          bash "$GAME/Install_Linux.sh"
+          grep -q '"SWF_CheatMenu"' "$GAME/js/plugins.js"
+          test -f "$GAME/js/plugins/SWF_CheatMenu.js"
+          bash "$GAME/Remove_Linux.sh"
+          ! grep -q '"SWF_CheatMenu"' "$GAME/js/plugins.js"
 
   package:
     needs: [plugin, windows, linux]
