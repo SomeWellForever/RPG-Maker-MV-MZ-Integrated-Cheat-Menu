@@ -2240,7 +2240,7 @@ Window_UniversalList.prototype.itemHeight=function(){
     return Window_Command.prototype.itemHeight.call(this);
 };
 Window_UniversalList.prototype.drawItem=function(index){
-    if(!this._swfGrid){Window_Command.prototype.drawItem.call(this,index);return;}
+    if(!this._swfGrid){var entry=this._rows[index];if(entry&&entry._swfTool){var box=this.itemRect(index);this.contents.fillRect(box.x+3,box.y+2,Math.max(2,box.width-12),Math.max(2,box.height-4),'#253852');}Window_Command.prototype.drawItem.call(this,index);return;}
     var row=this._rows[index],rect=this.itemRect(index),gutter=5;
     if(!row)return;
     this.contents.fillRect(rect.x+gutter,rect.y+gutter,rect.width-2*gutter,rect.height-2*gutter,'#28364c');
@@ -2380,10 +2380,10 @@ Scene_UniversalControl.prototype._swfCatalogTools=function(kind,query,refresh){
     this._swfOnlyFavorites=this._swfOnlyFavorites||{};
     this._swfEditingFavorites=this._swfEditingFavorites||{};
     return [
-        {name:TR('Поиск по названию / ID')+(query?' — '+query:''),help:TR('Поиск по названию или числовому идентификатору.'),run:function(){self.ask(TR('Название или ID (пусто — все)'),query,function(v){refresh(v);});}},
-        {name:TR('Сортировка: ')+swfSortLabel(kind),help:TR('Переключить: по ID, по названию или избранное сверху.'),run:function(){swfCycleSort(kind);self._swfRefreshCatalog(function(){refresh(query);});}},
-        {name:TR('Только избранное: ')+(this._swfOnlyFavorites[kind]?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Показать только записи, отмеченные звёздочкой.'),run:function(){self._swfOnlyFavorites[kind]=!self._swfOnlyFavorites[kind];self._swfRefreshCatalog(function(){refresh(query);});}},
-        {name:TR('Редактирование ★: ')+(this._swfEditingFavorites[kind]?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Когда включено, выбор записи меняет ★ вместо выполнения действия.'),run:function(){self._swfEditingFavorites[kind]=!self._swfEditingFavorites[kind];self._swfRefreshCatalog(function(){refresh(query);});}}
+        {_swfTool:true,name:TR('Поиск по названию / ID')+(query?' — '+query:''),help:TR('Поиск по названию или числовому идентификатору.'),run:function(){self.ask(TR('Название или ID (пусто — все)'),query,function(v){refresh(v);});}},
+        {_swfTool:true,name:TR('Сортировка: ')+swfSortLabel(kind),help:TR('Переключить: по ID, по названию или избранное сверху.'),run:function(){swfCycleSort(kind);self._swfRefreshCatalog(function(){refresh(query);});}},
+        {_swfTool:true,name:TR('Только избранное: ')+(this._swfOnlyFavorites[kind]?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Показать только записи, отмеченные звёздочкой.'),run:function(){self._swfOnlyFavorites[kind]=!self._swfOnlyFavorites[kind];self._swfRefreshCatalog(function(){refresh(query);});}},
+        {_swfTool:true,name:TR('Редактирование ★: ')+(this._swfEditingFavorites[kind]?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Когда включено, выбор записи меняет ★ вместо выполнения действия.'),run:function(){self._swfEditingFavorites[kind]=!self._swfEditingFavorites[kind];self._swfRefreshCatalog(function(){refresh(query);});}}
     ];
 };
 Scene_UniversalControl.prototype._swfCatalogRows=function(kind,data,renderRow,refresh,query){
@@ -2647,11 +2647,13 @@ function knownEntrances(id) {
     return result;
 }
 Scene_UniversalControl.prototype.maps=function(visitedOnly,query,replace){
-    var self=this,q=query.toLowerCase(),visited=$gameSystem._universalControlVisited||{};
+    if(this._battleMode)return;
+    var self=this,q=String(query||'').toLowerCase(),visited=$gameSystem._universalControlVisited||{};
     var selected=MAPS.filter(function(m){return (!visitedOnly||visited[m.id])&&(!q||(m.id+' '+m.name+' '+m.internal).toLowerCase().indexOf(q)>=0);});
-    var rows=[{name:TR('Поиск по названию или ID')+(query?' — '+query:''),run:function(){self.ask(TR('Название карты или ID (пусто — показать все)'),query,function(v){self.maps(visitedOnly,v,true);});}}];
-    selected.forEach(function(m){rows.push({name:'#'+m.id+' · '+clean(m.name),help:TR('Название карты из базы игры. Список может включать служебные карты.\nДанные и координаты будут прочитаны после выбора.\nПеред телепортом сохранись отдельно.'),run:function(){self.loadMapDetail(m);}});});
-    this.showPage(TR('Телепорт · найдено ')+selected.length,rows,replace);
+    var rows=this._swfCatalogRows('maps',selected,function(m){
+        return {name:'#'+m.id+' · '+clean(m.name),help:TR('Название карты из базы игры. Список может включать служебные карты.\nДанные и координаты будут прочитаны после выбора.\nПеред телепортом сохранись отдельно.'),run:function(){self.loadMapDetail(m);}};
+    },function(v){self.maps(visitedOnly,v,true);},query);
+    this.showPage(TR('Телепорт · найдено ')+(rows.length-4),rows,replace);
 };
 Scene_UniversalControl.prototype.loadMapDetail=function(info){
     var self=this;this._listWindow.deactivate();this._helpWindow.setText(TR('Читаю карту #')+info.id+'…');
@@ -2697,9 +2699,18 @@ Scene_UniversalControl.prototype.actorMenu=function(a,replace){
     this.showPage(clean(a.name())+TR(' · уровень ')+a.level,rows,replace);
 };
 Scene_UniversalControl.prototype.skills=function(a,remove,query,replace){
-    var self=this,q=query.toLowerCase();var data=$dataSkills.filter(function(s){return s&&s.name&&(!remove||a.isLearnedSkill(s.id))&&(!q||(s.id+' '+clean(s.name)).toLowerCase().indexOf(q)>=0);});
-    var rows=[{name:TR('Поиск по названию / ID')+(query?' — '+query:''),run:function(){self.ask(TR('Навык или ID (пусто — все)'),query,function(v){self.skills(a,remove,v,true);});}}];
-    data.forEach(function(s){rows.push({name:'#'+s.id+' · '+clean(s.name)+(a.isLearnedSkill(s.id)?TR(' [изучен]'):''),help:clean(s.description)+'\n'+(remove?TR('Удалить из изученных навыков.'):TR('Изучить напрямую, без траты очков дерева навыков.'))+TR('\nСюжетные, классовые и экипировочные условия использования сохраняются.'),run:function(){self.confirm((remove?TR('Забыть: '):TR('Изучить: '))+clean(s.name),TR('Персонаж: ')+clean(a.name())+'\n'+clean(s.description),function(){if(remove)a.forgetSkill(s.id);else a.learnSkill(s.id);self.back();self.skills(a,remove,query,true);self.notice(remove?TR('Навык удалён из изученных.'):TR('Навык изучен. Для применения могут требоваться класс, оружие или ресурсы.'));});}});});
+    var self=this,q=String(query||'').toLowerCase();
+    var data=$dataSkills.filter(function(skill){return skill&&skill.name&&(!remove||a.isLearnedSkill(skill.id))&&(!q||(skill.id+' '+clean(skill.name)).toLowerCase().indexOf(q)>=0);});
+    var rows=this._swfCatalogRows('skills',data,function(skill){
+        return {name:'#'+skill.id+' · '+clean(skill.name)+(a.isLearnedSkill(skill.id)?TR(' [изучен]'):''),
+            help:clean(skill.description)+'\n'+(remove?TR('Удалить из изученных навыков.'):TR('Изучить напрямую, без траты очков дерева навыков.'))+TR('\nСюжетные, классовые и экипировочные условия использования сохраняются.'),
+            run:function(){self.confirm((remove?TR('Забыть: '):TR('Изучить: '))+clean(skill.name),TR('Персонаж: ')+clean(a.name())+'\n'+clean(skill.description),function(){
+                if(remove)a.forgetSkill(skill.id);else a.learnSkill(skill.id);
+                self.back();self.skills(a,remove,query,true);
+                self.notice(remove?TR('Навык удалён из изученных.'):TR('Навык изучен. Для применения могут требоваться класс, оружие или ресурсы.'));
+            });}
+        };
+    },function(v){self.skills(a,remove,v,true);},query);
     this.showPage((remove?TR('Забыть'):TR('Изучить'))+' · '+clean(a.name()),rows,replace);
 };
 Scene_UniversalControl.prototype.itemCategories=function(){
@@ -2713,10 +2724,18 @@ Scene_UniversalControl.prototype.itemCategories=function(){
 };
 function database(kind){return kind==='items'?$dataItems:kind==='weapons'?$dataWeapons:$dataArmors;}
 Scene_UniversalControl.prototype.items=function(kind,mode,query,replace){
-    var self=this,q=query.toLowerCase();var data=database(kind).slice(0,BASE_COUNTS[kind]).filter(function(i){return i&&i.id!==ITEM_ID&&!(i.meta && i.meta.UniversalControl)&&(mode==='all'||!!i.name)&&(kind!=='items'||mode==='all'||(mode==='normal'?i.itypeId===1:i.itypeId!==1))&&(!q||(i.id+' '+clean(i.name)).toLowerCase().indexOf(q)>=0);});
-    var rows=[{name:TR('Поиск по названию / ID')+(query?' — '+query:''),run:function(){self.ask(TR('Название или ID (пусто — все)'),query,function(v){self.items(kind,mode,v,true);});}}];
-    data.forEach(function(item){rows.push({name:'#'+item.id+' · '+(clean(item.name)||TR('[без названия]')),help:clean(item.description)+TR('\nВыдача через игровую систему предметов. Лимит: ')+stackLimitLabel()+TR('. Уникальные экземпляры и спецлимиты не меняются.'),run:function(){self.giveDialog(item);}});});
-    this.showPage(TR('Предметы · найдено ')+data.length,rows,replace);
+    var self=this,q=String(query||'').toLowerCase();
+    var data=database(kind).slice(0,BASE_COUNTS[kind]).filter(function(i){
+        return i&&i.id!==ITEM_ID&&!(i.meta&&i.meta.UniversalControl)&&(mode==='all'||!!i.name)&&
+            (kind!=='items'||mode==='all'||(mode==='normal'?i.itypeId===1:i.itypeId!==1))&&
+            (!q||(i.id+' '+clean(i.name)).toLowerCase().indexOf(q)>=0);
+    });
+    var rows=this._swfCatalogRows(kind,data,function(item){
+        return {name:'#'+item.id+' · '+(clean(item.name)||TR('[без названия]')),
+            help:clean(item.description)+TR('\nВыдача через игровую систему предметов. Лимит: ')+stackLimitLabel()+TR('. Уникальные экземпляры и спецлимиты не меняются.'),
+            run:function(){self.giveDialog(item);}};
+    },function(v){self.items(kind,mode,v,true);},query);
+    this.showPage(TR('Предметы · найдено ')+(rows.length-4),rows,replace);
 };
 Scene_UniversalControl.prototype.giveDialog=function(item){
     var self=this,independent=DataManager.isIndependent&&DataManager.isIndependent(item);
@@ -2747,30 +2766,32 @@ Scene_UniversalControl.prototype.extraStats=function(a,replace){
     this.showPage(TR('Бонусы · ')+clean(a.name()),rows,replace);
 };
 Scene_UniversalControl.prototype.extraSwitches=function(query,replace){
-    var self=this,q=query.trim().toLowerCase(),names=$dataSystem.switches||[];
-    var rows=[{name:TR('Поиск по ID / имени')+(query?' · '+query:''),run:function(){self.ask(TR('Поиск переключателя'),query,function(v){self.extraSwitches(v,true);});}}];
-    names.forEach(function(name,i){if(i===0 || !name || (q && (String(i)+' '+name).toLowerCase().indexOf(q)<0))return;
-        rows.push({name:'#'+i+' '+clean(name)+' · '+($gameSwitches.value(i)?TR('ВКЛ'):TR('ВЫКЛ')),run:function(){
-            $gameSwitches.setValue(i,!$gameSwitches.value(i));self.extraSwitches(query,true);
-        }});
-    });
-    this.showPage(TR('Переключатели · ')+(rows.length-1),rows,replace);
+    var self=this,q=String(query||'').trim().toLowerCase(),names=$dataSystem.switches||[];
+    var data=[];
+    names.forEach(function(name,i){if(i>0&&name&&(!q||(String(i)+' '+name).toLowerCase().indexOf(q)>=0))data.push({id:i,name:name});});
+    var rows=this._swfCatalogRows('switches',data,function(entry){
+        return {name:'#'+entry.id+' '+clean(entry.name)+' · '+($gameSwitches.value(entry.id)?TR('ВКЛ'):TR('ВЫКЛ')),run:function(){
+            $gameSwitches.setValue(entry.id,!$gameSwitches.value(entry.id));self._swfRefreshCatalog(function(){self.extraSwitches(query,true);});
+        }};
+    },function(v){self.extraSwitches(v,true);},query);
+    this.showPage(TR('Переключатели · ')+(rows.length-4),rows,replace);
 };
 Scene_UniversalControl.prototype.extraVariables=function(query,replace){
-    var self=this,q=query.trim().toLowerCase(),names=$dataSystem.variables||[];
-    var rows=[{name:TR('Поиск по ID / имени')+(query?' · '+query:''),run:function(){self.ask(TR('Поиск переменной'),query,function(v){self.extraVariables(v,true);});}}];
-    names.forEach(function(name,i){if(i===0 || !name || (q && (String(i)+' '+name).toLowerCase().indexOf(q)<0))return;
-        var value=$gameVariables.value(i);
-        rows.push({name:'#'+i+' '+clean(name)+' · '+String(value).slice(0,28),run:function(){
-            self.ask(TR('Новое значение переменной #')+i+' · '+name,String(value),function(v){
-                // Numerical input by default, but preserve ability to use text variables.
+    var self=this,q=String(query||'').trim().toLowerCase(),names=$dataSystem.variables||[];
+    var data=[];
+    names.forEach(function(name,i){if(i>0&&name&&(!q||(String(i)+' '+name).toLowerCase().indexOf(q)>=0))data.push({id:i,name:name});});
+    var rows=this._swfCatalogRows('variables',data,function(entry){
+        return {name:'#'+entry.id+' '+clean(entry.name)+' · '+String($gameVariables.value(entry.id)).slice(0,28),run:function(){
+            var value=$gameVariables.value(entry.id);
+            self.ask(TR('Новое значение переменной #')+entry.id+' · '+entry.name,String(value),function(v){
                 var next=/^-?\d+(?:\.\d+)?$/.test(v.trim())?Number(v):v;
-                $gameVariables.setValue(i,next);self.extraVariables(query,true);
+                $gameVariables.setValue(entry.id,next);self._swfRefreshCatalog(function(){self.extraVariables(query,true);});
             });
-        }});
-    });
-    this.showPage(TR('Переменные · ')+(rows.length-1),rows,replace);
+        }};
+    },function(v){self.extraVariables(v,true);},query);
+    this.showPage(TR('Переменные · ')+(rows.length-4),rows,replace);
 };
+
 
 // Display the same native control UI *inside* Scene_Battle. Changing scenes
 // would reconstruct the battle scene and could reset input/action windows.
