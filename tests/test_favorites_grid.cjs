@@ -76,7 +76,7 @@ assert.equal(rows.length,4,"Unstarring while filtered must hide the entry");
 
 vm.runInContext(part("// The six categories are the only commands","Scene_UniversalControl.prototype.savedPositions=function"),ctx,{timeout:3000});
 ui._pages=[];ui._swfOnlyFavorites={};ui._swfEditingFavorites={};
-ui.showPage=function(title,rows,replace,grid){this.page={title,rows,replace,grid};};
+ui.showPage=function(title,rows,replace,grid){this.page={title,rows,replace,grid};this._page={title,rows,grid,index:0};};
 ui._battleMode=false;
 ui.main();
 assert.equal(ui.page.grid,true);
