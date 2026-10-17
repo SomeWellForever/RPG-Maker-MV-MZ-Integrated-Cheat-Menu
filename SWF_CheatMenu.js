@@ -12,11 +12,20 @@
 
 
 
+// A game may load this plugin from more than one registry or custom loader.
+// Running its hooks twice can recursively wrap DataManager/scene methods.
+(function () {
+if (window.__SWF_CheatMenuLoaded) {
+    if (typeof console !== 'undefined' && console.warn) console.warn('[SWF Cheat Menu] Duplicate load skipped. Check plugins.js and any manual main.js loaders.');
+    return;
+}
+window.__SWF_CheatMenuLoaded = true;
+
 /////////////////////////////////////////////////
 // Cheat Menu Plugin Class
 /////////////////////////////////////////////////
-// Check if already defined (allows game specific extensions to be loaded in any order)
-if (typeof Cheat_Menu == "undefined") { Cheat_Menu = {}; }
+// Keep the legacy Cheat_Menu API visible to other plugins.
+var Cheat_Menu = window.Cheat_Menu || (window.Cheat_Menu = {});
 
 Cheat_Menu.initialized = false;
 Cheat_Menu.cheat_menu_open = false;
@@ -1778,31 +1787,29 @@ Cheat_Menu.initialize = function() {
 };
 
 // add hook for loading a game
-DataManager.default_loadGame = DataManager.loadGame;
+// Capture previous methods in this plugin's own closure, not mutable global
+// DataManager.default_* properties. Other plugins can overwrite those globals.
+var swfPreviousLoadGame = DataManager.loadGame;
 DataManager.loadGame = function(savefileId) {
-	Cheat_Menu.initialize();
-
-	return DataManager.default_loadGame(savefileId);
+    Cheat_Menu.initialize();
+    return swfPreviousLoadGame.apply(this, arguments);
 };
 
 // add hook for new game
-DataManager.default_setupNewGame = DataManager.setupNewGame;
+var swfPreviousSetupNewGame = DataManager.setupNewGame;
 DataManager.setupNewGame = function() {
-	Cheat_Menu.initialize();
-
-	DataManager.default_setupNewGame();
+    Cheat_Menu.initialize();
+    return swfPreviousSetupNewGame.apply(this, arguments);
 };
 
 // add hook for saving values (just added into $gameSystem to be saved)
-DataManager.default_saveGame = DataManager.saveGame;
+var swfPreviousSaveGame = DataManager.saveGame;
 DataManager.saveGame = function(savefileId) {
-	// save values that are in intial values
-	$gameSystem.Cheat_Menu = {};
-	for (var name in Cheat_Menu.initial_values) {
-		$gameSystem.Cheat_Menu[name] = Cheat_Menu[name];
-	}
-
-	return DataManager.default_saveGame(savefileId);
+    $gameSystem.Cheat_Menu = {};
+    for (var name in Cheat_Menu.initial_values) {
+        $gameSystem.Cheat_Menu[name] = Cheat_Menu[name];
+    }
+    return swfPreviousSaveGame.apply(this, arguments);
 };
 
 // Integrated universal in-engine menu (no additional plugin file).
@@ -2595,4 +2602,5 @@ Scene_Battle.prototype.closeUniversalControl=function(terminating){
     if(!terminating)ui._previousActive.forEach(function(w){if(w && w.activate)w.activate();});
 };
 window.Scene_UniversalControl=Scene_UniversalControl;
+})();
 })();
