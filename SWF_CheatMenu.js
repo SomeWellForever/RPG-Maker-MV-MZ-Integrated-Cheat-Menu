@@ -1705,6 +1705,17 @@ Cheat_Menu.prepare = function() {
 	}
 };
 window.addEventListener("keydown", function(event) {
+    // Some games bypass DataManager.loadGame/setupNewGame when restoring a save.
+    // F7 can still work in that case, but the legacy overlay never becomes openable.
+    // Activate it lazily when Digit1 is pressed during a playable map or battle.
+    if (event.keyCode === Cheat_Menu.keyCodes.KEYCODE_1.keyCode &&
+        !event.repeat && !event.ctrlKey && !event.altKey && !event.shiftKey &&
+        !Cheat_Menu.overlay_openable &&
+        SceneManager._scene &&
+        (SceneManager._scene instanceof Scene_Map || SceneManager._scene instanceof Scene_Battle) &&
+        $gameActors && $gameSystem) {
+        Cheat_Menu.initialize();
+    }
 	if (false && !event.ctrlKey && !event.altKey && (event.keyCode === 119) && $gameTemp && !$gameTemp.isPlaytest()) {
 		// open debug menu
 		event.stopPropagation();
