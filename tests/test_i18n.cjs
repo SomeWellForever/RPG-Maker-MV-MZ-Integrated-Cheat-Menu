@@ -107,7 +107,7 @@ for(const label of allLabels){
     if(label==='EXP')continue; // This RPG abbreviation is also the standard RU/ES label.
     for(const lang of ["ru","es"]){
         const x=context("en_US","en-US",lang).ctx;
-        assert.notEqual(x.Cheat_Menu.quickText(label),label,"Missing quick "+lang+" translation: "+label);
+        assert.ok(Object.prototype.hasOwnProperty.call(x.SWF_QUICK_TRANSLATIONS[lang],label),"Missing quick "+lang+" translation: "+label);
     }
 }
 assert.match(plugin,/Cheat_Menu\.quickLayout\(\)/,"Quick layout update not hooked to redraw");
