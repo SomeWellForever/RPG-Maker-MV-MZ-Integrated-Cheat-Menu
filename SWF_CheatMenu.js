@@ -1,6 +1,6 @@
 /*:
  * @target MV MZ
- * @plugindesc SWF Cheat Menu Integrated 2.2.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @plugindesc SWF Cheat Menu Integrated 2.3.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author Community Cheat Menu + integrated local patch
  * @help Use the key item 'Control Menu' / 'Меню управления' or F7.
  * Menu language: Auto / Русский / English (select inside the menu).
@@ -1806,7 +1806,7 @@ DataManager.saveGame = function(savefileId) {
 
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
- * @plugindesc SWF Cheat Menu Integrated v2.2.0 — teleport, levels, skills, items and stack limits.
+ * @plugindesc SWF Cheat Menu Integrated v2.3.0 — teleport, levels, skills, items and stack limits.
  * @author Custom patch
  * @help Use the key item "Меню управления" or F7 on the map.
  * For RPG Maker MV and MZ. Custom plugin compatibility is not guaranteed.

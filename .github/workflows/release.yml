@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Check release version consistency
+        run: python3 scripts/check_version.py
       - name: Check plugin JavaScript syntax
         run: node --check SWF_CheatMenu.js
       - name: Check language switching, Russian and English translations
@@ -103,41 +105,80 @@ jobs:
           python3 scripts/verify_release.py
       - uses: actions/upload-artifact@v4
         with:
-          name: SWF-CheatMenu-Windows-Linux-Bilingual-Release
-          path: SWF_CheatMenu_MV_MZ_v2.2.0.zip
+          name: SWF-CheatMenu-v2.3.0-Windows-Linux
+          path: SWF_CheatMenu_MV_MZ_v2.3.0.zip
           if-no-files-found: error
-      - name: Update GitHub release v2.2.0
+      - name: Validate current release versions
+        run: python3 scripts/check_version.py
+      - name: Publish GitHub release v2.3.0
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cat > release-notes.md <<'EOF'
-          SWF Cheat Menu v2.2.0 — RPG Maker MV/MZ
+          ## SWF Cheat Menu v2.3.0
 
-          **Platforms: Windows and Linux.** The macOS installer has been removed due to unresolved launch/permission problems.
+          **Platforms:** Windows and Linux (RPG Maker MV/MZ). macOS is not supported in this release.
 
-          - **No Python or Go installation required.** Select the RPG Maker game folder with Install_Windows.cmd or Install_Linux.sh.
-          - Russian and English integrated menu with **Auto / Русский / English** selection. The choice is saved for that game. The quick overlay uses the original English UI; game-supplied item/skill/map names retain the game's own language.
-          - Upgrades over recognized prior Integrated Cheat Menu installs, backs up changed files and supports repeat install and uninstall.
-          - Disable Xenolauncher's built-in Enable Cheat Menu to avoid conflicts.
-          - Original authors and redistribution notes: CREDITS.md.
+          ### What's new
+          - **English and Russian interface:** integrated control menu supports Auto / Русский / English with a saved preference. The legacy quick overlay remains in English; names of items, maps and skills come from the game.
+          - **No Python required:** native Windows and Linux installers. End users do not need Python or Go installed.
+          - **Reliable upgrades:** supported updates from recognized older Integrated Cheat Menu versions, repeated installation without duplicate plugin registrations, automatic backups, and safe removal.
+          - The macOS installer was withdrawn following launch/permissions issues.
+          - Keep Xenolauncher's built-in **Enable Cheat Menu** disabled.
+          - Upstream authors and redistribution notes: CREDITS.md.
 
-          SWF Cheat Menu v2.2.0 — RPG Maker MV/MZ
+          ### How to install
+          Extract the entire ZIP. On Windows run Install_Windows.cmd; on Linux run Install_Linux.sh. Select the RPG Maker MV/MZ game folder. Keep a separate save backup while testing.
 
-          **Платформы: Windows и Linux.** Установщик macOS удалён из-за нерешённых проблем с запуском и разрешениями.
+          ---
+          ## SWF Cheat Menu v2.3.0 — русский
 
-          - **Python и Go устанавливать не нужно.** Установщик автоматически находит или предлагает выбрать папку игры.
-          - Встроенное меню на русском и английском, переключатель **Auto / Русский / English**, выбор сохраняется.
-          - Поддерживаются обновление поверх старой версии, резервное копирование и удаление.
-          - Встроенное Cheat Menu в Xenolauncher необходимо отключить.
-          - Авторы и условия распространения: CREDITS.md.
+          **Платформы:** Windows и Linux. Поддержка macOS прекращена из-за проблем с запуском установщика.
+
+          - **Русский и английский:** переключатель Auto / Русский / English внутри меню F7; выбор сохраняется. Быстрое меню на 1 осталось английским, а названия предметов/карт/навыков берутся из игры.
+          - **Python не нужен:** готовые установщики Windows и Linux; Go устанавливать тоже не требуется.
+          - **Обновление поверх старых версий:** миграция распознаваемых предыдущих установок, резервные копии, повторная установка без дублирования и удаление.
+          - В Xenolauncher отключите встроенное Enable Cheat Menu.
+
+          Распакуйте весь ZIP. В Windows запустите Install_Windows.cmd; в Linux — Install_Linux.sh. Выберите папку игры RPG Maker MV/MZ.
           EOF
-          gh release edit v2.2.0 --title "SWF Cheat Menu v2.2.0" --notes-file release-notes.md
-          gh release upload v2.2.0 SWF_CheatMenu_MV_MZ_v2.2.0.zip --clobber
-      - name: Align v2.2.0 source tag with published release
+          if gh release view v2.3.0 >/dev/null 2>&1; then
+            gh release edit v2.3.0 --title "SWF Cheat Menu v2.3.0" --notes-file release-notes.md --latest
+            gh release upload v2.3.0 SWF_CheatMenu_MV_MZ_v2.3.0.zip --clobber
+          else
+            gh release create v2.3.0 SWF_CheatMenu_MV_MZ_v2.3.0.zip --target "$GITHUB_SHA" --title "SWF Cheat Menu v2.3.0" --notes-file release-notes.md --latest
+          fi
+      - name: Restore historical v2.2.0 release and source tag
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git tag -f v2.2.0 "$GITHUB_SHA"
+          set -euo pipefail
+          PREVIOUS_COMMIT=dd0a3ccc2e2baa9b2382109f4f001e46100a0cf0
+          CURRENT_TAG="$(gh api repos/$GITHUB_REPOSITORY/git/ref/tags/v2.2.0 --jq '.object.sha')"
+          if [ "$CURRENT_TAG" = "$PREVIOUS_COMMIT" ]; then
+            echo "Historical v2.2.0 release already restored"
+            exit 0
+          fi
+          git fetch --depth=1 origin "$PREVIOUS_COMMIT"
+          git worktree add --detach "$RUNNER_TEMP/swf-legacy-v2.2" "$PREVIOUS_COMMIT"
+          python3 "$RUNNER_TEMP/swf-legacy-v2.2/scripts/build_release.py"
+          cat > historical-release-notes.md <<'EOF'
+          ## SWF Cheat Menu v2.2.0 — historical release
+          
+          Archived original v2.2.0 build from before native installers and bilingual interface. Earlier ZIP bundled Python-based installers. macOS appeared in this historical build but is **not supported** in the current v2.3.0 release.
+          
+          For Windows/Linux, **use v2.3.0** for the latest fixes, English/Russian interface and standalone installers.
+          
+          ---
+          ## SWF Cheat Menu v2.2.0 — предыдущая версия
+          
+          Восстановлена исходная сборка v2.2.0: установщики на Python, без двуязычного меню. macOS присутствовала в старом архиве, но в актуальной v2.3.0 эта платформа **не поддерживается**.
+          
+          **Рекомендуется версия v2.3.0** для Windows и Linux.
+          EOF
+          gh release upload v2.2.0 "$RUNNER_TEMP/swf-legacy-v2.2/SWF_CheatMenu_MV_MZ_v2.2.0.zip" --clobber
+          gh release edit v2.2.0 --notes-file historical-release-notes.md --latest=false
+          git tag -f v2.2.0 "$PREVIOUS_COMMIT"
           git push --force origin refs/tags/v2.2.0

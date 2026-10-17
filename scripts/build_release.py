@@ -11,7 +11,7 @@ members = [
     "bin/swf-setup-windows-amd64.exe", "bin/swf-setup-windows-arm64.exe",
     "bin/swf-setup-linux-amd64", "bin/swf-setup-linux-arm64",
 ]
-archive = root / "SWF_CheatMenu_MV_MZ_v2.2.0.zip"
+archive = root / "SWF_CheatMenu_MV_MZ_v2.3.0.zip"
 with ZipFile(archive, "w", ZIP_DEFLATED) as z:
     for member in members:
         if not (root / member).is_file():
