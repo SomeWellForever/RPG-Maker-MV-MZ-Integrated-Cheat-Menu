@@ -134,3 +134,10 @@ jobs:
           EOF
           gh release edit v2.2.0 --title "SWF Cheat Menu v2.2.0" --notes-file release-notes.md
           gh release upload v2.2.0 SWF_CheatMenu_MV_MZ_v2.2.0.zip --clobber
+      - name: Align v2.2.0 source tag with published release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -f v2.2.0 "$GITHUB_SHA"
+          git push --force origin refs/tags/v2.2.0
