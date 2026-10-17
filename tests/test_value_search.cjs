@@ -17,6 +17,7 @@ const state={
     variableData:[null,125,true,150,false,0,"quest_started","100"],
     switchData:[null,true,false,true,false],
     TR:s=>s,
+    clean:s=>String(s||''),
     swfCatalogResultCount:rows=>rows.length,
     Scene_UniversalControl:function(){}
 };
