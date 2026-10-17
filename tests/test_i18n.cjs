@@ -6,6 +6,7 @@ const vm = require("node:vm");
 
 const plugin = fs.readFileSync("SWF_CheatMenu.js", "utf8");
 assert.ok(plugin.includes("if (window.__SWF_CHEAT_MENU_LOADED__) return;"), "Missing duplicate-load guard");
+assert.ok(plugin.includes("if (window.__SWF_CHEAT_MENU_LOADED__) return;"), "Missing duplicate-load guard");
 const anchor = "var IS_MZ = Utils.RPGMAKER_NAME === 'MZ';";
 const from = plugin.indexOf(anchor);
 const until = plugin.indexOf("var openRequested = false;", from);
