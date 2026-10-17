@@ -1,6 +1,6 @@
 /*:
  * @target MV MZ
- * @plugindesc SWF Cheat Menu Integrated 2.7.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @plugindesc SWF Cheat Menu Integrated 2.7.1: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help F7 or the 'Control Menu' / 'Меню управления' key item opens the full menu,
  * including during battle. Choose Auto / Русский / English / Español inside that menu.
@@ -1348,69 +1348,52 @@ Cheat_Menu.append_switch_selection = function(key1, key2, key3) {
 
 // handler for saving positions
 Cheat_Menu.save_position = function(pos_num, event) {
-	Cheat_Menu.saved_positions[pos_num].m = $gameMap.mapId();
-	Cheat_Menu.saved_positions[pos_num].x = $gamePlayer.x;
-	Cheat_Menu.saved_positions[pos_num].y = $gamePlayer.y;
-
-	SoundManager.playSystemSound(1);
-	Cheat_Menu.update_menu();
+    if(!Array.isArray(Cheat_Menu.saved_positions))Cheat_Menu.saved_positions=[];
+    if(!Cheat_Menu.saved_positions[pos_num]||typeof Cheat_Menu.saved_positions[pos_num]!=='object')
+        Cheat_Menu.saved_positions[pos_num]={m:-1,x:-1,y:-1};
+    Cheat_Menu.saved_positions[pos_num].m=$gameMap.mapId();
+    Cheat_Menu.saved_positions[pos_num].x=$gamePlayer.x;
+    Cheat_Menu.saved_positions[pos_num].y=$gamePlayer.y;
+    SoundManager.playSystemSound(1);
+    Cheat_Menu.update_menu();
 };
 
 // handler for loading/recalling positions
 Cheat_Menu.recall_position = function(pos_num, event) {
-	if (Cheat_Menu.saved_positions[pos_num].m != -1) {
-		Cheat_Menu.teleport(Cheat_Menu.saved_positions[pos_num].m, Cheat_Menu.saved_positions[pos_num].x, Cheat_Menu.saved_positions[pos_num].y);
-		SoundManager.playSystemSound(1);
-	}
-	else {
-		SoundManager.playSystemSound(2);
-	}
-	Cheat_Menu.update_menu();
+    var slot=Cheat_Menu.saved_positions && Cheat_Menu.saved_positions[pos_num];
+    // Old game saves or game updates can reference maps which no longer exist.
+    // Do not teleport to invalid map IDs; the quick menu must stay usable.
+    if(slot && slot.m>0 && $dataMapInfos && $dataMapInfos[slot.m]) {
+        Cheat_Menu.teleport(slot.m,slot.x,slot.y);
+        SoundManager.playSystemSound(1);
+    }else{
+        SoundManager.playSystemSound(2);
+    }
+    Cheat_Menu.update_menu();
 };
 
-// append the save/recall cheat to the menu
-Cheat_Menu.append_save_recall = function (key1, key2, key3, key4, key5, key6) {
-	
-	Cheat_Menu.append_title("Current Position: ");
+// The keys are already supplied as arguments. Avoid eval() and guard missing
+// map records or malformed position slots loaded from third-party game saves.
+Cheat_Menu.append_save_recall = function(key1,key2,key3,key4,key5,key6) {
+    Cheat_Menu.append_title("Current Position: ");
+    var currentInfo=$dataMapInfos&&$dataMapInfos[$gameMap.mapId()];
+    if(currentInfo&&currentInfo.name){
+        Cheat_Menu.append_description(""+$gameMap.mapId()+": "+currentInfo.name);
+        Cheat_Menu.append_description("(" + $gamePlayer.x + ", " + $gamePlayer.y + ")");
+    }else Cheat_Menu.append_description("NULL");
 
-	if ($dataMapInfos[$gameMap.mapId()] && $dataMapInfos[$gameMap.mapId()].name) {
-		var current_map = "" + $gameMap.mapId() + ": " + $dataMapInfos[$gameMap.mapId()].name;
-		Cheat_Menu.append_description(current_map);
-
-		var map_pos = "(" + $gamePlayer.x + ", " + $gamePlayer.y + ")";
-		Cheat_Menu.append_description(map_pos);
-	}
-	else {
-		Cheat_Menu.append_description("NULL");
-	}
-
-	var cur_key = 1;
-	for (var i = 0; i < Cheat_Menu.saved_positions.length; i++) {
-		Cheat_Menu.append_title("Position " + (i+1));
-
-		var map_text;
-		var pos_text;
-		if (Cheat_Menu.saved_positions[i].m != -1) {
-			map_text = "" + Cheat_Menu.saved_positions[i].m + ": ";
-			if($dataMapInfos[Cheat_Menu.saved_positions[i].m].name) {
-				map_text += $dataMapInfos[Cheat_Menu.saved_positions[i].m].name;
-			}
-			else {
-				map_text += "NULL";
-			}
-			pos_text = "(" + Cheat_Menu.saved_positions[i].x + ", " + Cheat_Menu.saved_positions[i].y + ")";
-		} 
-		else {
-			map_text = "NULL";
-			pos_text = "NULL"
-		}
-
-		Cheat_Menu.append_cheat("Save:", map_text, eval("key" + cur_key), Cheat_Menu.save_position.bind(null, i));
-		cur_key++;
-
-		Cheat_Menu.append_cheat("Recall:", pos_text, eval("key" + cur_key), Cheat_Menu.recall_position.bind(null, i));
-		cur_key++;
-	}
+    var hotkeys=[key1,key2,key3,key4,key5,key6];
+    var slots=Array.isArray(Cheat_Menu.saved_positions)?Cheat_Menu.saved_positions:[];
+    for(var i=0;i<Math.min(3,slots.length);i++){
+        Cheat_Menu.append_title("Position "+(i+1));
+        var slot=slots[i];
+        var info=slot&&$dataMapInfos&&$dataMapInfos[slot.m];
+        var valid=!!(slot&&slot.m>0&&info);
+        var mapText=valid?String(slot.m)+": "+(info.name||"NULL"):"NULL";
+        var posText=valid?"("+slot.x+", "+slot.y+")":"NULL";
+        Cheat_Menu.append_cheat("Save:",mapText,hotkeys[i*2],Cheat_Menu.save_position.bind(null,i));
+        Cheat_Menu.append_cheat("Recall:",posText,hotkeys[i*2+1],Cheat_Menu.recall_position.bind(null,i));
+    }
 };
 
 // Left and right scrollers for handling switching between target teleport map
@@ -1472,9 +1455,15 @@ Cheat_Menu.scroll_y_teleport_selection = function(direction, event) {
 
 // handler for teleporting to targed map and location
 Cheat_Menu.teleport_current_location = function(event) {
-	Cheat_Menu.teleport(Cheat_Menu.teleport_location.m, Cheat_Menu.teleport_location.x, Cheat_Menu.teleport_location.y);
-	SoundManager.playSystemSound(1);
-	Cheat_Menu.update_menu();
+    var target=Cheat_Menu.teleport_location.m;
+    if(!$dataMapInfos || !$dataMapInfos[target]) {
+        SoundManager.playSystemSound(2);
+        Cheat_Menu.update_menu();
+        return;
+    }
+    Cheat_Menu.teleport(target, Cheat_Menu.teleport_location.x, Cheat_Menu.teleport_location.y);
+    SoundManager.playSystemSound(1);
+    Cheat_Menu.update_menu();
 };
 
 // append the teleport cheat to the menu
@@ -1816,7 +1805,7 @@ DataManager.saveGame = function(savefileId) {
 
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
- * @plugindesc SWF Cheat Menu Integrated v2.7.0 — teleport, levels, skills, items and stack limits.
+ * @plugindesc SWF Cheat Menu Integrated v2.7.1 — teleport, levels, skills, items and stack limits.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help Use F7 or the Control Menu / Меню управления key item on the map or in battle.
  * Auto / Русский / English / Español changes both menus (including the quick overlay on 1).
@@ -2906,21 +2895,28 @@ function swfRefillOwnedNormalItems(){
     var result={types:0,added:0,skipped:0};
     if(!$gameParty||typeof $gameParty.items!=='function'||typeof $gameParty.numItems!=='function'||
        typeof $gameParty.maxItems!=='function'||typeof $gameParty.gainItem!=='function')return result;
-    var owned=$gameParty.items();
+    var owned;
+    try{
+        owned=$gameParty.items();
+    }catch(error){
+        result.skipped++;
+        console.warn('[SWF Cheat Menu] Unable to inspect existing inventory',error);
+        return result;
+    }
     if(!Array.isArray(owned))return result;
     var seen={};
     owned.forEach(function(item){
-        if(!swfRefillableItem(item)||seen[item.id])return;
-        seen[item.id]=true;
-        var before=$gameParty.numItems(item),max=$gameParty.maxItems(item);
-        if(typeof before!=='number'||!isFinite(before)||before<1||Math.floor(before)!==before||
-           typeof max!=='number'||!isFinite(max)||max<0){result.skipped++;return;}
-        // The plugin itself supports stack limits up to 9,999. Protect against
-        // faulty/custom plugins returning absurd maximums for one item.
-        max=Math.min(9999,Math.floor(max));
-        var amount=max-before;
-        if(amount<1)return;
         try{
+            if(!swfRefillableItem(item)||seen[item.id])return;
+            seen[item.id]=true;
+            var before=$gameParty.numItems(item),max=$gameParty.maxItems(item);
+            if(typeof before!=='number'||!isFinite(before)||before<1||Math.floor(before)!==before||
+               typeof max!=='number'||!isFinite(max)||max<0){result.skipped++;return;}
+            // Keep amounts within supported limits even if another plugin
+            // advertises a very large maximum.
+            max=Math.min(9999,Math.floor(max));
+            var amount=max-before;
+            if(amount<1)return;
             $gameParty.gainItem(item,amount,false);
             var after=$gameParty.numItems(item);
             var gained=typeof after==='number'&&isFinite(after)?Math.max(0,after-before):0;
@@ -2928,7 +2924,7 @@ function swfRefillOwnedNormalItems(){
             if(gained<amount)result.skipped++;
         }catch(error){
             result.skipped++;
-            console.warn('[SWF Cheat Menu] Unable to refill item #'+item.id,error);
+            console.warn('[SWF Cheat Menu] Unable to refill item #'+(item&&item.id),error);
         }
     });
     return result;

@@ -18,16 +18,17 @@ const db=[null,
  make(9,"No stacking",1,{meta:{NoStack:true}}),
  make(10,"Base item"),make(11,"At cap"),make(12,"Invalid cap"),
  make(13,"Broken gain"),make(14,"Over cap"),make(15,"Huge cap"),
- make(16,"Other note",1,{meta:{Independent:true}})
+ make(16,"Other note",1,{meta:{Independent:true}}),
+ make(17,"Bad count getter"),make(18,"Bad independence getter")
 ];
 const clone=make(10,"Unique instance");
-const nums={1:3,2:99,3:1,4:2,5:1,7:2,8:2,9:2,10:1,11:5,12:4,13:2,14:200,15:1,16:4};
-const max={1:99,2:99,3:99,4:99,5:99,7:99,8:5,9:99,10:99,11:5,12:Infinity,13:10,14:99,15:20000,16:99};
+const nums={1:3,2:99,3:1,4:2,5:1,7:2,8:2,9:2,10:1,11:5,12:4,13:2,14:200,15:1,16:4,17:2,18:1};
+const max={1:99,2:99,3:99,4:99,5:99,7:99,8:5,9:99,10:99,11:5,12:Infinity,13:10,14:99,15:20000,16:99,17:99,18:99};
 let gains=[],throws=0;
 const party={
  items(){return [db[1],db[1],db[2],db[3],db[4],db[5],db[7],db[8],db[9],clone,
- db[11],db[12],db[13],db[14],db[15],db[16]];},
- numItems(item){return nums[item.id]||0;},
+ db[11],db[12],db[13],db[14],db[15],db[16],db[17],db[18]];},
+ numItems(item){if(item.id===17)throw Error("Third-party numItems error");return nums[item.id]||0;},
  maxItems(item){return max[item.id];},
  gainItem(item,count,includeEquip){
    assert.equal(includeEquip,false,"Bulk refill must never touch equipped objects");
@@ -38,10 +39,10 @@ const party={
  }
 };
 const ctx={
- $dataItems:db,$gameParty:party,BASE_COUNTS:{items:17},ITEM_ID:100,
+ $dataItems:db,$gameParty:party,BASE_COUNTS:{items:19},ITEM_ID:100,
  DataManager:{
    isItem(item){return item&&item.kind!=="weapon"&&item.kind!=="armor"&&item.itypeId>0;},
-   isIndependent(item){return item===clone;}
+   isIndependent(item){if(item.id===18)throw Error("Third-party isIndependent error");return item===clone;}
  },
  itemIsControl:item=>item&&item.id===100,
  console:{warn(){throws++;}},
@@ -68,16 +69,16 @@ assert.equal(nums[1],99,"Potion should reach game cap");
 assert.equal(nums[8],5,"Per-item note override cap should be respected");
 assert.equal(nums[15],9999,"Protect against excessively large custom limits");
 assert.equal(nums[2],99,"Already full item must remain untouched");
-for(const id of [3,4,5,7,9,10,11,12,13,14,16]){
+for(const id of [3,4,5,7,9,10,11,12,13,14,16,17,18]){
  assert.equal(nums[id],original[id],"Unsafe/unchanged type modified: "+id);
 }
 assert.equal(nums[6],undefined,"Must not create items not in inventory");
 assert.deepEqual(Array.from(gains,g=>g.id),[1,8,15],
  "Should only use normal RPG Maker gainItem on eligible owned items");
-assert.equal(throws,2,"A broken third-party item must be isolated and counted");
+assert.equal(throws,4,"Broken third-party queries and a gainItem failure must be isolated");
 assert.match(ui.lastNotice,/Пополнено видов: 3/);
 assert.match(ui.lastNotice,/ · добавлено предметов: 10097/);
-assert.match(ui.lastNotice,/ · пропущено: 2/);
+assert.match(ui.lastNotice,/ · пропущено: 4/);
 const beforeSecond=gains.length;
 ui.lastPage.rows[1].run();
 assert.equal(gains.length,beforeSecond,"Refill should be idempotent");
@@ -85,6 +86,13 @@ assert.match(ui.lastNotice,/Пополнено видов: 0/);
 const saved=nums[1];nums[1]=0;
 ui.lastPage.rows[1].run();
 assert.equal(nums[1],0,"Previously owned but currently exhausted item must not be created");
+const originalItems=party.items;
+party.items=function(){throw Error("Third-party items() exception");};
+const failure=ctx.swfRefillOwnedNormalItems();
+assert.equal(failure.types,0);
+assert.equal(failure.added,0);
+assert.equal(failure.skipped,1,"A broken items() implementation should return a safe result");
+party.items=originalItems;
 
 assert.ok(!plugin.includes("gainItem(item,amount,true)"));
 assert.ok(plugin.includes("swfRefillOwnedNormalItems"));

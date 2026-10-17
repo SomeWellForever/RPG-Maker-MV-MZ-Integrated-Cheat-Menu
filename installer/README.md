@@ -15,4 +15,4 @@ The installer locates `www/js/` or `js/`, updates `plugins.js` (with a managed `
 
 Starting with **v2.3.1**, an existing `Cheat_Menu` entry with an empty description is disabled during migration while its settings are preserved. Recognized older integrated entries are removed. Other plugins are preserved and repeated installation is supported.
 
-Only Windows and Linux installers are distributed in release **v2.7.0**.
+Only Windows and Linux installers are distributed in release **v2.7.1**.
