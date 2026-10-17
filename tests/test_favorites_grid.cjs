@@ -12,7 +12,10 @@ const part=(begin,end)=>{
 const saved1={},saved2={};
 const ctx={$gameSystem:saved1,TR:s=>s,clean:s=>String(s||""),
            Scene_UniversalControl:function(){},Window_Command:function(){},
-           IS_MZ:false,Graphics:{boxWidth:816},Bitmap:function(){},Sprite:function(){}};
+           IS_MZ:false,Graphics:{boxWidth:816},Bitmap:function(){},Sprite:function(){},
+           stackLimitLabel:()=>"standard",Cheat_Menu:{speed_unlocked:true},
+           $gamePlayer:{isThrough(){return false},moveSpeed(){return 4}},
+           $gameParty:{gold(){return 100}}};
 vm.createContext(ctx);
 vm.runInContext(part("function swfFavorites(","function Window_UniversalList()"),ctx,{timeout:3000});
 assert.equal(ctx.swfFavoriteCount("items"),0);
