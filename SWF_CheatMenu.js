@@ -1,6 +1,6 @@
 /*:
  * @target MV MZ
- * @plugindesc SWF Cheat Menu Integrated 2.4.1: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @plugindesc SWF Cheat Menu Integrated 2.5.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help F7 or the 'Control Menu' / 'Меню управления' key item opens the full menu,
  * including during battle. Choose Auto / Русский / English inside that menu.
@@ -1814,7 +1814,7 @@ DataManager.saveGame = function(savefileId) {
 
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
- * @plugindesc SWF Cheat Menu Integrated v2.4.1 — teleport, levels, skills, items and stack limits.
+ * @plugindesc SWF Cheat Menu Integrated v2.5.0 — teleport, levels, skills, items and stack limits.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help Use F7 or the Control Menu / Меню управления key item on the map or in battle.
  * Auto / Русский / English changes the full menu only; key 1 remains in English.
@@ -2003,7 +2003,44 @@ var SWF_EN_STRINGS = {
     'Язык меню: ': 'Menu language: ',
     'Выбор языка': 'Choose language',
     'Автоматически (по языку игры или системы)': 'Automatic (game or system language)',
-    'Язык интерфейса меню не меняет названия предметов, карт и навыков, заданные самой игрой.': 'Changing the menu language does not translate items, maps, or skills provided by the game.'
+    'Язык интерфейса меню не меняет названия предметов, карт и навыков, заданные самой игрой.': 'Changing the menu language does not translate items, maps, or skills provided by the game.',
+    'Персонажи и отряд': 'Characters & party',
+    'Уровни · навыки · HP / MP / TP': 'Levels · skills · HP / MP / TP',
+    'Инвентарь': 'Inventory',
+    'Предметы · оружие · броня': 'Items · weapons · armor',
+    'Прогресс игры': 'Game progress',
+    'Золото · переменные · флаги': 'Gold · variables · switches',
+    'Мир и перемещение': 'World & travel',
+    'Карты · телепорт · скорость': 'Maps · teleport · speed',
+    'Бой': 'Battle',
+    'Противники · победа': 'Enemies · victory',
+    'Избранное': 'Favorites',
+    'Быстрый доступ к отмеченному': 'Quick access to starred entries',
+    'Настройки': 'Settings',
+    'Язык · служебный предмет': 'Language · control item',
+    'Список персонажей': 'Party characters',
+    'Предметы, оружие и броня': 'Items, weapons and armor',
+    'Предметы': 'Items',
+    'Оружие': 'Weapons',
+    'Броня и аксессуары': 'Armor & accessories',
+    'Навыки': 'Skills',
+    'Переключатели': 'Switches',
+    'Переменные': 'Variables',
+    'Карты': 'Maps',
+    'Выбери персонажа для навыков': 'Choose an actor for skills',
+    'Избранное хранится в текущем сохранении игры.': 'Favorites are stored in this game save.',
+    'Поиск по названию или числовому идентификатору.': 'Search by name or numeric ID.',
+    'Сортировка: ': 'Sort: ',
+    'по названию': 'name',
+    'избранное сверху': 'favorites first',
+    'по ID': 'ID',
+    'Переключить: по ID, по названию или избранное сверху.': 'Switch between ID, name and favorites first.',
+    'Только избранное: ': 'Favorites only: ',
+    'Показать только записи, отмеченные звёздочкой.': 'Show only starred entries.',
+    'Редактирование ★: ': 'Edit ★: ',
+    'Когда включено, выбор записи меняет ★ вместо выполнения действия.': 'When enabled, choosing an entry toggles ★ without executing its action.',
+    '\\n★: добавь в избранное через режим редактирования.': '\\n★: use Edit ★ to add or remove favorites.',
+    'SWF Cheat Menu · ': 'SWF Cheat Menu · '
 };
 var SWF_LANG_KEY = 'SWF_CheatMenu.menuLanguage';
 var swfLanguageSetting = 'auto';
