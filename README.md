@@ -45,7 +45,7 @@
 2. Запустите `Install_Windows.cmd` (Windows) или `bash Install_Linux.sh` (Linux). Установщик **сам найдёт игру** и установит или обновит мод — выбирать папку не нужно.
 3. Запустите игру. Меню открывается клавишей `F7` или через предмет «Меню управления», а быстрое меню — клавишей `1`.
 
-**Дополнительный архив без установщика:** для уже установленного SWF Cheat Menu доступен ZIP только с `SWF_CheatMenu.js`. Закройте игру, сохраните копию старого `www/js/plugins/SWF_CheatMenu.js` (или `js/plugins/SWF_CheatMenu.js`) и замените его файлом из архива. Такой архив не предназначен для первоначальной установки. Если защитник Windows обнаруживает угрозу, не отключайте защиту и не добавляйте файлы в исключения: отправьте обнаружение на проверку Microsoft.
+**[Дополнительный архив без установщика](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.4.1/SWF_CheatMenu_plugin_only_v2.4.1.zip):** для уже установленного SWF Cheat Menu доступен ZIP только с `SWF_CheatMenu.js`. Закройте игру, сохраните копию старого `www/js/plugins/SWF_CheatMenu.js` (или `js/plugins/SWF_CheatMenu.js`) и замените его файлом из архива. Такой архив не предназначен для первоначальной установки. Если защитник Windows обнаруживает угрозу, не отключайте защиту и не добавляйте файлы в исключения: отправьте обнаружение на проверку Microsoft.
 
 **Если архив распакован в другую папку**, запустите установщик оттуда и выберите папку игры. Устанавливать Python или Go не требуется.
 
@@ -96,7 +96,7 @@ Choose the first Search entry in an item, skill, map, switch or variable catalog
 2. Run `Install_Windows.cmd` (Windows) or `bash Install_Linux.sh` (Linux). The installer **detects the game automatically** and installs or updates the mod without asking you to choose a folder.
 3. Launch the game. Open the full menu with `F7` or the Control Menu item; press `1` for the quick overlay.
 
-**Plugin-only alternative:** users with an existing SWF Cheat Menu installation may use the ZIP containing only `SWF_CheatMenu.js`. Close the game, back up the existing `www/js/plugins/SWF_CheatMenu.js` (or `js/plugins/SWF_CheatMenu.js`) and replace it. This package is not intended for first-time installation. If Windows Defender detects a threat, do not disable protection or allowlist the file; submit the detection to Microsoft for review.
+**[Plugin-only alternative](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.4.1/SWF_CheatMenu_plugin_only_v2.4.1.zip):** users with an existing SWF Cheat Menu installation may use the ZIP containing only `SWF_CheatMenu.js`. Close the game, back up the existing `www/js/plugins/SWF_CheatMenu.js` (or `js/plugins/SWF_CheatMenu.js`) and replace it. This package is not intended for first-time installation. If Windows Defender detects a threat, do not disable protection or allowlist the file; submit the detection to Microsoft for review.
 
 **If you extracted the ZIP somewhere else**, run the installer there and select the game folder when prompted. Neither Python nor Go is required.
 
