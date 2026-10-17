@@ -92,6 +92,24 @@ assert.ok(!ui.page.rows.some(r=>r.name.startsWith("Карты")),"Battle favorit
 ui._battleMode=false;ui.favorites();
 assert.ok(ui.page.rows.some(r=>r.name.startsWith("Карты")),"Map favorites should exist outside battle");
 
+ui._swfOnlyFavorites={items:true,weapons:true,armors:true,skills:true,maps:true,switches:true,variables:true};
+ui._swfEditingFavorites={items:true,weapons:true,armors:true,skills:true,maps:true,switches:true,variables:true};
+ui.sectionInventory();
+assert.equal(ui._swfOnlyFavorites.items,false,"Regular inventory must not inherit Favorites-only mode");
+assert.equal(ui._swfEditingFavorites.weapons,false,"Regular inventory must not enter star editing");
+ui.sectionActors();
+assert.equal(ui._swfOnlyFavorites.skills,false);
+ui.sectionWorld();
+assert.equal(ui._swfOnlyFavorites.maps,false);
+ui.sectionProgress();
+assert.equal(ui._swfOnlyFavorites.variables,false);
+vm.runInContext(part("Scene_UniversalControl.prototype.back=","Scene_UniversalControl.prototype.close="),ctx,{timeout:3000});
+let refreshed=false;
+ui.favorites=function(replace){refreshed=replace===true;};
+ui._pages=[{title:"Избранное",rows:[],index:2,favoriteRoot:true}];
+ui.back();
+assert.equal(refreshed,true,"Favorites totals must refresh when returning to the category list");
+
 // Grid only changes main menu: all list pages retain one column and inherited
 // scroll/selection behavior. Create minimal MV/MZ-friendly Window_Command mocks.
 for(const mz of [false,true]){
