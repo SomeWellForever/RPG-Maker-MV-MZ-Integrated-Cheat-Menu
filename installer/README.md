@@ -1,6 +1,6 @@
 # Native installer (no Python dependency)
 
-This directory contains the shared Go 1.22 installation engine used by Windows and Linux. The release archive contains compiled binaries for supported architectures; end users do not need Go.
+This directory contains the shared Go 1.22 installation engine used by Windows and Linux. The release archive contains compiled binaries in bin/; end users do not need Go or Python. Keep bin/ together with the Windows/Linux launcher scripts.
 
 The installer intentionally keeps the RPG Maker MV/MZ game modifications from earlier v2.2.0 builds: updates plugins.js (or a guarded main.js loader for nonstandard registries), recognizes the previous Integrated Cheat Menu install, backs up changed files, preserves unrelated plugins and never modifies saves.
 

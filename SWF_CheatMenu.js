@@ -1,10 +1,11 @@
 /*:
  * @target MV MZ
  * @plugindesc SWF Cheat Menu Integrated 2.3.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
- * @author Community Cheat Menu + integrated local patch
- * @help Use the key item 'Control Menu' / 'Меню управления' or F7.
- * Menu language: Auto / Русский / English (select inside the menu).
- * Key 1 on map or in battle opens the legacy quick overlay.
+ * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
+ * @help F7 or the 'Control Menu' / 'Меню управления' key item opens the full menu,
+ * including during battle. Choose Auto / Русский / English inside that menu.
+ * Key 1 opens the legacy English quick overlay, including during battle.
+ * Item, skill and map names are taken from the game, not translated.
  * The key item is usable in battle without consuming a turn.
  * Contains original Cheat_Menu features plus RPG Maker MV/MZ control menu.
  */
@@ -1807,9 +1808,10 @@ DataManager.saveGame = function(savefileId) {
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
  * @plugindesc SWF Cheat Menu Integrated v2.3.0 — teleport, levels, skills, items and stack limits.
- * @author Custom patch
- * @help Use the key item "Меню управления" or F7 on the map.
- * For RPG Maker MV and MZ. Custom plugin compatibility is not guaranteed.
+ * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
+ * @help Use F7 or the Control Menu / Меню управления key item on the map or in battle.
+ * Auto / Русский / English changes the full menu only; key 1 remains in English.
+ * For RPG Maker MV and MZ. Other plugins may require compatibility fixes.
  * @target MV MZ
  */
 (function() {

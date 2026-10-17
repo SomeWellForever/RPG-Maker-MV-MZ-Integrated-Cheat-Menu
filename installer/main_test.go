@@ -96,7 +96,7 @@ func TestUnicodePath(t *testing.T) {
     checkNames(t,js,"OtherPlugin","SWF_CheatMenu")
 }
 
-func TestLegacyRegistrationRemovedEvenIfXenolauncherDeletedFile(t *testing.T) {
+func TestLegacyRegistrationRemovedEvenIfOldPluginFileIsMissing(t *testing.T) {
     root,js,payload:=fixture(t,false)
     old:=`var $plugins = [{"name":"Cheat_Menu","status":true,"description":"Integrated Cheat Menu"},{"name":"OtherPlugin","status":true}];`
     os.WriteFile(filepath.Join(js,"plugins.js"),[]byte(old),0o644)
