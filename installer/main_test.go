@@ -165,14 +165,26 @@ func TestUpgradeDisablesBlankDescriptionLegacyAndPreservesSettings(t *testing.T)
             }
         }
         if activeSWF != 1 || activeLegacy != 0 { t.Fatalf("conflict remains: SWF=%d legacy=%d", activeSWF, activeLegacy) }
-        backup, err := filepath.Glob(filepath.Join(root, "SWF_CheatMenu_Backup", "*", filepath.Base(filepath.Dir(js)), "js", "plugins.js"))
-        // Independently check that repeat installation is idempotent.
-        _ = backup
-        _ = err
+        // Both MV (www/js) and MZ (js) backups must contain the exact pre-update registry.
+        relative, err := filepath.Rel(root, filepath.Join(js, "plugins.js"))
+        if err != nil { t.Fatal(err) }
+        pattern := filepath.Join(root, "SWF_CheatMenu_Backup", "*", relative)
+        backups, err := filepath.Glob(pattern)
+        if err != nil || len(backups) != 1 {
+            t.Fatalf("expected one registry backup; got %v (error: %v)", backups, err)
+        }
+        if !bytes.Equal(mustRead(t, backups[0]), []byte(reg)) {
+            t.Fatal("backup does not contain the original plugins.js")
+        }
+        // Repeat installation must leave both the registry and backup count unchanged.
         before := mustRead(t, filepath.Join(js, "plugins.js"))
         if err := run([]string{"install", root, payload}, os.Stdout); err != nil { t.Fatal(err) }
         after := mustRead(t, filepath.Join(js, "plugins.js"))
         if !bytes.Equal(before, after) { t.Fatal("repeated upgrade modified registry") }
+        repeatBackups, err := filepath.Glob(pattern)
+        if err != nil || len(repeatBackups) != len(backups) {
+            t.Fatalf("repeated upgrade created new backups: %v (error: %v)", repeatBackups, err)
+        }
     }
 }
 
