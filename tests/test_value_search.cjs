@@ -12,7 +12,7 @@ function fragment(start,end){
 const state={
     $dataSystem:{
         switches:["","Gate 1","Open Door","NPC","Switch 10"],
-        variables:["","Health","Quest Flag","Experience","Event State","Score","Quest string","Plain 100"]
+        variables:["","Health","Quest Flag","Experience","Event State","Score","Quest string","Text number"]
     },
     variableData:[null,125,true,150,false,0,"quest_started","100"],
     switchData:[null,true,false,true,false],
