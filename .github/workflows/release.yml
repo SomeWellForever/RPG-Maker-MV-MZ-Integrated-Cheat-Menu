@@ -23,6 +23,8 @@ jobs:
         run: node tests/test_i18n.cjs
       - name: Test duplicate plugin load and DataManager recursion prevention
         run: node tests/test_recursion.cjs
+      - name: Test the quick 1-key menu during map and battle
+        run: node tests/test_quick_overlay.cjs
 
   windows:
     runs-on: windows-latest
