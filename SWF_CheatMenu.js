@@ -2086,7 +2086,10 @@ var SWF_EN_STRINGS = {
     "Одним нажатием доводит уже имеющиеся обычные предметы до индивидуального лимита. Не создаёт новые виды, не трогает оружие, броню, ключевые предметы и уникальные экземпляры.": "Fill currently owned normal items to each item's maximum with one action. Does not create new item types or change weapons, armor, key items, or unique instances.",
     "Пополнено видов: ": "Item types refilled: ",
     " · добавлено предметов: ": " · items added: ",
-    " · пропущено: ": " · skipped: "
+    " · пропущено: ": " · skipped: ",
+    "Нет уже имеющихся складываемых обычных предметов.": "No owned stackable normal items were found.",
+    "Все подходящие предметы уже достигли лимита: ": "All eligible items are already at their cap: ",
+    "Система инвентаря не позволила увеличить количество; возможно, нужен патч под игру.": "The game's inventory system did not increase item counts; a game-specific patch may be required."
 };
 var SWF_ES_STRINGS = {
     "Slots ": "Ranuras ",
@@ -2318,7 +2321,10 @@ var SWF_ES_STRINGS = {
     "Одним нажатием доводит уже имеющиеся обычные предметы до индивидуального лимита. Не создаёт новые виды, не трогает оружие, броню, ключевые предметы и уникальные экземпляры.": "Rellena con una acción los objetos normales que ya tienes hasta su límite individual. No crea objetos nuevos ni modifica armas, armaduras, objetos clave o ejemplares únicos.",
     "Пополнено видов: ": "Tipos rellenados: ",
     " · добавлено предметов: ": " · objetos añadidos: ",
-    " · пропущено: ": " · omitidos: "
+    " · пропущено: ": " · omitidos: ",
+    "Нет уже имеющихся складываемых обычных предметов.": "No se encontraron objetos normales acumulables que ya tengas.",
+    "Все подходящие предметы уже достигли лимита: ": "Todos los objetos aptos ya alcanzaron el límite: ",
+    "Система инвентаря не позволила увеличить количество; возможно, нужен патч под игру.": "El inventario del juego no permitió aumentar las cantidades; quizá necesite una adaptación específica."
 };
 var SWF_LANG_KEY = 'SWF_CheatMenu.menuLanguage';
 var swfLanguageSetting = 'auto';
@@ -2449,8 +2455,15 @@ function eligibleForStackLimit(item) {
     if (typeof DataManager.isIndependent === 'function' && DataManager.isIndependent(item)) return false;
     if (item.meta && (item.meta.IndependentItem || item.meta.Independent || item.meta.NoStack || item.meta.NoStacking)) return false;
     var note = String(item.note || '');
-    if (/<\s*(?:max\s*items?|item\s*max(?:imum)?|stack\s*(?:limit|max)|max\s*stack|itemmaxnum)\s*:\s*\d+\s*>/i.test(note)) return false;
-    if (/(?:^|\n)\s*itemMaxNum\s*:\s*\d+/i.test(note)) return false;
+    // Ordinary RPG Maker items may have note-defined stack caps such as
+    // itemMaxNum:5. These are the very limits a user explicitly chooses to
+    // override with 99/999/9999. Preserve them in default mode, and keep
+    // equipment/special-item caps protected even in increased-limit mode.
+    var isNormal=DataManager.isItem(item)&&item.itypeId===1;
+    if(!isNormal){
+        if (/<\s*(?:max\s*items?|item\s*max(?:imum)?|stack\s*(?:limit|max)|max\s*stack|itemmaxnum)\s*:\s*\d+\s*>/i.test(note))return false;
+        if (/(?:^|\n)\s*itemMaxNum\s*:\s*\d+/i.test(note))return false;
+    }
     return true;
 }
 // Call the game's previous implementation first, so other inventory plugins
@@ -2933,7 +2946,7 @@ function swfRefillableItem(item){
     return true;
 }
 function swfRefillOwnedNormalItems(){
-    var result={types:0,added:0,skipped:0};
+    var result={types:0,added:0,skipped:0,ownedNormal:0,alreadyFull:0};
     if(!$gameParty||typeof $gameParty.items!=='function'||typeof $gameParty.numItems!=='function'||
        typeof $gameParty.maxItems!=='function'||typeof $gameParty.gainItem!=='function')return result;
     var owned;
@@ -2950,6 +2963,7 @@ function swfRefillOwnedNormalItems(){
         try{
             if(!swfRefillableItem(item)||seen[item.id])return;
             seen[item.id]=true;
+            result.ownedNormal++;
             var before=$gameParty.numItems(item),max=$gameParty.maxItems(item);
             if(typeof before!=='number'||!isFinite(before)||before<1||Math.floor(before)!==before||
                typeof max!=='number'||!isFinite(max)||max<0){result.skipped++;return;}
@@ -2957,7 +2971,7 @@ function swfRefillOwnedNormalItems(){
             // advertises a very large maximum.
             max=Math.min(9999,Math.floor(max));
             var amount=max-before;
-            if(amount<1)return;
+            if(amount<1){result.alreadyFull++;return;}
             $gameParty.gainItem(item,amount,false);
             var after=$gameParty.numItems(item);
             var gained=typeof after==='number'&&isFinite(after)?Math.max(0,after-before):0;
@@ -2977,8 +2991,14 @@ Scene_UniversalControl.prototype.sectionInventory=function(){
         {name:TR('Предметы, оружие и броня'),run:function(){self.itemCategories();}},
         {name:TR('Пополнить имеющиеся обычные предметы'),help:TR('Одним нажатием доводит уже имеющиеся обычные предметы до индивидуального лимита. Не создаёт новые виды, не трогает оружие, броню, ключевые предметы и уникальные экземпляры.'),run:function(){
             var result=swfRefillOwnedNormalItems();
-            self.notice(TR('Пополнено видов: ')+result.types+TR(' · добавлено предметов: ')+result.added+
-                (result.skipped?TR(' · пропущено: ')+result.skipped:''));
+            var message=TR('Пополнено видов: ')+result.types+TR(' · добавлено предметов: ')+result.added+
+                (result.skipped?TR(' · пропущено: ')+result.skipped:'');
+            if(!result.types){
+                message+='\n'+(!result.ownedNormal?TR('Нет уже имеющихся складываемых обычных предметов.'):
+                    result.alreadyFull?TR('Все подходящие предметы уже достигли лимита: ')+stackLimitLabel():
+                    TR('Система инвентаря не позволила увеличить количество; возможно, нужен патч под игру.'));
+            }
+            self.notice(message);
         }},
         {name:TR('Лимит предметов: ')+stackLimitLabel(),run:function(){self.stackLimits();}}
     ]);
