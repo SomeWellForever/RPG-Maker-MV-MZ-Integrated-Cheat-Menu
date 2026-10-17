@@ -2,11 +2,12 @@ name: Verify and publish bilingual native installers (Windows and Linux)
 on:
   push:
     branches: [main]
+    tags: ['v*.*.*']
   pull_request:
     branches: [main]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   plugin:
@@ -124,6 +125,8 @@ jobs:
   package:
     needs: [plugin, windows, linux]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -148,11 +151,22 @@ jobs:
           if-no-files-found: error
       - name: Validate current release versions
         run: python3 scripts/check_version.py
-      - name: Publish GitHub release v2.3.1
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      # A branch update only runs CI. Existing releases and historical tags are immutable.
+      - name: Publish a new release only from its matching version tag
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          VERSION="$(grep -E '^ver = "[0-9]+\\.[0-9]+\\.[0-9]+"' scripts/check_version.py | cut -d '"' -f 2)"
+          if [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then
+            echo "Refusing to release: tag $GITHUB_REF_NAME does not match code version v$VERSION." >&2
+            exit 1
+          fi
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists; refusing to replace its files or notes." >&2
+            exit 1
+          fi
           cat > release-notes.md <<'EOF'
           ## SWF Cheat Menu v2.3.1
 
@@ -181,49 +195,4 @@ jobs:
 
           **Mac / Xenolauncher:** Уже пропатченную на Windows/Linux игру можно перенести на Mac и попробовать запустить через [Xenolauncher](https://github.com/m5kro/Xenolauncher) — сторонний лаунчер для macOS. Отключите в нём `Enable Cheat Menu`, чтобы избежать конфликта. Совместимость зависит от игры.
           EOF
-          if gh release view v2.3.1 >/dev/null 2>&1; then
-            gh release edit v2.3.1 --title "SWF Cheat Menu v2.3.1" --notes-file release-notes.md --latest
-            gh release upload v2.3.1 SWF_CheatMenu_MV_MZ_v2.3.1.zip --clobber
-          else
-            gh release create v2.3.1 SWF_CheatMenu_MV_MZ_v2.3.1.zip --target "$GITHUB_SHA" --title "SWF Cheat Menu v2.3.1" --notes-file release-notes.md --latest
-          fi
-      - name: Restore historical v2.2.0 release and source tag
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          PREVIOUS_COMMIT=dd0a3ccc2e2baa9b2382109f4f001e46100a0cf0
-          CURRENT_TAG="$(gh api repos/$GITHUB_REPOSITORY/git/ref/tags/v2.2.0 --jq '.object.sha')"
-          if [ "$CURRENT_TAG" = "$PREVIOUS_COMMIT" ]; then
-            echo "Historical v2.2.0 release already restored"
-            exit 0
-          fi
-          git fetch --depth=1 origin "$PREVIOUS_COMMIT"
-          git worktree add --detach "$RUNNER_TEMP/swf-legacy-v2.2" "$PREVIOUS_COMMIT"
-          python3 "$RUNNER_TEMP/swf-legacy-v2.2/scripts/build_release.py"
-          cat > historical-release-notes.md <<'EOF'
-          ## SWF Cheat Menu v2.2.0 — historical release
-          
-          Archived original v2.2.0 build from before native installers and bilingual interface. Earlier ZIP bundled Python-based installers. macOS appeared in this historical build but is **not supported** in the current v2.3.1 release.
-          
-          For Windows/Linux, **use v2.3.1** for the latest fixes, English/Russian interface and standalone installers.
-          
-          ---
-          ## SWF Cheat Menu v2.2.0 — предыдущая версия
-          
-          Восстановлена исходная сборка v2.2.0: установщики на Python, без двуязычного меню. macOS присутствовала в старом архиве, но в актуальной v2.3.1 эта платформа **не поддерживается**.
-          
-          **Рекомендуется версия v2.3.1** для Windows и Linux.
-          EOF
-          gh release upload v2.2.0 "$RUNNER_TEMP/swf-legacy-v2.2/SWF_CheatMenu_MV_MZ_v2.2.0.zip" --clobber
-          gh release edit v2.2.0 --notes-file historical-release-notes.md --latest=false
-          git tag -f v2.2.0 "$PREVIOUS_COMMIT"
-          git push --force origin refs/tags/v2.2.0
-      - name: Align current v2.3.1 source tag with published revision
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git tag -f v2.3.1 "$GITHUB_SHA"
-          git push --force origin refs/tags/v2.3.1
+          gh release create "$GITHUB_REF_NAME" "SWF_CheatMenu_MV_MZ_v${VERSION}.zip" --target "$GITHUB_SHA" --title "SWF Cheat Menu $GITHUB_REF_NAME" --notes-file release-notes.md --latest
