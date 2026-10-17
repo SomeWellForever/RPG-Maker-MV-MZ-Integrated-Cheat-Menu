@@ -1,4 +1,4 @@
-SWF Cheat Menu v2.7.0 — обновление только плагина / plugin-only update
+SWF Cheat Menu v2.7.1 — обновление только плагина / plugin-only update
 ========================================================================
 
 Русский
@@ -34,3 +34,20 @@ The draggable list scrollbar is rendered by RPG Maker itself.
 For a fresh installation, use the full release archive.
 If Defender reports a threat, do not disable protection or add exclusions.
 Submit the file to Microsoft: https://www.microsoft.com/en-us/wdsi/filesubmission
+
+Español
+
+Este archivo contiene únicamente SWF_CheatMenu.js y estas instrucciones.
+No incluye ejecutables ni instaladores. Úsalo solo para actualizar un juego
+donde SWF Cheat Menu ya esté instalado.
+
+1. Cierra el juego.
+2. Abre la carpeta www/js/plugins/ o js/plugins/ del juego.
+3. Haz una copia de seguridad del archivo SWF_CheatMenu.js anterior.
+4. Sustitúyelo por el nuevo SWF_CheatMenu.js.
+5. Inicia el juego y comprueba F7, la búsqueda y la tecla 1.
+
+Para una primera instalación, utiliza el archivo completo con instaladores.
+Si el antivirus detecta una amenaza, no desactives la protección ni añadas
+excepciones. Envía el archivo para su revisión:
+https://www.microsoft.com/en-us/wdsi/filesubmission
