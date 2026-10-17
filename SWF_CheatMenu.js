@@ -1348,12 +1348,14 @@ Cheat_Menu.append_switch_selection = function(key1, key2, key3) {
 
 // handler for saving positions
 Cheat_Menu.save_position = function(pos_num, event) {
-	Cheat_Menu.saved_positions[pos_num].m = $gameMap.mapId();
-	Cheat_Menu.saved_positions[pos_num].x = $gamePlayer.x;
-	Cheat_Menu.saved_positions[pos_num].y = $gamePlayer.y;
-
-	SoundManager.playSystemSound(1);
-	Cheat_Menu.update_menu();
+    if(!Array.isArray(Cheat_Menu.saved_positions))Cheat_Menu.saved_positions=[];
+    if(!Cheat_Menu.saved_positions[pos_num]||typeof Cheat_Menu.saved_positions[pos_num]!=='object')
+        Cheat_Menu.saved_positions[pos_num]={m:-1,x:-1,y:-1};
+    Cheat_Menu.saved_positions[pos_num].m=$gameMap.mapId();
+    Cheat_Menu.saved_positions[pos_num].x=$gamePlayer.x;
+    Cheat_Menu.saved_positions[pos_num].y=$gamePlayer.y;
+    SoundManager.playSystemSound(1);
+    Cheat_Menu.update_menu();
 };
 
 // handler for loading/recalling positions
