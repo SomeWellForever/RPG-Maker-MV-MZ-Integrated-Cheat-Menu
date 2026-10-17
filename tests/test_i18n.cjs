@@ -104,6 +104,7 @@ const quickPages=[...plugin.slice(plugin.indexOf("// One menu added for each che
 const allLabels=[...new Set(quickLabels.concat(quickPages))];
 assert.ok(allLabels.length>=42);
 for(const label of allLabels){
+    if(label==='EXP')continue; // This RPG abbreviation is also the standard RU/ES label.
     for(const lang of ["ru","es"]){
         const x=context("en_US","en-US",lang).ctx;
         assert.notEqual(x.Cheat_Menu.quickText(label),label,"Missing quick "+lang+" translation: "+label);
