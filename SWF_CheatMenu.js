@@ -1,10 +1,10 @@
 /*:
  * @target MV MZ
- * @plugindesc SWF Cheat Menu Integrated 2.5.1: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @plugindesc SWF Cheat Menu Integrated 2.6.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help F7 or the 'Control Menu' / 'Меню управления' key item opens the full menu,
- * including during battle. Choose Auto / Русский / English inside that menu.
- * Key 1 opens the legacy English quick overlay, including during battle.
+ * including during battle. Choose Auto / Русский / English / Español inside that menu.
+ * Key 1 opens the localized legacy quick overlay, including during battle.
  * Item, skill and map names are taken from the game, not translated.
  * The key item is usable in battle without consuming a turn.
  * Contains original Cheat_Menu features plus RPG Maker MV/MZ control menu.
@@ -496,7 +496,7 @@ Cheat_Menu.append_scroll_selector = function(text, key1, key2, scroll_handler) {
 	scroll_right_button.className = "scroll_selector_buttons cheat_menu_cell";
 	
 	scroll_left_button.innerHTML = "←[" + key1 + "]";
-	scroll_text.innerHTML = text;
+	scroll_text.innerHTML = Cheat_Menu.quickNull ? Cheat_Menu.quickNull(text) : text;
 	scroll_right_button.innerHTML =  "[" + key2 + "]→";
 
 	scroll_left_button.addEventListener('mousedown', scroll_handler.bind(null, "left"));
@@ -517,7 +517,7 @@ Cheat_Menu.append_title = function(title) {
 	title_text.className = "cheat_menu_cell_title";
 	temp = title_row.insertCell()
 	temp.className = "cheat_menu_cell_title";
-	title_text.innerHTML = title;
+	title_text.innerHTML = Cheat_Menu.quickText ? Cheat_Menu.quickText(title) : title;
 };
 
 // Insert a desciption row
@@ -531,7 +531,7 @@ Cheat_Menu.append_description = function(text) {
 	title_text.className = "cheat_menu_cell";
 	temp = title_row.insertCell()
 	temp.className = "cheat_menu_cell";
-	title_text.innerHTML = text;
+	title_text.innerHTML = Cheat_Menu.quickNull ? Cheat_Menu.quickNull(text) : text;
 };
 
 // Append a cheat with some handler to activate
@@ -551,8 +551,9 @@ Cheat_Menu.append_cheat = function(cheat_text, status_text, key, click_handler) 
 	var cheat = cheat_row.insertCell();
 	cheat.className = "cheat_menu_buttons cheat_menu_cell";
 
-	cheat_title.innerHTML = cheat_text;
-	cheat.innerHTML = status_text + "[" + key + "]";
+	cheat_title.innerHTML = Cheat_Menu.quickText ? Cheat_Menu.quickText(cheat_text) : cheat_text;
+	var displayStatus = Cheat_Menu.quickStatus ? Cheat_Menu.quickStatus(status_text) : status_text;
+	cheat.innerHTML = displayStatus + "[" + key + "]";
 
 	cheat.addEventListener('mousedown', click_handler);
 	Cheat_Menu.key_listeners[key] = click_handler;
@@ -586,7 +587,7 @@ Cheat_Menu.scroll_cheat = function(direction, event) {
 //	append on each menu
 Cheat_Menu.append_cheat_title = function(cheat_name) {
 	Cheat_Menu.append_title("Cheat");
-	Cheat_Menu.append_scroll_selector(cheat_name, 2, 3, Cheat_Menu.scroll_cheat);
+	Cheat_Menu.append_scroll_selector(Cheat_Menu.quickText ? Cheat_Menu.quickText(cheat_name) : cheat_name, 2, 3, Cheat_Menu.scroll_cheat);
 };
 
 // Left and right scrollers for handling switching selected actors
@@ -1814,10 +1815,10 @@ DataManager.saveGame = function(savefileId) {
 
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
- * @plugindesc SWF Cheat Menu Integrated v2.5.1 — teleport, levels, skills, items and stack limits.
+ * @plugindesc SWF Cheat Menu Integrated v2.6.0 — teleport, levels, skills, items and stack limits.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help Use F7 or the Control Menu / Меню управления key item on the map or in battle.
- * Auto / Русский / English changes the full menu only; key 1 remains in English.
+ * Auto / Русский / English / Español changes both menus (including the quick overlay on 1).
  * For RPG Maker MV and MZ. Other plugins may require compatibility fixes.
  * @target MV MZ
  */
@@ -2273,30 +2274,103 @@ var SWF_LANG_KEY = 'SWF_CheatMenu.menuLanguage';
 var swfLanguageSetting = 'auto';
 try {
     var swfStoredLanguage = window.localStorage.getItem(SWF_LANG_KEY);
-    if (swfStoredLanguage === 'ru' || swfStoredLanguage === 'en') swfLanguageSetting = swfStoredLanguage;
+    if (swfStoredLanguage === 'ru' || swfStoredLanguage === 'en' || swfStoredLanguage === 'es') swfLanguageSetting = swfStoredLanguage;
 } catch (ignored) {}
 function swfCurrentLanguage() {
     if (swfLanguageSetting !== 'auto') return swfLanguageSetting;
     var gameLocale = typeof $dataSystem !== 'undefined' && $dataSystem ? String($dataSystem.locale || '') : '';
     var systemLocale = typeof navigator !== 'undefined' ? String(navigator.language || '') : '';
-    return /^ru(?:[-_]|$)/i.test(gameLocale || systemLocale) ? 'ru' : 'en';
+    var locale=gameLocale || systemLocale;
+    if(/^ru(?:[-_]|$)/i.test(locale))return 'ru';
+    return /^es(?:[-_]|$)/i.test(locale)?'es':'en';
 }
 function TR(ru) {
-    if (swfCurrentLanguage() === 'ru') return ru;
-    return Object.prototype.hasOwnProperty.call(SWF_EN_STRINGS, ru) ? SWF_EN_STRINGS[ru] : ru;
+    var lang=swfCurrentLanguage();
+    if(lang==='ru')return ru;
+    var dictionary=lang==='es'?SWF_ES_STRINGS:SWF_EN_STRINGS;
+    return Object.prototype.hasOwnProperty.call(dictionary,ru)?dictionary[ru]:ru;
 }
 function swfLanguageLabel() {
-    return swfLanguageSetting === 'auto' ? 'Auto' : swfLanguageSetting === 'ru' ? 'Русский' : 'English';
+    return swfLanguageSetting === 'auto' ? 'Auto' : swfLanguageSetting === 'ru' ? 'Русский' : swfLanguageSetting==='es'?'Español':'English';
 }
 function swfSetLanguage(lang) {
-    if (lang !== 'auto' && lang !== 'ru' && lang !== 'en') return;
+    if (lang !== 'auto' && lang !== 'ru' && lang !== 'en' && lang !== 'es') return;
     swfLanguageSetting = lang;
     try { window.localStorage.setItem(SWF_LANG_KEY, lang); } catch (ignored) {}
+    if (Cheat_Menu && Cheat_Menu.cheat_menu_open) Cheat_Menu.update_menu();
     if (typeof $dataItems !== 'undefined' && $dataItems && $dataItems[ITEM_ID] && itemIsControl($dataItems[ITEM_ID])) {
         $dataItems[ITEM_ID].name = TR('Меню управления');
         $dataItems[ITEM_ID].description = TR('Управление персонажами, инвентарём и игрой. Доступен в бою.\nF7 — полное меню, 1 — быстрые читы.');
     }
 }
+
+
+// The original quick overlay uses English source labels. Keep the existing
+// keyboard bindings and cheat handlers, and translate only known interface text.
+// All game-provided names (actors, items, weapons, maps, switches) stay untouched.
+var SWF_QUICK_TRANSLATIONS = {
+    ru: {
+        'Cheat':'Читы','Actor':'Персонаж','Status:':'Состояние:','Alive':'Живые','All':'Все',
+        'Enemy HP to 0':'HP врагов = 0','Enemy HP to 1':'HP врагов = 1',
+        'Party HP to 0':'HP группы = 0','Party HP to 1':'HP группы = 1','Party Full HP':'HP группы макс.',
+        'Party MP to 0':'MP группы = 0','Party MP to 1':'MP группы = 1','Party Full MP':'MP группы макс.',
+        'Party TP to 0':'TP группы = 0','Party TP to 1':'TP группы = 1','Party Full TP':'TP группы макс.',
+        'Amount':'Количество','Stat':'Параметр','Gold':'Золото','Current Speed':'Текущая скорость',
+        'Speed Unlocked':'Скорость свободна','Item':'Предмет','Weapon':'Оружие','Armor':'Броня',
+        'Clear Party States':'Очистить состояния группы','Current State':'Состояния',
+        'Number Effects:':'Эффектов:','Variable':'Переменная','Switch':'Переключатель',
+        'Current Position: ':'Текущая позиция: ','Position ':'Позиция ',
+        'Save:':'Сохранить:','Recall:':'Вернуться:','Teleport':'Телепорт',
+        'Save and Recall':'Точки возврата','Switches':'Переключатели','Variables':'Переменные',
+        'Clear States':'Снять состояния','Speed':'Скорость','Armors':'Броня','Weapons':'Оружие',
+        'Items':'Предметы','Stats':'Параметры','Give Exp':'Дать опыт','Party TP':'TP группы',
+        'Party MP':'MP группы','Party HP':'HP группы','Enemy HP':'HP врагов',
+        'No Clip':'Проход сквозь стены','God Mode':'Бессмертие',
+        'Activate':'Применить','on':'вкл','off':'выкл','true':'да','false':'нет','NULL':'—'
+    },
+    es: {
+        'Cheat':'Trucos','Actor':'Personaje','Status:':'Estado:','Alive':'Vivos','All':'Todos',
+        'Enemy HP to 0':'PV enemigos = 0','Enemy HP to 1':'PV enemigos = 1',
+        'Party HP to 0':'PV grupo = 0','Party HP to 1':'PV grupo = 1','Party Full HP':'PV grupo máx.',
+        'Party MP to 0':'PM grupo = 0','Party MP to 1':'PM grupo = 1','Party Full MP':'PM grupo máx.',
+        'Party TP to 0':'PT grupo = 0','Party TP to 1':'PT grupo = 1','Party Full TP':'PT grupo máx.',
+        'Amount':'Cantidad','Stat':'Atributo','Gold':'Oro','Current Speed':'Velocidad actual',
+        'Speed Unlocked':'Velocidad libre','Item':'Objeto','Weapon':'Arma','Armor':'Armadura',
+        'Clear Party States':'Quitar estados del grupo','Current State':'Estados',
+        'Number Effects:':'Efectos:','Variable':'Variable','Switch':'Interruptor',
+        'Current Position: ':'Posición actual: ','Position ':'Posición ',
+        'Save:':'Guardar:','Recall:':'Volver:','Teleport':'Teletransporte',
+        'Save and Recall':'Puntos guardados','Switches':'Interruptores','Variables':'Variables',
+        'Clear States':'Quitar estados','Speed':'Velocidad','Armors':'Armaduras','Weapons':'Armas',
+        'Items':'Objetos','Stats':'Atributos','Give Exp':'Añadir EXP','Party TP':'PT del grupo',
+        'Party MP':'PM del grupo','Party HP':'PV del grupo','Enemy HP':'PV enemigos',
+        'No Clip':'Atravesar paredes','God Mode':'Modo dios',
+        'Activate':'Activar','on':'activado','off':'desactivado','true':'sí','false':'no','NULL':'—'
+    }
+};
+function swfQuickText(text){
+    var lang=swfCurrentLanguage(),dict=SWF_QUICK_TRANSLATIONS[lang];
+    if(!dict||typeof text!=='string')return text;
+    if(Object.prototype.hasOwnProperty.call(dict,text))return dict[text];
+    if(/^Position \d+$/.test(text))return dict['Position ']+text.slice(9);
+    return text;
+}
+Cheat_Menu.quickText=swfQuickText;
+Cheat_Menu.quickNull=function(text){
+    // Preserve database text, actor names and all other dynamic selector values.
+    if(text==='NULL')return swfQuickText('NULL');
+    if(typeof text==='string'&&/^<font\b[^>]*>NULL<\/font>$/i.test(text))
+        return text.replace('NULL',swfQuickText('NULL'));
+    return text;
+};
+Cheat_Menu.quickStatus=function(status){
+    if(typeof status==='string'&&/^<font\b[^>]*>(?:on|off|true|false)<\/font>$/i.test(status)){
+        return status.replace(/(>)(on|off|true|false)(<\/font>)/i,function(match,start,value,end){
+            return start+swfQuickText(value)+end;
+        });
+    }
+    return swfQuickText(status);
+};
 
 var openRequested = false;
 // Per-save stack size setting. Zero means the original game limit.
@@ -2825,7 +2899,8 @@ Scene_UniversalControl.prototype.sectionSettings=function(replace){
             self.showPage(TR('Выбор языка'),[
                 {name:TR('Автоматически (по языку игры или системы)'),run:function(){swfSetLanguage('auto');self._pages=[];self.main();}},
                 {name:'Русский',run:function(){swfSetLanguage('ru');self._pages=[];self.main();}},
-                {name:'English',run:function(){swfSetLanguage('en');self._pages=[];self.main();}}
+                {name:'English',run:function(){swfSetLanguage('en');self._pages=[];self.main();}},
+                {name:'Español',run:function(){swfSetLanguage('es');self._pages=[];self.main();}}
             ]);
         }},
         {name:$gameSystem._universalControlDisabled?TR('Вернуть предмет в инвентарь'):TR('Подготовить удаление мода'),run:function(){
