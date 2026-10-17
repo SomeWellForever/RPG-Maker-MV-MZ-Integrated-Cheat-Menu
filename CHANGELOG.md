@@ -4,6 +4,11 @@ The entries below describe published functional releases. Documentation and CI-o
 
 Ниже перечислены изменения опубликованных функциональных версий. Последующие правки документации и тестов не меняют архив и тег уже выпущенной версии.
 
+## v2.6.0 — 2026-10
+
+- **RU:** Добавлен испанский язык (Español) во все разделы основного меню. Выбранный язык теперь одновременно применяется к основному меню и оригинальному быстрому оверлею по клавише `1`; русские и испанские подписи покрывают все 18 страниц, без изменения клавиш и чит-функций. Режим Auto распознаёт русский и испанский по настройкам игры или системы. Названия персонажей и объектов из базы игры не переводятся.
+- **EN:** Added Spanish (Español) throughout the full menu. The chosen language now applies to both full and legacy quick menus; Russian and Spanish labels cover all 18 quick-menu pages without changing cheat actions or hotkeys. Auto detects Russian and Spanish from the game/system locale. Names supplied by the game database remain unchanged.
+
 ## v2.5.1 — 2026-10
 
 - **RU:** Добавлена сортировка по категориям внутри каталогов предметов, оружия, брони и навыков. Группы обозначены неактивными заголовками, типы взяты из базы игры. Для карт, переключателей и переменных остались режимы по ID, названию и избранному: общих типов у них нет.
