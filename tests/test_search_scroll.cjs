@@ -24,7 +24,7 @@ assert.deepEqual(names("227"),["#227 · Potion of Mana"]);
 assert.deepEqual(names("   меч  "),["#15 · Короткий меч"]);
 assert.deepEqual(names("not present"),[]);
 assert.deepEqual(Array.from(swfFilterRows(null,"")),[]);
-assert.ok(source.includes("this._page.searchText=input.value"),"Input is not wired to live search");
+assert.ok(source.includes("self._page.searchText=input.value"),"Input is not wired to live search");
 assert.ok(source.includes("ui.main();ui._mountListTools();"),"Battle UI search bar was not mounted");
 assert.ok(source.includes("ui._removeListTools();"),"Battle UI did not remove controls");
 assert.ok(source.includes("this._removeListTools();if(this._modal)"),"Map UI did not remove controls");
