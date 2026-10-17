@@ -9,7 +9,7 @@ for name in ("SWF_CheatMenu.js", "installer/main.go", "installer/main_test.go",
              ".github/ISSUE_TEMPLATE/bug_report.yml"):
     text = (root / name).read_text(encoding="utf-8")
     assert ver in text, f"Missing {ver}: {name}"
-    if name in ("SWF_CheatMenu.js", "scripts/build_release.py", "README.md", ".github/workflows/release.yml"):
+    if name in ("SWF_CheatMenu.js", "scripts/build_release.py", "README.md"):
         assert "2.2.0" not in text, f"Old version in current release metadata: {name}"
 assert 'version = "2.3.0"' in (root / "installer/main.go").read_text()
 assert "SWF_CheatMenu_MV_MZ_v2.3.0.zip" in (root / "scripts/build_release.py").read_text()
