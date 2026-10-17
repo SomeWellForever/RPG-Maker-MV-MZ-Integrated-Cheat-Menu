@@ -158,7 +158,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          VERSION="$(grep -E '^ver = "[0-9]+\\.[0-9]+\\.[0-9]+"' scripts/check_version.py | cut -d '"' -f 2)"
+          VERSION="$(grep -E '^ver = "[0-9]+[.][0-9]+[.][0-9]+"' scripts/check_version.py | cut -d '"' -f 2)"
           if [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then
             echo "Refusing to release: tag $GITHUB_REF_NAME does not match code version v$VERSION." >&2
             exit 1
