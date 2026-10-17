@@ -4,6 +4,11 @@ The entries below describe published functional releases. Documentation and CI-o
 
 Ниже перечислены изменения опубликованных функциональных версий. Последующие правки документации и тестов не меняют архив и тег уже выпущенной версии.
 
+## v2.6.1 — 2026-10
+
+- **RU:** Исправлен вероятный сбой `Window_ChoiceList` (`Cannot read properties of undefined (reading 'bitmap')`) при выходе из полного чит-меню во время мини-игр и игровых событий. Теперь `F7` открывает меню поверх текущей сцены карты без её пересоздания и приостанавливает игровую логику до выхода. Диалоговые окна и окна выбора остаются прежними.
+- **EN:** Fixed a likely `Window_ChoiceList` bitmap crash when closing F7 during event choices or mini-games. The full menu now overlays the current map scene and pauses map event updates, preserving existing message and choice windows when the menu closes.
+
 ## v2.6.0 — 2026-10
 
 - **RU:** Добавлен испанский язык (Español) во все разделы основного меню. Выбранный язык теперь одновременно применяется к основному меню и оригинальному быстрому оверлею по клавише `1`; русские и испанские подписи покрывают все 18 страниц, без изменения клавиш и чит-функций. Режим Auto распознаёт русский и испанский по настройкам игры или системы. Названия персонажей и объектов из базы игры не переводятся.
