@@ -47,7 +47,7 @@ assert.equal(track.style.display,"block");
 assert.equal(track.style.top,"121px");
 assert.ok(parseInt(thumb.style.height,10)>0&&parseInt(thumb.style.height,10)<parseInt(track.style.height,10));
 assert.ok(parseInt(thumb.style.top,10)>0,"Scroll thumb must move with scroll position");
-assert.equal(input.style.top,"96px");
+assert.equal(input.style.top,"76px");
 state._listWindow.maxTopRow=()=>0;
 context.Scene_UniversalControl.prototype._syncListTools.call(state);
 assert.equal(track.style.display,"none","Short lists must not show a scrollbar");
