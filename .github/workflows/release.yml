@@ -24,6 +24,8 @@ jobs:
         run: node tests/test_i18n.cjs
       - name: Check duplicate-load quick-menu hotkeys
         run: node tests/test_single_load.cjs
+      - name: Check live search and scrollbar behavior
+        run: node tests/test_search_scroll.cjs
 
   windows:
     runs-on: windows-latest
@@ -148,32 +150,40 @@ jobs:
           python3 scripts/verify_release.py
       - uses: actions/upload-artifact@v4
         with:
-          name: SWF-CheatMenu-v2.3.1-Windows-Linux
-          path: SWF_CheatMenu_MV_MZ_v2.3.1.zip
+          name: SWF-CheatMenu-v2.4.0-Windows-Linux
+          path: SWF_CheatMenu_MV_MZ_v2.4.0.zip
           if-no-files-found: error
       - name: Validate current release versions
         run: python3 scripts/check_version.py
       # A branch update only runs CI. Existing releases and historical tags are immutable.
       - name: Publish a new release only from its matching version tag
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           VERSION="$(grep -E '^ver = "[0-9]+[.][0-9]+[.][0-9]+"' scripts/check_version.py | cut -d '"' -f 2)"
-          if [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then
-            echo "Refusing to release: tag $GITHUB_REF_NAME does not match code version v$VERSION." >&2
+          RELEASE_TAG="v$VERSION"
+          if [[ "$GITHUB_REF" == refs/tags/* && "$GITHUB_REF_NAME" != "$RELEASE_TAG" ]]; then
+            echo "Refusing to release: tag $GITHUB_REF_NAME does not match code version $RELEASE_TAG." >&2
             exit 1
           fi
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            echo "Release $GITHUB_REF_NAME already exists; refusing to replace its files or notes." >&2
+          # Publishing a new version from main is allowed once. Existing releases
+          # are immutable and ordinary documentation commits cannot republish them.
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; leaving it untouched."
+            exit 0
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag $RELEASE_TAG exists without a GitHub Release; refusing to overwrite it." >&2
             exit 1
           fi
           cat > release-notes.md <<'EOF'
-          ## SWF Cheat Menu v2.3.1
+          ## SWF Cheat Menu v2.4.0
 
           **RPG Maker MV/MZ · Windows and Linux installers**
 
+          - **New:** live name/ID search and a draggable scrollbar for long catalog lists.
           - **English / Русский:** full menu supports Auto / Русский / English. The original quick menu (`1`) remains in English; names from the game retain its language.
           - **Fix:** when upgrading, automatically disable an active legacy `Cheat_Menu` with an empty description; preserve its options and all other plugins.
           - **Fix:** loading the integrated script twice no longer registers two quick-menu hotkey handlers.
@@ -184,10 +194,11 @@ jobs:
           **Mac / Xenolauncher:** You can copy an already-patched game from Windows/Linux to a Mac and try launching it through [Xenolauncher](https://github.com/m5kro/Xenolauncher), a third-party macOS game launcher. Disable its `Enable Cheat Menu` option to avoid conflicts. Game compatibility varies.
 
           ---
-          ## SWF Cheat Menu v2.3.1 — русский
+          ## SWF Cheat Menu v2.4.0 — русский
 
           **RPG Maker MV/MZ · установщики Windows и Linux**
 
+          - **Новое:** поиск по названию и ID прямо над списком и ползунок для прокрутки длинных списков.
           - **Русский / English:** полное меню поддерживает Auto / Русский / English. Быстрое меню (`1`) остаётся английским; названия из игры не переводятся.
           - **Исправлено:** установка отключает старый `Cheat_Menu` с пустым описанием и сохраняет его настройки и другие плагины.
           - **Исправлено:** повторная загрузка скрипта не добавляет второй обработчик клавиши `1`.
@@ -197,4 +208,4 @@ jobs:
 
           **Mac / Xenolauncher:** Уже пропатченную на Windows/Linux игру можно перенести на Mac и попробовать запустить через [Xenolauncher](https://github.com/m5kro/Xenolauncher) — сторонний лаунчер для macOS. Отключите в нём `Enable Cheat Menu`, чтобы избежать конфликта. Совместимость зависит от игры.
           EOF
-          gh release create "$GITHUB_REF_NAME" "SWF_CheatMenu_MV_MZ_v${VERSION}.zip" --target "$GITHUB_SHA" --title "SWF Cheat Menu $GITHUB_REF_NAME" --notes-file release-notes.md --latest
+          gh release create "$RELEASE_TAG" "SWF_CheatMenu_MV_MZ_v${VERSION}.zip" --target "$GITHUB_SHA" --title "SWF Cheat Menu $RELEASE_TAG" --notes-file release-notes.md --latest
