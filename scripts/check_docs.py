@@ -34,7 +34,9 @@ assert "github.com/m5kro/Xenolauncher" in readme
 assert "already patched on Windows or Linux" in readme
 assert "уже пропатченную на Windows или Linux" in readme
 assert "Game compatibility varies" in workflow
+assert "Compatibility depends on the game and its plugins" in readme
 assert "Совместимость зависит от игры" in workflow
+assert "Совместимость зависит от игры и её плагинов" in readme
 assert "installer was withdrawn" not in workflow
 assert "Установщик macOS удалён" not in workflow
 assert "Xenolauncher" not in installer, "Do not show irrelevant Mac-specific warnings to every installer user"
@@ -48,4 +50,13 @@ assert "Operating system / Операционная система" in issues
 assert "emerladCoder" in credits and "NamelessMagician" in credits
 assert "extract the ZIP **directly into the game folder**" in workflow
 assert "распакуйте ZIP **прямо в папку игры**" in workflow
+assert "go -C installer test ./..." in (root / "installer/README.md").read_text(encoding="utf-8")
+assert "v2.3.1" in (root / "installer/README.md").read_text(encoding="utf-8")
+assert "CHANGELOG.md" in readme
+assert (root / "CHANGELOG.md").is_file()
+# A branch push or PR may build artifacts but must never rewrite published releases.
+assert "tags: ['v*.*.*']" in workflow
+assert "startsWith(github.ref, 'refs/tags/v')" in workflow
+for destructive in ("gh release upload", "gh release edit", "git push --force", "git tag -f"):
+    assert destructive not in workflow, f"Workflow can rewrite a release: {destructive}"
 print("Documentation checks passed: game-root auto-install, external path, RU/EN, Xenolauncher transfer, credits, bug report.")
