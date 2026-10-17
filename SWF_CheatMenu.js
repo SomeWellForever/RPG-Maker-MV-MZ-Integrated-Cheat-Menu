@@ -12,11 +12,20 @@
 
 
 
+// A game may load this plugin from more than one registry or custom loader.
+// Running its hooks twice can recursively wrap DataManager/scene methods.
+(function () {
+if (window.__SWF_CheatMenuLoaded) {
+    if (typeof console !== 'undefined' && console.warn) console.warn('[SWF Cheat Menu] Duplicate load skipped. Check plugins.js and any manual main.js loaders.');
+    return;
+}
+window.__SWF_CheatMenuLoaded = true;
+
 /////////////////////////////////////////////////
 // Cheat Menu Plugin Class
 /////////////////////////////////////////////////
-// Check if already defined (allows game specific extensions to be loaded in any order)
-if (typeof Cheat_Menu == "undefined") { Cheat_Menu = {}; }
+// Keep the legacy Cheat_Menu API visible to other plugins.
+var Cheat_Menu = window.Cheat_Menu || (window.Cheat_Menu = {});
 
 Cheat_Menu.initialized = false;
 Cheat_Menu.cheat_menu_open = false;
@@ -1660,9 +1669,37 @@ Cheat_Menu.key_listeners = {};
 
 Cheat_Menu.close_overlay = function() {
     Cheat_Menu.cheat_menu_open = false;
+    Cheat_Menu.overlay_scene = null;
     if (Cheat_Menu.overlay_box.parentNode) Cheat_Menu.overlay_box.parentNode.removeChild(Cheat_Menu.overlay_box);
     if (Cheat_Menu.overlay.parentNode) Cheat_Menu.overlay.parentNode.removeChild(Cheat_Menu.overlay);
 };
+// Games with customized #GameCanvas stacking can place the legacy menu
+// (z-index 1000) BEHIND their canvas. Force it into the browser's top layer.
+Cheat_Menu.open_overlay = function() {
+    var box = Cheat_Menu.overlay_box, table = Cheat_Menu.overlay;
+    [box, table].forEach(function(element, i) {
+        element.style.setProperty('position', 'fixed', 'important');
+        element.style.setProperty('z-index', i ? '2147483646' : '2147483645', 'important');
+        element.style.setProperty('display', i ? 'table' : 'block', 'important');
+        element.style.setProperty('visibility', 'visible', 'important');
+        element.style.setProperty('pointer-events', i ? 'auto' : 'none', 'important');
+    });
+    if (box.parentNode !== document.body) document.body.appendChild(box);
+    if (table.parentNode !== document.body) document.body.appendChild(table);
+    Cheat_Menu.cheat_menu_open = true;
+    Cheat_Menu.overlay_scene = SceneManager._scene;
+    Cheat_Menu.update_menu();
+};
+// Dismiss orphaned HTML overlays during map/menu/battle scene changes.
+var swfPreviousOnSceneStart = SceneManager.onSceneStart;
+if (typeof swfPreviousOnSceneStart === 'function') {
+    SceneManager.onSceneStart = function() {
+        if (Cheat_Menu.cheat_menu_open && Cheat_Menu.overlay_scene !== this._scene) {
+            Cheat_Menu.close_overlay();
+        }
+        return swfPreviousOnSceneStart.apply(this, arguments);
+    };
+}
 
 Cheat_Menu.prepare = function() {
 	if (!Cheat_Menu.initialized) {
@@ -1696,6 +1733,27 @@ Cheat_Menu.prepare = function() {
 	}
 };
 window.addEventListener("keydown", function(event) {
+    // Allow closing from any scene even if a custom menu replaces Scene_Map.
+    var quickKey = event.keyCode === Cheat_Menu.keyCodes.KEYCODE_1.keyCode;
+    var plainKey = !event.repeat && !event.ctrlKey && !event.altKey &&
+                   !event.shiftKey && !/^(INPUT|TEXTAREA)$/.test((event.target && event.target.tagName) || "");
+    if (quickKey && plainKey && Cheat_Menu.cheat_menu_open) {
+        Cheat_Menu.close_overlay();
+        if (event.preventDefault) event.preventDefault();
+        SoundManager.playSystemSound(2);
+        return;
+    }
+    // Some games bypass DataManager.loadGame/setupNewGame when restoring a save.
+    // F7 can still work in that case, but the legacy overlay never becomes openable.
+    // Activate it lazily when Digit1 is pressed during a playable map or battle.
+    if (event.keyCode === Cheat_Menu.keyCodes.KEYCODE_1.keyCode &&
+        !event.repeat && !event.ctrlKey && !event.altKey && !event.shiftKey &&
+        !Cheat_Menu.overlay_openable &&
+        SceneManager._scene &&
+        (SceneManager._scene instanceof Scene_Map || SceneManager._scene instanceof Scene_Battle) &&
+        $gameActors && $gameSystem) {
+        Cheat_Menu.initialize();
+    }
 	if (false && !event.ctrlKey && !event.altKey && (event.keyCode === 119) && $gameTemp && !$gameTemp.isPlaytest()) {
 		// open debug menu
 		event.stopPropagation();
@@ -1711,24 +1769,13 @@ window.addEventListener("keydown", function(event) {
 		}, 100);
 	}
 	else if (Cheat_Menu.overlay_openable && (SceneManager._scene instanceof Scene_Map || SceneManager._scene instanceof Scene_Battle) && !(SceneManager._scene instanceof Scene_Battle && SceneManager._scene._universalControlBattle) && !event.altKey && !event.ctrlKey && !event.shiftKey && !event.repeat && !/^(INPUT|TEXTAREA)$/.test((event.target && event.target.tagName) || "")) {
-		// open and close menu
-		if (event.keyCode == Cheat_Menu.keyCodes.KEYCODE_1.keyCode) {
-			Cheat_Menu.prepare();
-
-			// open menu
-			if (!Cheat_Menu.cheat_menu_open) {
-				Cheat_Menu.cheat_menu_open = true;
-				document.body.appendChild(Cheat_Menu.overlay_box);
-				document.body.appendChild(Cheat_Menu.overlay);
-				Cheat_Menu.update_menu();
-				SoundManager.playSystemSound(1);
-			}
-			// close menu
-			else {
-                Cheat_Menu.close_overlay();
-                SoundManager.playSystemSound(2);
-			}
-		}
+		// open menu (closing was already handled before the scene guard)
+        if (quickKey && plainKey) {
+            if (event.preventDefault) event.preventDefault();
+            Cheat_Menu.prepare();
+            Cheat_Menu.open_overlay();
+            SoundManager.playSystemSound(1);
+        }
 
 		// navigate and activate cheats
 		else if (Cheat_Menu.cheat_menu_open) {
@@ -1778,31 +1825,29 @@ Cheat_Menu.initialize = function() {
 };
 
 // add hook for loading a game
-DataManager.default_loadGame = DataManager.loadGame;
+// Capture previous methods in this plugin's own closure, not mutable global
+// DataManager.default_* properties. Other plugins can overwrite those globals.
+var swfPreviousLoadGame = DataManager.loadGame;
 DataManager.loadGame = function(savefileId) {
-	Cheat_Menu.initialize();
-
-	return DataManager.default_loadGame(savefileId);
+    Cheat_Menu.initialize();
+    return swfPreviousLoadGame.apply(this, arguments);
 };
 
 // add hook for new game
-DataManager.default_setupNewGame = DataManager.setupNewGame;
+var swfPreviousSetupNewGame = DataManager.setupNewGame;
 DataManager.setupNewGame = function() {
-	Cheat_Menu.initialize();
-
-	DataManager.default_setupNewGame();
+    Cheat_Menu.initialize();
+    return swfPreviousSetupNewGame.apply(this, arguments);
 };
 
 // add hook for saving values (just added into $gameSystem to be saved)
-DataManager.default_saveGame = DataManager.saveGame;
+var swfPreviousSaveGame = DataManager.saveGame;
 DataManager.saveGame = function(savefileId) {
-	// save values that are in intial values
-	$gameSystem.Cheat_Menu = {};
-	for (var name in Cheat_Menu.initial_values) {
-		$gameSystem.Cheat_Menu[name] = Cheat_Menu[name];
-	}
-
-	return DataManager.default_saveGame(savefileId);
+    $gameSystem.Cheat_Menu = {};
+    for (var name in Cheat_Menu.initial_values) {
+        $gameSystem.Cheat_Menu[name] = Cheat_Menu[name];
+    }
+    return swfPreviousSaveGame.apply(this, arguments);
 };
 
 // Integrated universal in-engine menu (no additional plugin file).
@@ -2595,4 +2640,5 @@ Scene_Battle.prototype.closeUniversalControl=function(terminating){
     if(!terminating)ui._previousActive.forEach(function(w){if(w && w.activate)w.activate();});
 };
 window.Scene_UniversalControl=Scene_UniversalControl;
+})();
 })();
