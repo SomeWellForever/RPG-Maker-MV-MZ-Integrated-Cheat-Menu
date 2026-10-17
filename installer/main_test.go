@@ -19,7 +19,7 @@ func fixture(t *testing.T, mz bool) (string, string, string) {
     reg := `var $plugins = [{"name":"OtherPlugin","status":true,"parameters":{"nested":[1,2,3],"bracket":"hello ] world"}}];`
     if err := os.WriteFile(filepath.Join(js, "plugins.js"), []byte(reg), 0o644); err != nil { t.Fatal(err) }
     payload := filepath.Join(root, "source.js")
-    if err := os.WriteFile(payload, []byte("/* @plugindesc SWF Cheat Menu Integrated 2.6.1 */\n"), 0o644); err != nil { t.Fatal(err) }
+    if err := os.WriteFile(payload, []byte("/* @plugindesc SWF Cheat Menu Integrated 2.6.2 */\n"), 0o644); err != nil { t.Fatal(err) }
     return root, js, payload
 }
 
@@ -62,7 +62,7 @@ func TestInstallAndRemoveMVandMZ(t *testing.T) {
     }
 }
 
-func TestUpdateFrom220To261PreservesBackupsAndOtherPlugins(t *testing.T) {
+func TestUpdateFrom220To262PreservesBackupsAndOtherPlugins(t *testing.T) {
     root, js, payload := fixture(t, false)
     previous := []byte("/* @plugindesc SWF Cheat Menu Integrated 2.2.0 */\n// old release\n")
     destination := filepath.Join(js, "plugins", pluginFile)
@@ -73,7 +73,7 @@ func TestUpdateFrom220To261PreservesBackupsAndOtherPlugins(t *testing.T) {
     checkNames(t, js, "OtherPlugin", "SWF_CheatMenu")
     installed, err := os.ReadFile(destination)
     if err != nil { t.Fatal(err) }
-    if !bytes.Contains(installed, []byte("2.6.1")) { t.Fatal("old plugin was not upgraded") }
+    if !bytes.Contains(installed, []byte("2.6.2")) { t.Fatal("old plugin was not upgraded") }
     backups, err := filepath.Glob(filepath.Join(root, "SWF_CheatMenu_Backup", "*", "www", "js", "plugins", pluginFile))
     if err != nil || len(backups) != 1 { t.Fatalf("expected exactly one old plugin backup: %v %v", backups, err) }
     stored, err := os.ReadFile(backups[0])
@@ -155,7 +155,7 @@ func TestUpgradeDisablesBlankDescriptionLegacyAndPreservesSettings(t *testing.T)
                 }
             case "SWF_CheatMenu":
                 if entry.Status { activeSWF++ }
-                if entry.Description != "SWF Cheat Menu Integrated 2.6.1" { t.Fatal("incorrect new version") }
+                if entry.Description != "SWF Cheat Menu Integrated 2.6.2" { t.Fatal("incorrect new version") }
             case "OtherPlugin":
                 if !entry.Status || entry.Parameters["message"] != "keep me" { t.Fatal("other plugin modified") }
             case "AnotherPlugin":
