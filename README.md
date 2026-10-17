@@ -1,11 +1,11 @@
 # SWF Cheat Menu — RPG Maker MV/MZ
 
 **[Русский](#-русский) · [English](#-english)**  
-**Version 2.4.0 · RPG Maker MV / MZ · Windows / Linux**
+**Version 2.4.1 · RPG Maker MV / MZ · Windows / Linux**
 
-[![Release](https://img.shields.io/github/v/release/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu?label=Release)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/tag/v2.4.0) [![Platform](https://img.shields.io/badge/RPG%20Maker-MV%20%2F%20MZ-blue)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu) [![Issues](https://img.shields.io/github/issues/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/issues)
+[![Release](https://img.shields.io/github/v/release/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu?label=Release)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/tag/v2.4.1) [![Platform](https://img.shields.io/badge/RPG%20Maker-MV%20%2F%20MZ-blue)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu) [![Issues](https://img.shields.io/github/issues/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/issues)
 
- > **Latest release / Последняя версия:** [v2.4.0 — Download ZIP / Скачать ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.4.0/SWF_CheatMenu_MV_MZ_v2.4.0.zip).
+ > **Latest release / Последняя версия:** [v2.4.1 — Download ZIP / Скачать ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.4.1/SWF_CheatMenu_MV_MZ_v2.4.1.zip).
 
 > An integrated cheat menu for single-player games made with RPG Maker MV and MZ. One JavaScript plugin, one in-game key item, and a quick overlay accessible in and out of battle.
 >
@@ -26,13 +26,13 @@
 | Прогресс | Золото, игровые переменные и переключатели |
 | Бой | Изменение HP противников, мгновенная победа |
 | Быстрый оверлей | Оригинальные 18 страниц Cheat Menu, доступные клавишей `1` |
-| Поиск и прокрутка | Поиск по названию или ID прямо над списком; прокрутка длинных списков мышью |
+| Поиск и прокрутка | Поиск по названию или ID через первый пункт каталога; полоса прокрутки средствами RPG Maker |
 
 В отличие от оригинального Cheat Menu, эта версия дополнена полноценным меню управления с удобным интерфейсом, расширенными настройками инвентаря и дополнительными возможностями в бою. Классическое быстрое меню по клавише `1` при этом сохранено. Во время боя телепортация и настройки перемещения недоступны, чтобы не нарушать игровую сцену.
 
 ### Управление
 
-В основном меню поиск фильтрует список прямо во время ввода. Длинные списки можно прокручивать колесом мыши или боковым ползунком.
+Для поиска выберите первый пункт «Поиск» в списке предметов, навыков, карт, переключателей или переменных и введите название либо ID. Длинные списки можно прокручивать колёсиком мыши или боковым ползунком.
 
 - `1` — оригинальное быстрое меню на карте или во время боя. **Оно остаётся на английском языке**, независимо от настройки языка основного меню.
 - `F7` — основное меню на карте или в бою.
@@ -41,9 +41,11 @@
 
 ### Установка
 
-1. Закройте игру и распакуйте [архив v2.4.0](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.4.0/SWF_CheatMenu_MV_MZ_v2.4.0.zip) **прямо в папку игры**.
+1. Закройте игру и распакуйте [архив v2.4.1](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.4.1/SWF_CheatMenu_MV_MZ_v2.4.1.zip) **прямо в папку игры**.
 2. Запустите `Install_Windows.cmd` (Windows) или `bash Install_Linux.sh` (Linux). Установщик **сам найдёт игру** и установит или обновит мод — выбирать папку не нужно.
 3. Запустите игру. Меню открывается клавишей `F7` или через предмет «Меню управления», а быстрое меню — клавишей `1`.
+
+**Дополнительный архив без установщика:** для уже установленного SWF Cheat Menu доступен ZIP только с `SWF_CheatMenu.js`. Закройте игру, сохраните копию старого `www/js/plugins/SWF_CheatMenu.js` (или `js/plugins/SWF_CheatMenu.js`) и замените его файлом из архива. Такой архив не предназначен для первоначальной установки. Если защитник Windows обнаруживает угрозу, не отключайте защиту и не добавляйте файлы в исключения: отправьте обнаружение на проверку Microsoft.
 
 **Если архив распакован в другую папку**, запустите установщик оттуда и выберите папку игры. Устанавливать Python или Go не требуется.
 
@@ -75,13 +77,13 @@
 | Progress | Gold, game variables, and switches |
 | Battle | Modify enemy HP and instantly defeat enemies |
 | Quick overlay | The legacy Cheat Menu with 18 pages, opened with `1` |
-| Search and scrolling | Instant name/ID filtering above the list; draggable scrollbar for long lists |
+| Search and scrolling | Name/ID search from the first catalog entry; draggable RPG Maker scrollbar for long lists |
 
 Unlike the original Cheat Menu, this edition adds a full control interface, expanded inventory settings, and additional battle features while keeping the classic quick overlay on `1`. Teleportation and movement controls are disabled during battle to avoid disrupting the game.
 
 ### Controls
 
-The search field filters the current list as you type. Long lists support mouse-wheel scrolling and a draggable scrollbar.
+Choose the first Search entry in an item, skill, map, switch or variable catalog and enter a name or ID. Long lists support mouse-wheel scrolling and a draggable scrollbar.
 
 - `1` — open the original quick overlay on the map or during battle. **This legacy menu remains in English**, regardless of your language setting for the main menu.
 - `F7` — open the integrated main menu on the map or during battle.
@@ -90,9 +92,11 @@ The search field filters the current list as you type. Long lists support mouse-
 
 ### Installation
 
-1. Close the game and extract the [v2.4.0 ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.4.0/SWF_CheatMenu_MV_MZ_v2.4.0.zip) **directly into the game folder**.
+1. Close the game and extract the [v2.4.1 ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.4.1/SWF_CheatMenu_MV_MZ_v2.4.1.zip) **directly into the game folder**.
 2. Run `Install_Windows.cmd` (Windows) or `bash Install_Linux.sh` (Linux). The installer **detects the game automatically** and installs or updates the mod without asking you to choose a folder.
 3. Launch the game. Open the full menu with `F7` or the Control Menu item; press `1` for the quick overlay.
+
+**Plugin-only alternative:** users with an existing SWF Cheat Menu installation may use the ZIP containing only `SWF_CheatMenu.js`. Close the game, back up the existing `www/js/plugins/SWF_CheatMenu.js` (or `js/plugins/SWF_CheatMenu.js`) and replace it. This package is not intended for first-time installation. If Windows Defender detects a threat, do not disable protection or allowlist the file; submit the detection to Microsoft for review.
 
 **If you extracted the ZIP somewhere else**, run the installer there and select the game folder when prompted. Neither Python nor Go is required.
 
