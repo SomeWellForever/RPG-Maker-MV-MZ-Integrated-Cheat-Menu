@@ -1,6 +1,6 @@
 /*:
  * @target MV MZ
- * @plugindesc SWF Cheat Menu Integrated 2.3.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @plugindesc SWF Cheat Menu Integrated 2.3.1: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help F7 or the 'Control Menu' / 'Меню управления' key item opens the full menu,
  * including during battle. Choose Auto / Русский / English inside that menu.
@@ -12,6 +12,13 @@
 
 
 
+// Ignore a second load of this release: otherwise each copy registers
+// another keydown listener and key 1 can instantly close the overlay.
+(function () {
+if (typeof window !== 'undefined') {
+    if (window.__SWF_CHEAT_MENU_LOADED__) return;
+    window.__SWF_CHEAT_MENU_LOADED__ = true;
+}
 /////////////////////////////////////////////////
 // Cheat Menu Plugin Class
 /////////////////////////////////////////////////
@@ -1807,7 +1814,7 @@ DataManager.saveGame = function(savefileId) {
 
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
- * @plugindesc SWF Cheat Menu Integrated v2.3.0 — teleport, levels, skills, items and stack limits.
+ * @plugindesc SWF Cheat Menu Integrated v2.3.1 — teleport, levels, skills, items and stack limits.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help Use F7 or the Control Menu / Меню управления key item on the map or in battle.
  * Auto / Русский / English changes the full menu only; key 1 remains in English.
@@ -2596,3 +2603,5 @@ Scene_Battle.prototype.closeUniversalControl=function(terminating){
 };
 window.Scene_UniversalControl=Scene_UniversalControl;
 })();
+
+})(); // Single-load guard for the entire integrated plugin.
