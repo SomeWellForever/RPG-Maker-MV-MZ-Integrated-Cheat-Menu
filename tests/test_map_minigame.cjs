@@ -23,6 +23,8 @@ for(const mz of [false,true]){
     Scene_UniversalControl.prototype.main=function(){this.mainOpened=(this.mainOpened||0)+1;};
     Scene_UniversalControl.prototype.choose=function(){};
     Scene_UniversalControl.prototype.back=function(){};
+    const pendingMaps=[];
+    Scene_UniversalControl.prototype.mapDetail=function(m){this.lastMapDetail=m;};
     const oldChoice={active:true,deactivate(){this.active=false;},activate(){this.active=true;}};
     const oldMessage={active:true,deactivate(){this.active=false;},activate(){this.active=true;}};
     counts.initChoice=1; // Window_ChoiceList was created when the map started.
@@ -47,11 +49,13 @@ for(const mz of [false,true]){
         this.active=true;this.deactivate=function(){this.active=false;};
         this.activate=function(){this.active=true;};
         this.destroy=function(){this.destroyed=true;};
+        this.setText=function(text){this.lastText=text;};
     }
     function Window_UniversalList(){
         this.height=200;this.active=true;
         this.setHelpWindow=function(){};
         this.setHandler=function(){};
+        this.deactivate=function(){this.active=false;};
         this.destroy=function(){this.destroyed=true;};
     }
     const ctx={
@@ -63,6 +67,8 @@ for(const mz of [false,true]){
         Input:{clear(){}},TouchInput:{clear(){}},
         Cheat_Menu:{close_overlay(){},prepare(){counts.prepare++;},cheat_menu_open:false},
         ensureItem(){counts.item++;},
+        readMap(id,callback){pendingMaps.push(callback);},
+        TR:s=>s, candidatePoint:()=>[1,1,2],knownEntrances:()=>[],
         openRequested:false
     };
     vm.createContext(ctx);
@@ -70,6 +76,7 @@ for(const mz of [false,true]){
     vm.runInContext(region("var oldMapUpdate = Scene_Map.prototype.update;","// Recheck landing tiles against active"),ctx,{timeout:3000});
     vm.runInContext(region("Scene_UniversalControl.prototype.close=function(){","Scene_UniversalControl.prototype.notice=function"),ctx,{timeout:3000});
     vm.runInContext(region("// The map editor uses the same in-scene layout","window.Scene_UniversalControl=Scene_UniversalControl;"),ctx,{timeout:3000});
+    vm.runInContext(region("Scene_UniversalControl.prototype.loadMapDetail=function","Scene_UniversalControl.prototype.mapDetail=function"),ctx,{timeout:3000});
     // A mini-game can have pending Show Choices. F7 must not initialize a second message window.
     let prevented=false;
     callbacks.keydown({keyCode:118,repeat:false,preventDefault(){prevented=true;}});
@@ -91,8 +98,20 @@ for(const mz of [false,true]){
     assert.equal(counts.baseUpdate,1,"UI and sprites stopped updating while editor is open");
     assert.equal(map._windowLayer.children[1],oldChoice,"Choice window identity changed");
     assert.equal(map._windowLayer.children[0],oldMessage,"Message window identity changed");
+    // Teleport page requests are asynchronous: the embedded editor must still
+    // accept map data, and it must ignore responses after that editor closes.
+    const entry={id:7,name:"Test map"};
+    ui.loadMapDetail(entry);
+    assert.equal(pendingMaps.length,1);
+    pendingMaps[0](null,{displayName:"Loaded map",width:14,height:16});
+    assert.equal(ui.lastMapDetail.name,"Loaded map","Map details ignored by new in-scene editor");
+    const staleEntry={id:8,name:"Stale map"};
+    ui.loadMapDetail(staleEntry);
+    assert.equal(pendingMaps.length,2);
     // Closing via Escape must restore precisely the previous game windows.
     ui.close();
+    pendingMaps[1](null,{displayName:"Late result",width:18,height:16});
+    assert.equal(ui.lastMapDetail.name,"Loaded map","Late map load updated a closed editor");
     assert.equal(map._universalControlMap,null);
     assert.equal(oldChoice.active,true);
     assert.equal(oldMessage.active,true);
