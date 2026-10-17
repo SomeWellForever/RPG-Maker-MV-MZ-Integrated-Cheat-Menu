@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 # SWF Cheat Menu - Linux launcher. Supports GUI and terminal selection.
 HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)" || exit 1
+ACTION="install"
+ARCH="$(uname -m)"
+case "$ARCH" in
+  arm64|aarch64) ARCH=arm64 ;;
+  x86_64|amd64) ARCH=amd64 ;;
+  *) echo "ERROR: Unsupported Linux architecture: $ARCH" >&2; exit 1 ;;
+esac
+BINARY="$HERE/bin/swf-setup-linux-$ARCH"
+if [ ! -f "$BINARY" ]; then
+  echo "ERROR: Missing native installer binary: $BINARY. Extract all files from the ZIP." >&2
+  exit 1
+fi
 
-if [ ! -f "$HERE/Setup.py" ] || [ ! -f "$HERE/SWF_CheatMenu.js" ]; then
+if [ "$ACTION" = install ] && [ ! -f "$HERE/SWF_CheatMenu.js" ]; then
   echo "ERROR: Installer files are missing. Extract the complete release archive." >&2
   exit 1
 fi
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "ERROR: Python 3 is required. Install python3 and try again." >&2
-  exit 1
-fi
-
 is_game() {
   [ -d "$1" ] && {
     { [ -f "$1/www/js/main.js" ] && [ -f "$1/www/js/plugins.js" ]; } ||
@@ -46,7 +53,7 @@ while ! is_game "$GAME"; do
   fi
 done
 printf 'Game folder: %s\n' "$GAME"
-python3 "$HERE/Setup.py" install "$GAME"
+"$BINARY" install "$GAME" "$HERE/SWF_CheatMenu.js"
 STATUS=$?
 if [ "$STATUS" -eq 0 ]; then
   echo "Completed successfully."

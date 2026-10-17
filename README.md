@@ -1,7 +1,7 @@
 # SWF Cheat Menu — RPG Maker MV/MZ
 
 **[Русский](#-русский) · [English](#-english)**  
-**Version 2.2.0 · RPG Maker MV / MZ · Windows / macOS / Linux**
+**Version 2.2.0 · RPG Maker MV / MZ · Windows / Linux**
 
 [![Release](https://img.shields.io/github/v/release/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu?label=Release)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/tag/v2.2.0) [![Platform](https://img.shields.io/badge/RPG%20Maker-MV%20%2F%20MZ-blue)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu) [![Issues](https://img.shields.io/github/issues/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/issues)
 
@@ -33,19 +33,23 @@
 
 - `1` — быстрый оверлей на карте или во время боя.
 - `F7` — основное меню на карте или в бою.
-- **«Меню управления»** — ключевой предмет для открытия меню, включая боевой инвентарь; не расходуется и не должен отнимать ход.
+- **Язык:** пункт «Язык меню» в основном меню — `Auto`, `Русский`, `English`. Автоматический выбор использует языковую настройку игры, если она доступна, иначе язык системы. Выбор сохраняется для этой игры. Названия игровых предметов, навыков и карт остаются на языке самой игры.
+- **«Меню управления» / «Control Menu»** — ключевой предмет для открытия меню, включая боевой инвентарь; не расходуется и не должен отнимать ход.
 
 ### Установка
 
 1. **Закройте игру и создайте резервную копию сохранений.**
 2. Скачайте и распакуйте [архив версии 2.2.0](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.2.0/SWF_CheatMenu_MV_MZ_v2.2.0.zip) в любую папку.
-3. В Windows запустите `Install_Windows.cmd`; в macOS — `Install_macOS.command`; в Linux — `bash Install_Linux.sh`. Выберите папку игры: macOS откроет Finder, Linux — Zenity/KDialog (если доступны) или попросит ввести путь в терминале. Можно также передать путь к игре аргументом. **Для установщиков требуется Python 3.**
+3. В Windows запустите `Install_Windows.cmd`; в Linux — `bash Install_Linux.sh`. Выберите папку игры: в Windows откроется окно выбора папки, в Linux — Zenity/KDialog (если доступны) или запрос пути в терминале. Можно также передать путь к игре аргументом. **Для установщиков требуется Python 3.**
 4. Убедитесь, что создано **одно** подключение `SWF_CheatMenu.js` в `js/plugins` или `www/js/plugins`.
 5. Запустите игру и проверьте меню на отдельном сохранении.
 
+
+**macOS:** данная версия не содержит установщика для macOS. Поддерживаются Windows и Linux; Mac-совместимость не заявлена.
+
 **Xenolauncher:** отключите его встроенное `Enable Cheat Menu`. Плагин использует имя `SWF_CheatMenu.js`; установщик переносит распознаваемые подключения прежней объединённой версии и сохраняет резервные копии изменённых файлов.
 
-**Удаление:** закройте игру и запустите `Remove_Windows.cmd`, `Remove_macOS.command` или `bash Remove_Linux.sh`. Резервные копии установщика находятся в `SWF_CheatMenu_Backup/`.
+**Удаление:** закройте игру и запустите `Remove_Windows.cmd` или `bash Remove_Linux.sh`. Резервные копии установщика находятся в `SWF_CheatMenu_Backup/`.
 
 ### Ошибки и предложения
 
@@ -77,19 +81,23 @@ The integrated menu combines features without a duplicate "extra cheats" section
 
 - `1` — open the legacy quick overlay on the map or during battle.
 - `F7` — open the integrated main menu on the map or during battle.
+- **Language:** choose `Auto`, `Русский`, or `English` under **Menu language** in the main menu. Auto uses the game's locale when available, otherwise the system language. The choice is saved per game. Item, skill, and map names remain in the game's own language.
 - **Control Menu** (`Меню управления`) — a non-consumable key item usable from the inventory, including in battle, without intentionally spending a turn.
 
 ### Installation
 
 1. **Close the game and back up your save files.**
 2. Download and extract the [v2.2.0 release ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.2.0/SWF_CheatMenu_MV_MZ_v2.2.0.zip) to any folder.
-3. Run `Install_Windows.cmd` on Windows, `Install_macOS.command` on macOS, or `bash Install_Linux.sh` on Linux. Choose the game folder: macOS opens a Finder picker; Linux uses Zenity/KDialog when available, or asks for a folder path in the terminal. You can also supply the game folder as an argument. **Python 3 is required by all installers.**
+3. Run `Install_Windows.cmd` on Windows or `bash Install_Linux.sh` on Linux. Choose the game folder: Windows opens a folder chooser, while Linux uses Zenity/KDialog when available or asks for a folder path in the terminal. You can also supply the game folder as an argument. **Python 3 is required by all installers.**
 4. Confirm that only one `SWF_CheatMenu.js` is enabled under `js/plugins` or `www/js/plugins`.
 5. Launch the game and test with a separate save slot.
 
+
+**macOS:** the macOS installer has been removed from this release. Only Windows and Linux are supported; Mac compatibility is not claimed.
+
 **Xenolauncher:** keep its built-in `Enable Cheat Menu` disabled. The plugin uses the separate filename `SWF_CheatMenu.js`; the installer migrates recognized previous integrated-menu registrations and backs up any overwritten files.
 
-**Uninstall:** close the game and run `Remove_Windows.cmd`, `Remove_macOS.command` or `bash Remove_Linux.sh`. Backups are stored in `SWF_CheatMenu_Backup/`.
+**Uninstall:** close the game and run `Remove_Windows.cmd` or `bash Remove_Linux.sh`. Backups are stored in `SWF_CheatMenu_Backup/`.
 
 ### Bug reports and suggestions
 

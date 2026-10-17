@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
+"""Build the release ZIP in CI; end users do not need Python or Go."""
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 root = Path(__file__).resolve().parent.parent
-names = ["SWF_CheatMenu.js", "Setup.py", "Install_Windows.cmd", "Remove_Windows.cmd", "Setup_Windows.ps1",
-         "Install_macOS.command", "Remove_macOS.command", "Install_Linux.sh",
-         "Remove_Linux.sh", "README.md", "CREDITS.md"]
+members = [
+    "SWF_CheatMenu.js", "Setup_Windows.ps1",
+    "Install_Windows.cmd", "Remove_Windows.cmd",
+    "Install_Linux.sh", "Remove_Linux.sh",
+    "README.md", "CREDITS.md",
+    "bin/swf-setup-windows-amd64.exe", "bin/swf-setup-windows-arm64.exe",
+    "bin/swf-setup-linux-amd64", "bin/swf-setup-linux-arm64",
+]
 archive = root / "SWF_CheatMenu_MV_MZ_v2.2.0.zip"
 with ZipFile(archive, "w", ZIP_DEFLATED) as z:
-    for name in names:
-        z.write(root / name, name)
+    for member in members:
+        if not (root / member).is_file():
+            raise FileNotFoundError(member)
+        z.write(root / member, member)
 print(archive)
