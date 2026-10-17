@@ -1411,11 +1411,11 @@ Cheat_Menu.append_save_recall = function(key1,key2,key3,key4,key5,key6) {
         Cheat_Menu.append_description("(" + $gamePlayer.x + ", " + $gamePlayer.y + ")");
     }else Cheat_Menu.append_description("NULL");
 
-    // The legacy overlay has only ten digit hotkeys. Keep 4-9 for the
-    // three save/recall pairs, and use 1/2 to browse four groups of slots.
+    // Keep 1 for opening/closing the overlay, 2/3 for switching its
+    // main pages, and 4-9 for save/recall. Use 0 and minus for slot pages.
     var first=Cheat_Menu.saved_position_page*3,last=Math.min(first+3,slots.length);
     Cheat_Menu.append_scroll_selector("Slots "+(first+1)+"–"+last+" / "+slots.length,
-        1,2,Cheat_Menu.scroll_saved_position_page);
+        0,'-',Cheat_Menu.scroll_saved_position_page);
     var hotkeys=[key1,key2,key3,key4,key5,key6];
     for(var i=first;i<last;i++){
         Cheat_Menu.append_title("Position "+(i+1));
