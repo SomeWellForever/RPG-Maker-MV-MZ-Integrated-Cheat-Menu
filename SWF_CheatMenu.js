@@ -2176,6 +2176,16 @@ Game_Player.prototype.performTransfer = function() {
         $gameTemp._universalControlLanding=null;
     }
 };
+
+var SWF_SEARCH_BAR_HEIGHT=44;
+// Filtering leaves source command arrays intact, so every command runs against
+// its original item/skill/map even after filtering and navigating back.
+function swfFilterRows(rows,query){
+    var q=String(query||'').trim().toLowerCase();
+    return (rows||[]).filter(function(row){
+        return row && !row.searchRow && (!q || String(row.name||'').toLowerCase().indexOf(q)>=0);
+    });
+}
 function Window_UniversalList() { this.initialize.apply(this,arguments); }
 Window_UniversalList.prototype=Object.create(Window_Command.prototype);
 Window_UniversalList.prototype.constructor=Window_UniversalList;
@@ -2188,6 +2198,11 @@ Window_UniversalList.prototype.makeCommandList=function(){
 };
 Window_UniversalList.prototype.setRows=function(rows,index){this._rows=rows;this.refresh();this.select(Math.min(index||0,Math.max(0,rows.length-1)));this.activate();};
 Window_UniversalList.prototype.updateHelp=function(){if(this._helpWindow){var r=this.currentExt();this._helpWindow.setText(r&&r.help?r.help:TR('Enter — выбрать · Esc / правая кнопка — назад · PageUp / PageDown — листать'));}};
+var swfOriginalListUpdate=Window_UniversalList.prototype.update;
+Window_UniversalList.prototype.update=function(){
+    swfOriginalListUpdate.call(this);
+    if(this._swfOwner)this._swfOwner._syncListTools();
+};
 function Scene_UniversalControl(){this.initialize.apply(this,arguments);}
 Scene_UniversalControl.prototype=Object.create(Scene_MenuBase.prototype);
 Scene_UniversalControl.prototype.constructor=Scene_UniversalControl;
@@ -2210,17 +2225,130 @@ Scene_UniversalControl.prototype.create=function(){
     var titleH=72,helpH=144;
     this._titleWindow=IS_MZ?new Window_Help(new Rectangle(0,0,Graphics.boxWidth,titleH)):new Window_Help(1);this.addWindow(this._titleWindow);
     this._helpWindow=IS_MZ?new Window_Help(new Rectangle(0,Graphics.boxHeight-helpH,Graphics.boxWidth,helpH)):new Window_Help(3);this._helpWindow.y=Graphics.boxHeight-this._helpWindow.height;this.addWindow(this._helpWindow);
-    this._listWindow=new Window_UniversalList(this._titleWindow.height,this._helpWindow.y-this._titleWindow.height);
+    this._listWindow=new Window_UniversalList(this._titleWindow.height+SWF_SEARCH_BAR_HEIGHT,this._helpWindow.y-this._titleWindow.height-SWF_SEARCH_BAR_HEIGHT);
     this._listWindow.setHelpWindow(this._helpWindow);this._listWindow.setHandler('choose',this.choose.bind(this));this._listWindow.setHandler('cancel',this.back.bind(this));this.addWindow(this._listWindow);
-    this.main();
+    this.main();this._mountListTools();
 };
-Scene_UniversalControl.prototype.terminate=function(){if(this._modal)this._modal.remove();this._modal=null;Scene_MenuBase.prototype.terminate.call(this);};
+Scene_UniversalControl.prototype.terminate=function(){this._removeListTools();if(this._modal)this._modal.remove();this._modal=null;Scene_MenuBase.prototype.terminate.call(this);};
 Scene_UniversalControl.prototype.choose=function(){var row=this._listWindow.currentExt();try{if(row&&row.run)row.run();else this._listWindow.activate();}catch(e){console.error('[UniversalControlMenu]',e);this.notice(TR('Операция не выполнена: ')+e.message+TR('\nВозможно, нужна адаптация под плагины этой игры.'));}};
 Scene_UniversalControl.prototype.showPage=function(title,rows,replace){
     if(!replace&&this._page){this._page.index=this._listWindow.index();this._pages.push(this._page);}
     this._page={title:title,rows:rows,index:0};this.renderPage();
 };
-Scene_UniversalControl.prototype.renderPage=function(){this._titleWindow.setText(this._page.title);this._listWindow.setRows(this._page.rows,this._page.index);};
+Scene_UniversalControl.prototype.renderPage=function(){
+    this._titleWindow.setText(this._page.title);
+    if(this._swfSearchInput)this._swfSearchInput.value=this._page.searchText||'';
+    this._refreshListResults(false);
+};
+Scene_UniversalControl.prototype._refreshListResults=function(resetSelection){
+    if(!this._page)return;
+    var rows=swfFilterRows(this._page.rows,this._page.searchText);
+    this._listWindow.setRows(rows,resetSelection?0:this._page.index);
+    if(this._swfSearchCount)this._swfSearchCount.textContent=rows.length+' / '+swfFilterRows(this._page.rows,'').length;
+    this._syncListTools();
+};
+
+// Browser-side controls are placed above the RPG Maker canvas so they work with
+// both MV and MZ, including the in-battle control interface.
+Scene_UniversalControl.prototype._mountListTools=function(){
+    if(this._swfTools)return;
+    var self=this,layer=document.createElement('div');
+    layer.style.cssText='position:fixed;pointer-events:none;z-index:2147483000;';
+    var input=document.createElement('input');
+    input.type='search';input.autocomplete='off';input.spellcheck=false;
+    input.placeholder=TR('Поиск по названию / ID');
+    input.style.cssText='position:absolute;box-sizing:border-box;pointer-events:auto;padding:5px 12px;background:#202b40;color:#fff;border:1px solid #8094ba;border-radius:7px;outline:none;font:19px Arial,sans-serif;';
+    input.addEventListener('focus',function(){self._listWindow.deactivate();Input.clear();TouchInput.clear();});
+    input.addEventListener('blur',function(){Input.clear();TouchInput.clear();if(!self._modal&&self._listWindow)self._listWindow.activate();});
+    ['keydown','keyup','keypress'].forEach(function(type){
+        input.addEventListener(type,function(e){
+            e.stopPropagation();
+            if(type==='keydown'&&(e.key==='Escape'||e.key==='Enter')){
+                e.preventDefault();input.blur();
+            }
+        });
+    });
+    ['mousedown','mouseup','touchstart','touchend','wheel'].forEach(function(type){
+        input.addEventListener(type,function(e){e.stopPropagation();});
+    });
+    input.addEventListener('input',function(){
+        if(!self._page)return;
+        self._page.searchText=input.value;self._page.index=0;self._refreshListResults(true);
+    });
+    var count=document.createElement('span');
+    count.style.cssText='position:absolute;pointer-events:none;text-align:right;color:#c4d1e6;font:16px Arial,sans-serif;';
+    var track=document.createElement('div');
+    track.style.cssText='position:absolute;pointer-events:auto;background:rgba(127,151,187,.25);border-radius:8px;cursor:pointer;display:none;touch-action:none;';
+    var thumb=document.createElement('div');
+    thumb.style.cssText='position:absolute;left:1px;right:1px;top:0;background:#a1c0f1;border-radius:8px;min-height:16px;';
+    track.appendChild(thumb);
+    var dragging=false;
+    function seek(clientY){
+        if(!self._listWindow)return;
+        var list=self._listWindow,max=Math.max(0,list.maxTopRow());
+        if(!max)return;
+        var rect=track.getBoundingClientRect(),thumbHeight=thumb.getBoundingClientRect().height;
+        var travel=Math.max(1,rect.height-thumbHeight);
+        var fraction=Math.max(0,Math.min(1,(clientY-rect.top-thumbHeight/2)/travel));
+        var top=Math.round(max*fraction);
+        var visible=Math.max(1,list.maxPageRows());
+        if(list.index()<top||list.index()>=top+visible)list.select(top);
+        list.setTopRow(top);self._syncListTools();
+    }
+    track.addEventListener('mousedown',function(e){
+        if(e.button!==0)return;
+        e.preventDefault();e.stopPropagation();dragging=true;seek(e.clientY);
+    });
+    track.addEventListener('wheel',function(e){
+        e.preventDefault();e.stopPropagation();
+        if(!self._listWindow)return;
+        var list=self._listWindow,max=Math.max(0,list.maxTopRow());
+        list.setTopRow(Math.max(0,Math.min(max,list.topRow()+(e.deltaY>0?1:-1))));
+        self._syncListTools();
+    });
+    this._swfMouseMove=function(e){if(dragging){e.preventDefault();seek(e.clientY);}};
+    this._swfMouseUp=function(){dragging=false;};
+    window.addEventListener('mousemove',this._swfMouseMove);
+    window.addEventListener('mouseup',this._swfMouseUp);
+    layer.appendChild(input);layer.appendChild(count);layer.appendChild(track);
+    document.body.appendChild(layer);
+    this._swfTools=layer;this._swfSearchInput=input;this._swfSearchCount=count;
+    this._swfTrack=track;this._swfThumb=thumb;this._listWindow._swfOwner=this;
+    if(this._page){input.value=this._page.searchText||'';this._refreshListResults(false);}
+};
+Scene_UniversalControl.prototype._syncListTools=function(){
+    if(!this._swfTools||!this._listWindow)return;
+    var canvas=Graphics._canvas;if(!canvas||!canvas.getBoundingClientRect)return;
+    var rect=canvas.getBoundingClientRect(),sx=rect.width/Graphics.width,sy=rect.height/Graphics.height;
+    if(!sx||!sy)return;
+    var layer=this._swfTools,input=this._swfSearchInput,count=this._swfSearchCount;
+    layer.style.left=rect.left+'px';layer.style.top=rect.top+'px';
+    layer.style.width=rect.width+'px';layer.style.height=rect.height+'px';
+    input.style.left=Math.round(12*sx)+'px';input.style.top=Math.round((this._titleWindow.height+4)*sy)+'px';
+    input.style.width=Math.max(80,Math.round((Graphics.boxWidth-128)*sx))+'px';
+    input.style.height=Math.round(34*sy)+'px';input.style.fontSize=Math.max(12,Math.round(19*sy))+'px';
+    count.style.top=Math.round((this._titleWindow.height+13)*sy)+'px';
+    count.style.right=Math.round(22*sx)+'px';count.style.fontSize=Math.max(11,Math.round(16*sy))+'px';
+    var list=this._listWindow,max=Math.max(0,list.maxTopRow());
+    var track=this._swfTrack,thumb=this._swfThumb;
+    track.style.display=max>0?'block':'none';
+    if(!max)return;
+    var height=Math.max(12,Math.round((list.height-10)*sy));
+    var visible=Math.max(1,list.maxPageRows()),total=Math.max(visible,list.maxItems());
+    var thumbHeight=Math.max(20,Math.min(height,Math.round(height*visible/total)));
+    track.style.top=Math.round((list.y+5)*sy)+'px';track.style.right=Math.round(5*sx)+'px';
+    track.style.width=Math.max(10,Math.round(15*sx))+'px';track.style.height=height+'px';
+    thumb.style.height=thumbHeight+'px';
+    thumb.style.top=Math.round(Math.max(0,Math.min(1,list.topRow()/max))*(height-thumbHeight))+'px';
+};
+Scene_UniversalControl.prototype._removeListTools=function(){
+    if(this._swfTools&&this._swfTools.parentNode)this._swfTools.parentNode.removeChild(this._swfTools);
+    if(this._swfMouseMove)window.removeEventListener('mousemove',this._swfMouseMove);
+    if(this._swfMouseUp)window.removeEventListener('mouseup',this._swfMouseUp);
+    if(this._listWindow)this._listWindow._swfOwner=null;
+    this._swfTools=null;this._swfSearchInput=null;this._swfSearchCount=null;this._swfTrack=null;this._swfThumb=null;
+    this._swfMouseMove=null;this._swfMouseUp=null;
+};
 Scene_UniversalControl.prototype.back=function(){if(this._pages.length){this._page=this._pages.pop();this.renderPage();}else this.close();};
 Scene_UniversalControl.prototype.close=function(){
     if (this._battleMode && this._battleScene) this._battleScene.closeUniversalControl();
@@ -2412,7 +2540,7 @@ function knownEntrances(id) {
 Scene_UniversalControl.prototype.maps=function(visitedOnly,query,replace){
     var self=this,q=query.toLowerCase(),visited=$gameSystem._universalControlVisited||{};
     var selected=MAPS.filter(function(m){return (!visitedOnly||visited[m.id])&&(!q||(m.id+' '+m.name+' '+m.internal).toLowerCase().indexOf(q)>=0);});
-    var rows=[{name:TR('Поиск по названию или ID')+(query?' — '+query:''),run:function(){self.ask(TR('Название карты или ID (пусто — показать все)'),query,function(v){self.maps(visitedOnly,v,true);});}}];
+    var rows=[{searchRow:true,name:TR('Поиск по названию или ID')+(query?' — '+query:''),run:function(){self.ask(TR('Название карты или ID (пусто — показать все)'),query,function(v){self.maps(visitedOnly,v,true);});}}];
     selected.forEach(function(m){rows.push({name:'#'+m.id+' · '+clean(m.name),help:TR('Название карты из базы игры. Список может включать служебные карты.\nДанные и координаты будут прочитаны после выбора.\nПеред телепортом сохранись отдельно.'),run:function(){self.loadMapDetail(m);}});});
     this.showPage(TR('Телепорт · найдено ')+selected.length,rows,replace);
 };
@@ -2461,7 +2589,7 @@ Scene_UniversalControl.prototype.actorMenu=function(a,replace){
 };
 Scene_UniversalControl.prototype.skills=function(a,remove,query,replace){
     var self=this,q=query.toLowerCase();var data=$dataSkills.filter(function(s){return s&&s.name&&(!remove||a.isLearnedSkill(s.id))&&(!q||(s.id+' '+clean(s.name)).toLowerCase().indexOf(q)>=0);});
-    var rows=[{name:TR('Поиск по названию / ID')+(query?' — '+query:''),run:function(){self.ask(TR('Навык или ID (пусто — все)'),query,function(v){self.skills(a,remove,v,true);});}}];
+    var rows=[{searchRow:true,name:TR('Поиск по названию / ID')+(query?' — '+query:''),run:function(){self.ask(TR('Навык или ID (пусто — все)'),query,function(v){self.skills(a,remove,v,true);});}}];
     data.forEach(function(s){rows.push({name:'#'+s.id+' · '+clean(s.name)+(a.isLearnedSkill(s.id)?TR(' [изучен]'):''),help:clean(s.description)+'\n'+(remove?TR('Удалить из изученных навыков.'):TR('Изучить напрямую, без траты очков дерева навыков.'))+TR('\nСюжетные, классовые и экипировочные условия использования сохраняются.'),run:function(){self.confirm((remove?TR('Забыть: '):TR('Изучить: '))+clean(s.name),TR('Персонаж: ')+clean(a.name())+'\n'+clean(s.description),function(){if(remove)a.forgetSkill(s.id);else a.learnSkill(s.id);self.back();self.skills(a,remove,query,true);self.notice(remove?TR('Навык удалён из изученных.'):TR('Навык изучен. Для применения могут требоваться класс, оружие или ресурсы.'));});}});});
     this.showPage((remove?TR('Забыть'):TR('Изучить'))+' · '+clean(a.name()),rows,replace);
 };
@@ -2477,7 +2605,7 @@ Scene_UniversalControl.prototype.itemCategories=function(){
 function database(kind){return kind==='items'?$dataItems:kind==='weapons'?$dataWeapons:$dataArmors;}
 Scene_UniversalControl.prototype.items=function(kind,mode,query,replace){
     var self=this,q=query.toLowerCase();var data=database(kind).slice(0,BASE_COUNTS[kind]).filter(function(i){return i&&i.id!==ITEM_ID&&!(i.meta && i.meta.UniversalControl)&&(mode==='all'||!!i.name)&&(kind!=='items'||mode==='all'||(mode==='normal'?i.itypeId===1:i.itypeId!==1))&&(!q||(i.id+' '+clean(i.name)).toLowerCase().indexOf(q)>=0);});
-    var rows=[{name:TR('Поиск по названию / ID')+(query?' — '+query:''),run:function(){self.ask(TR('Название или ID (пусто — все)'),query,function(v){self.items(kind,mode,v,true);});}}];
+    var rows=[{searchRow:true,name:TR('Поиск по названию / ID')+(query?' — '+query:''),run:function(){self.ask(TR('Название или ID (пусто — все)'),query,function(v){self.items(kind,mode,v,true);});}}];
     data.forEach(function(item){rows.push({name:'#'+item.id+' · '+(clean(item.name)||TR('[без названия]')),help:clean(item.description)+TR('\nВыдача через игровую систему предметов. Лимит: ')+stackLimitLabel()+TR('. Уникальные экземпляры и спецлимиты не меняются.'),run:function(){self.giveDialog(item);}});});
     this.showPage(TR('Предметы · найдено ')+data.length,rows,replace);
 };
@@ -2511,7 +2639,7 @@ Scene_UniversalControl.prototype.extraStats=function(a,replace){
 };
 Scene_UniversalControl.prototype.extraSwitches=function(query,replace){
     var self=this,q=query.trim().toLowerCase(),names=$dataSystem.switches||[];
-    var rows=[{name:TR('Поиск по ID / имени')+(query?' · '+query:''),run:function(){self.ask(TR('Поиск переключателя'),query,function(v){self.extraSwitches(v,true);});}}];
+    var rows=[{searchRow:true,name:TR('Поиск по ID / имени')+(query?' · '+query:''),run:function(){self.ask(TR('Поиск переключателя'),query,function(v){self.extraSwitches(v,true);});}}];
     names.forEach(function(name,i){if(i===0 || !name || (q && (String(i)+' '+name).toLowerCase().indexOf(q)<0))return;
         rows.push({name:'#'+i+' '+clean(name)+' · '+($gameSwitches.value(i)?TR('ВКЛ'):TR('ВЫКЛ')),run:function(){
             $gameSwitches.setValue(i,!$gameSwitches.value(i));self.extraSwitches(query,true);
@@ -2521,7 +2649,7 @@ Scene_UniversalControl.prototype.extraSwitches=function(query,replace){
 };
 Scene_UniversalControl.prototype.extraVariables=function(query,replace){
     var self=this,q=query.trim().toLowerCase(),names=$dataSystem.variables||[];
-    var rows=[{name:TR('Поиск по ID / имени')+(query?' · '+query:''),run:function(){self.ask(TR('Поиск переменной'),query,function(v){self.extraVariables(v,true);});}}];
+    var rows=[{searchRow:true,name:TR('Поиск по ID / имени')+(query?' · '+query:''),run:function(){self.ask(TR('Поиск переменной'),query,function(v){self.extraVariables(v,true);});}}];
     names.forEach(function(name,i){if(i===0 || !name || (q && (String(i)+' '+name).toLowerCase().indexOf(q)<0))return;
         var value=$gameVariables.value(i);
         rows.push({name:'#'+i+' '+clean(name)+' · '+String(value).slice(0,28),run:function(){
@@ -2581,18 +2709,19 @@ Scene_Battle.prototype.openUniversalControl=function(){
     ui._titleWindow=IS_MZ?new Window_Help(new Rectangle(0,0,Graphics.boxWidth,titleH)):new Window_Help(1);
     ui._helpWindow=IS_MZ?new Window_Help(new Rectangle(0,Graphics.boxHeight-helpH,Graphics.boxWidth,helpH)):new Window_Help(3);
     ui._helpWindow.y=Graphics.boxHeight-ui._helpWindow.height;
-    ui._listWindow=new Window_UniversalList(ui._titleWindow.height,ui._helpWindow.y-ui._titleWindow.height);
+    ui._listWindow=new Window_UniversalList(ui._titleWindow.height+SWF_SEARCH_BAR_HEIGHT,ui._helpWindow.y-ui._titleWindow.height-SWF_SEARCH_BAR_HEIGHT);
     ui._listWindow.setHelpWindow(ui._helpWindow);
     ui._listWindow.setHandler('choose',ui.choose.bind(ui));
     ui._listWindow.setHandler('cancel',ui.back.bind(ui));
     this.addWindow(ui._titleWindow);this.addWindow(ui._helpWindow);this.addWindow(ui._listWindow);
     this._universalControlBattle=ui;
-    ui.main();
+    ui.main();ui._mountListTools();
 };
 Scene_Battle.prototype.closeUniversalControl=function(terminating){
     var ui=this._universalControlBattle;
     if(!ui)return;
     this._universalControlBattle=null;
+    ui._removeListTools();
     if(ui._modal && ui._modal.parentNode)ui._modal.parentNode.removeChild(ui._modal);
     [ui._listWindow,ui._helpWindow,ui._titleWindow,ui._battleBackground].forEach(function(obj){
         if(obj && obj.parent) obj.parent.removeChild(obj);
