@@ -1,53 +1,29 @@
-SWF Cheat Menu v2.8.0 — обновление только плагина / plugin-only update
-========================================================================
+SWF Cheat Menu v2.8.0 — Plugin-only update / Только плагин
+=============================================================
 
 Русский
-
-Этот архив содержит только SWF_CheatMenu.js, БЕЗ исполняемых установщиков.
-Он предназначен ТОЛЬКО для игр, где SWF Cheat Menu уже установлен.
-
+Только для уже установленного мода. Архив не содержит установщиков.
 1. Закройте игру.
-2. Найдите папку игры: www/js/plugins/ или js/plugins/.
-3. Сделайте копию файла SWF_CheatMenu.js из этой папки.
-4. Замените его новым SWF_CheatMenu.js из архива.
-5. Запустите игру и проверьте F7, поиск в списках и клавишу 1.
-
-Поиск открывается первым пунктом соответствующего списка (название или ID).
-Ползунок длинных списков отрисовывается самим RPG Maker.
-Если мод раньше не был установлен, используйте полный установочный архив.
-Если Defender сообщает об угрозе, не отключайте защиту и не добавляйте исключений.
-Отправьте файл на проверку Microsoft: https://www.microsoft.com/en-us/wdsi/filesubmission
+2. Сохраните копию www/js/plugins/SWF_CheatMenu.js (или js/plugins/).
+3. Замените файл новым и проверьте F7 и клавишу 1.
+Для первой установки скачайте полный архив.
+Если антивирус обнаружил угрозу, не отключайте защиту и не добавляйте исключений:
+https://www.microsoft.com/en-us/wdsi/filesubmission
 
 English
-
-This archive contains only SWF_CheatMenu.js, WITHOUT installer executables.
-It is intended ONLY for games that already have SWF Cheat Menu installed.
-
+For existing installations only; no installer included.
 1. Close the game.
-2. Open the game's www/js/plugins/ or js/plugins/ directory.
-3. Back up its existing SWF_CheatMenu.js.
-4. Replace it with the new SWF_CheatMenu.js from this archive.
-5. Launch the game and verify F7, catalog search, and the 1 key.
-
-Select the first Search command in a catalog to search by name or ID.
-The draggable list scrollbar is rendered by RPG Maker itself.
-For a fresh installation, use the full release archive.
-If Defender reports a threat, do not disable protection or add exclusions.
-Submit the file to Microsoft: https://www.microsoft.com/en-us/wdsi/filesubmission
+2. Back up www/js/plugins/SWF_CheatMenu.js (or js/plugins/).
+3. Replace it with the new file; test F7 and 1.
+For first-time installation, use the full ZIP.
+If antivirus software flags the file, do not disable protection or allowlist it:
+https://www.microsoft.com/en-us/wdsi/filesubmission
 
 Español
-
-Este archivo contiene únicamente SWF_CheatMenu.js y estas instrucciones.
-No incluye ejecutables ni instaladores. Úsalo solo para actualizar un juego
-donde SWF Cheat Menu ya esté instalado.
-
+Solo para juegos con el mod ya instalado; no incluye instalador.
 1. Cierra el juego.
-2. Abre la carpeta www/js/plugins/ o js/plugins/ del juego.
-3. Haz una copia de seguridad del archivo SWF_CheatMenu.js anterior.
-4. Sustitúyelo por el nuevo SWF_CheatMenu.js.
-5. Inicia el juego y comprueba F7, la búsqueda y la tecla 1.
-
-Para una primera instalación, utiliza el archivo completo con instaladores.
-Si el antivirus detecta una amenaza, no desactives la protección ni añadas
-excepciones. Envía el archivo para su revisión:
+2. Guarda una copia de www/js/plugins/SWF_CheatMenu.js (o js/plugins/).
+3. Sustituye el archivo y comprueba F7 y 1.
+Para la primera instalación, descarga el paquete completo.
+Si el antivirus detecta una amenaza, no lo desactives ni añadas excepciones:
 https://www.microsoft.com/en-us/wdsi/filesubmission
