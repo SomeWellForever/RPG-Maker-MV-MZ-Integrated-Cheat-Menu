@@ -1,9 +1,18 @@
-# Native installer (no Python dependency)
+# Native installer (Windows and Linux)
 
-This directory contains the shared Go 1.22 installation engine used by Windows and Linux. The release archive contains compiled binaries in bin/; end users do not need Go or Python. Keep bin/ together with the Windows/Linux launcher scripts.
+The shared Go 1.22 installer modifies RPG Maker MV/MZ games. The downloaded release already includes compiled executables in `bin/`, so players do **not** need Go or Python. Keep the complete release folder together with the launchers.
 
-The installer intentionally keeps the RPG Maker MV/MZ game modifications from earlier v2.2.0 builds: updates plugins.js (or a guarded main.js loader for nonstandard registries), recognizes the previous Integrated Cheat Menu install, backs up changed files, preserves unrelated plugins and never modifies saves.
+## Development
 
-Develop/test: go test ./installer/...
+From the repository root:
 
-Current release: v2.3.0. The released installers target Windows and Linux only.
+```sh
+go -C installer test ./...
+go -C installer build ./...
+```
+
+The installer locates `www/js/` or `js/`, updates `plugins.js` (with a managed `main.js` loader fallback for nonstandard registries), installs `SWF_CheatMenu.js`, and backs up changed files to `SWF_CheatMenu_Backup/`. Game saves are not modified.
+
+Starting with **v2.3.1**, an existing `Cheat_Menu` entry with an empty description is disabled during migration while its settings are preserved. Recognized older integrated entries are removed. Other plugins are preserved and repeated installation is supported.
+
+Only Windows and Linux installers are distributed in release **v2.3.1**.

@@ -5,7 +5,7 @@ root = Path(__file__).resolve().parent.parent
 ver = "2.3.1"
 for name in ("SWF_CheatMenu.js", "installer/main.go", "installer/main_test.go",
              "scripts/build_release.py", "scripts/verify_release.py",
-             "README.md", ".github/workflows/release.yml",
+             "README.md", "installer/README.md", ".github/workflows/release.yml",
              ".github/ISSUE_TEMPLATE/bug_report.yml"):
     text = (root / name).read_text(encoding="utf-8")
     assert ver in text, f"Missing {ver}: {name}"
