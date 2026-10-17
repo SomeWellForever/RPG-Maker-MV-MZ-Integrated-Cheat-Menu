@@ -71,6 +71,7 @@ assert.equal(output.filter(x=>x[0]==="cheat").length,6,"More corrupted slots mus
 assert.equal(destinations.length,2);
 assert.equal(menu.saved_positions.length,10,"Older three-position saves must gain seven empty slots");
 assert.equal(output.filter(x=>x[0]==="scroll").length,1,"Quick position page selector missing");
+assert.deepEqual(Array.from(output.find(x=>x[0]==="scroll").slice(2,4)),[0,"-"],"Hotkeys 1/2/3 must retain their original overlay functions");
 menu.scroll_saved_position_page("right");
 assert.equal(menu.saved_position_page,1);
 output.length=0;menu.append_save_recall(4,5,6,7,8,9);
