@@ -1,6 +1,6 @@
 /*:
  * @target MV MZ
- * @plugindesc SWF Cheat Menu Integrated 2.6.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @plugindesc SWF Cheat Menu Integrated 2.6.1: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help F7 or the 'Control Menu' / 'Меню управления' key item opens the full menu,
  * including during battle. Choose Auto / Русский / English / Español inside that menu.
@@ -1816,7 +1816,7 @@ DataManager.saveGame = function(savefileId) {
 
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
- * @plugindesc SWF Cheat Menu Integrated v2.6.0 — teleport, levels, skills, items and stack limits.
+ * @plugindesc SWF Cheat Menu Integrated v2.6.1 — teleport, levels, skills, items and stack limits.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help Use F7 or the Control Menu / Меню управления key item on the map or in battle.
  * Auto / Русский / English / Español changes both menus (including the quick overlay on 1).
@@ -2456,7 +2456,8 @@ Scene_Item.prototype.onItemOk = function() {
 document.addEventListener('keydown', function(e) {
     if (e.keyCode === 118 && !e.repeat && (SceneManager._scene instanceof Scene_Map || SceneManager._scene instanceof Scene_Battle)) {
         e.preventDefault();
-        if (SceneManager._scene instanceof Scene_Battle && SceneManager._scene._universalControlBattle) {
+        if ((SceneManager._scene instanceof Scene_Battle && SceneManager._scene._universalControlBattle) ||
+            (SceneManager._scene instanceof Scene_Map && SceneManager._scene._universalControlMap)) {
             openRequested = false; SceneManager._scene.closeUniversalControl(); return;
         }
         openRequested = true;
@@ -2482,11 +2483,22 @@ Scene_Map.prototype.start = function() {
         $gameSystem._universalControlVisited[$gameMap.mapId()]=true;
     }
 };
+// Do not change away from Scene_Map when F7 opens the editor: returning by
+// SceneManager.pop() recreates Window_Message and Window_ChoiceList. In a
+// running event/mini-game, pending choices can make Window_ChoiceList measure
+// text before its bitmap exists (TypeError: reading 'bitmap').
 var oldMapUpdate = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
+    if (this._universalControlMap) {
+        // Keep the scene's graphics/windows alive but pause the map interpreter
+        // and scripted mini-games until the control UI is closed.
+        Scene_Base.prototype.update.call(this);
+        return;
+    }
     oldMapUpdate.apply(this, arguments);
     if (openRequested && !SceneManager.isSceneChanging() && !$gamePlayer.isTransferring()) {
-        openRequested = false; ensureItem(); SceneManager.push(Scene_UniversalControl);
+        openRequested = false;
+        this.openUniversalControl();
     }
 };
 // Recheck landing tiles against active collision/events after the map is loaded.
@@ -2796,6 +2808,7 @@ Scene_UniversalControl.prototype.back=function(){
     }else this.renderPage();
 };
 Scene_UniversalControl.prototype.close=function(){
+    if(this._mapScene){this._mapScene.closeUniversalControl();return;}
     if (this._battleMode && this._battleScene) this._battleScene.closeUniversalControl();
     else SceneManager.pop();
 };
@@ -3251,6 +3264,54 @@ Scene_Battle.prototype.closeUniversalControl=function(terminating){
     });
     Input.clear();TouchInput.clear();
     if(!terminating)ui._previousActive.forEach(function(w){if(w && w.activate)w.activate();});
+};
+// The map editor uses the same in-scene layout as battle, but must preserve
+// Scene_Map's message/choice windows and interpreter while a mini-game is active.
+// Do not call SceneManager.push/pop for F7 on the map.
+Scene_Map.prototype.openUniversalControl=function(){
+    if(this._universalControlMap || SceneManager.isSceneChanging())return;
+    Cheat_Menu.close_overlay();Cheat_Menu.prepare();ensureItem();
+    var ui=Object.create(Scene_UniversalControl.prototype);
+    ui._battleMode=false;ui._mapScene=this;ui._pages=[];ui._modal=null;
+    ui._swfOnlyFavorites={};ui._swfEditingFavorites={};
+    var oldActive=[];
+    if(this._windowLayer&&this._windowLayer.children)this._windowLayer.children.forEach(function(w){
+        if(w.active){oldActive.push(w);w.deactivate();}
+    });
+    ui._previousActive=oldActive;
+    var dark=new Sprite(new Bitmap(Graphics.width,Graphics.height));
+    dark.bitmap.fillAll('#161e2d');dark.opacity=245;
+    this.addChildAt(dark,this.getChildIndex(this._windowLayer));
+    ui._battleBackground=dark;
+    var titleH=72,helpH=144;
+    ui._titleWindow=IS_MZ?new Window_Help(new Rectangle(0,0,Graphics.boxWidth,titleH)):new Window_Help(1);
+    ui._helpWindow=IS_MZ?new Window_Help(new Rectangle(0,Graphics.boxHeight-helpH,Graphics.boxWidth,helpH)):new Window_Help(3);
+    ui._helpWindow.y=Graphics.boxHeight-ui._helpWindow.height;
+    ui._listWindow=new Window_UniversalList(ui._titleWindow.height,ui._helpWindow.y-ui._titleWindow.height);
+    ui._listWindow.setHelpWindow(ui._helpWindow);
+    ui._listWindow.setHandler('choose',ui.choose.bind(ui));
+    ui._listWindow.setHandler('cancel',ui.back.bind(ui));
+    this.addWindow(ui._titleWindow);this.addWindow(ui._helpWindow);this.addWindow(ui._listWindow);
+    this._universalControlMap=ui;
+    Input.clear();TouchInput.clear();
+    ui.main();
+};
+Scene_Map.prototype.closeUniversalControl=function(terminating){
+    var ui=this._universalControlMap;
+    if(!ui)return;
+    this._universalControlMap=null;
+    if(ui._modal&&ui._modal.parentNode)ui._modal.parentNode.removeChild(ui._modal);
+    [ui._listWindow,ui._helpWindow,ui._titleWindow,ui._battleBackground].forEach(function(obj){
+        if(obj&&obj.parent)obj.parent.removeChild(obj);
+        if(obj&&obj.destroy&&IS_MZ)obj.destroy({children:true});
+    });
+    Input.clear();TouchInput.clear();
+    if(!terminating)ui._previousActive.forEach(function(w){if(w&&w.activate)w.activate();});
+};
+var oldMapTerminate=Scene_Map.prototype.terminate;
+Scene_Map.prototype.terminate=function(){
+    if(this._universalControlMap)this.closeUniversalControl(true);
+    return oldMapTerminate.apply(this,arguments);
 };
 window.Scene_UniversalControl=Scene_UniversalControl;
 })();
