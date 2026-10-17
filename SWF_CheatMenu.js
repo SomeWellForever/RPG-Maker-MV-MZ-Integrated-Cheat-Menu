@@ -3223,11 +3223,12 @@ function swfSwitchSearch(id,name,isOn,query){
     var state=q.charAt(0)==='='?q.slice(1).trim():q;
     // Spanish accents, Russian names, and the stable English tokens work
     // regardless of the currently selected interface language.
-    var on=['on','true','1','вкл','sí','si','activado'];
-    var off=['off','false','0','выкл','no','desactivado'];
+    var explicit=q.charAt(0)==='=';
+    var on=explicit?['on','true','1','вкл','sí','si','activado']:['on','вкл','sí','si','activado'];
+    var off=explicit?['off','false','0','выкл','no','desactivado']:['off','выкл','no','desactivado'];
     if(on.indexOf(state)>=0)return !!isOn;
     if(off.indexOf(state)>=0)return !isOn;
-    if(q.charAt(0)==='=')return false;
+    if(explicit)return false;
     return swfPlainSearch(id,name,q);
 }
 Scene_UniversalControl.prototype.extraSwitches=function(query,replace){
