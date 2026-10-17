@@ -21,6 +21,8 @@ jobs:
         run: node --check SWF_CheatMenu.js
       - name: Check language switching, Russian and English translations
         run: node tests/test_i18n.cjs
+      - name: Test duplicate plugin load and DataManager recursion prevention
+        run: node tests/test_recursion.cjs
 
   windows:
     runs-on: windows-latest
