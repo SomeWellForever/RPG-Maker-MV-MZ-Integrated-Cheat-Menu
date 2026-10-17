@@ -2437,66 +2437,118 @@ Scene_UniversalControl.prototype.askNumber=function(title,value,min,max,callback
 Scene_UniversalControl.prototype.confirm=function(title,help,action){
     var self=this;this.showPage(title,[{name:TR('Подтвердить'),help:help,run:action},{name:TR('Отмена'),run:function(){self.back();}}]);
 };
-// Single main menu: legacy cheats appear directly in the native interface,
-// grouped by purpose without a second "Extra cheats" page.
+// The six categories are the only commands shown at the top level.
+// The grid uses the same RPG Maker window/input model as the normal lists.
 Scene_UniversalControl.prototype.main=function(){
-    var self=this,battle=!!this._battleMode,rows=[];
-    if (!battle) {
-        var ret=$gameSystem._universalControlReturn;
-        rows.push(
-            {name:TR('Телепорт: посещённые карты'),help:TR('Телепортация не выполняет сюжетные события.'),run:function(){self.maps(true,'');}},
-            {name:TR('Телепорт: все карты игры'),help:TR('Включая тестовые и служебные карты. Сохрани игру отдельно.'),run:function(){self.maps(false,'');}},
-            {name:TR('Возврат после телепорта'),enabled:!!ret,help:ret?TR('Карта #')+ret.mapId+' · '+ret.x+', '+ret.y:TR('Точка возврата пока не записана.'),run:function(){self.confirm(TR('Возврат'),TR('Сюжетные события не откатываются.'),function(){self.teleport(ret.mapId,ret.x,ret.y,ret.direction,false,false);});}},
-            {name:TR('Точки быстрого перемещения (3 слота)'),run:function(){self.savedPositions();}}
-        );
-    } else {
-        rows.push({name:TR('Противники: установить HP = 1'),run:function(){Cheat_Menu.set_enemy_hp(1,true);self.notice(TR('У живых противников осталось 1 HP.'));}});
-        rows.push({name:TR('Победить всех противников'),help:TR('Мгновенно устанавливает HP всех живых врагов в 0 и завершает бой через штатную обработку победы.'),run:function(){
-            self.confirm(TR('Победить всех противников?'),TR('У всех оставшихся врагов будет 0 HP.'),function(){
-                self.close(); Cheat_Menu.set_enemy_hp(0,true);
-            });
-        }});
-    }
-    rows.push(
-        {name:TR('Персонажи: уровни, навыки, параметры, читы'),run:function(){self.actors();}},
-        {name:TR('HP / MP / TP всей группы'),help:TR('Пополнить ресурсы, обнулить их или снять все состояния.'),run:function(){self.partyResources();}},
-        {name:TR('Получить предмет / оружие / броню'),run:function(){self.itemCategories();}},
-        {name:TR('Лимит предметов: ')+stackLimitLabel(),run:function(){self.stackLimits();}},
-        {name:TR('Золото: ')+$gameParty.gold(),run:function(){self.askNumber(TR('Установить золото'),$gameParty.gold(),0,999999999,function(n){$gameParty.gainGold(n-$gameParty.gold());self.main();self.notice(TR('Золото: ')+$gameParty.gold());});}},
+    var self=this,battle=!!this._battleMode;
+    this._swfOnlyFavorites={};this._swfEditingFavorites={};
+    var rows=[
+        {name:TR('Персонажи и отряд'),subtitle:TR('Уровни · навыки · HP / MP / TP'),run:function(){self.sectionActors();}},
+        {name:TR('Инвентарь'),subtitle:TR('Предметы · оружие · броня'),run:function(){self.sectionInventory();}},
+        battle
+          ?{name:TR('Прогресс игры'),subtitle:TR('Золото · переменные · флаги'),run:function(){self.sectionProgress();}}
+          :{name:TR('Мир и перемещение'),subtitle:TR('Карты · телепорт · скорость'),run:function(){self.sectionWorld();}},
+        battle
+          ?{name:TR('Бой'),subtitle:TR('Противники · победа'),run:function(){self.sectionBattle();}}
+          :{name:TR('Прогресс игры'),subtitle:TR('Золото · переменные · флаги'),run:function(){self.sectionProgress();}},
+        {name:TR('Избранное'),subtitle:TR('Быстрый доступ к отмеченному'),run:function(){self.favorites();}},
+        {name:TR('Настройки'),subtitle:TR('Язык · служебный предмет'),run:function(){self.sectionSettings();}}
+    ];
+    this.showPage(TR('SWF Cheat Menu · ')+(IS_MZ?'MZ':'MV')+(battle?TR(' · БОЙ'):''),rows,true,true);
+};
+Scene_UniversalControl.prototype.sectionActors=function(){
+    var self=this;
+    this.showPage(TR('Персонажи и отряд'),[
+        {name:TR('Список персонажей'),run:function(){self.actors();}},
+        {name:TR('HP / MP / TP всей группы'),help:TR('Пополнить ресурсы, обнулить их или снять все состояния.'),run:function(){self.partyResources();}}
+    ]);
+};
+Scene_UniversalControl.prototype.sectionInventory=function(){
+    var self=this;
+    this.showPage(TR('Инвентарь'),[
+        {name:TR('Предметы, оружие и броня'),run:function(){self.itemCategories();}},
+        {name:TR('Лимит предметов: ')+stackLimitLabel(),run:function(){self.stackLimits();}}
+    ]);
+};
+Scene_UniversalControl.prototype.sectionWorld=function(replace){
+    if(this._battleMode)return;
+    var self=this,ret=$gameSystem._universalControlReturn;
+    var through=$gamePlayer.isThrough&&$gamePlayer.isThrough()?TR('ВКЛ'):TR('ВЫКЛ');
+    var speed=$gamePlayer.moveSpeed?$gamePlayer.moveSpeed():$gamePlayer._moveSpeed;
+    this.showPage(TR('Мир и перемещение'),[
+        {name:TR('Телепорт: посещённые карты'),help:TR('Телепортация не выполняет сюжетные события.'),run:function(){self.maps(true,'');}},
+        {name:TR('Телепорт: все карты игры'),help:TR('Включая тестовые и служебные карты. Сохрани игру отдельно.'),run:function(){self.maps(false,'');}},
+        {name:TR('Возврат после телепорта'),enabled:!!ret,help:ret?TR('Карта #')+ret.mapId+' · '+ret.x+', '+ret.y:TR('Точка возврата пока не записана.'),run:function(){self.confirm(TR('Возврат'),TR('Сюжетные события не откатываются.'),function(){self.teleport(ret.mapId,ret.x,ret.y,ret.direction,false,false);});}},
+        {name:TR('Точки быстрого перемещения (3 слота)'),run:function(){self.savedPositions();}},
+        {name:TR('Проход сквозь стены: ')+through,run:function(){$gamePlayer.setThrough(!$gamePlayer.isThrough());self.sectionWorld(true);}},
+        {name:TR('Скорость движения: ')+speed,run:function(){self.ask(TR('Скорость (0.5–6.0, шаг 0.5)'),String(speed),function(v){
+            var n=Number(v);if(!isFinite(n)||n<0.5||n>6||Math.round(n*2)!==n*2){self.notice(TR('Введите число от 0.5 до 6.0, шаг 0.5.'));return;}
+            if(Cheat_Menu.speed_initialized && !Cheat_Menu.speed_unlocked)Cheat_Menu.speed_unlocked=true;
+            $gamePlayer.setMoveSpeed(n);self.sectionWorld(true);
+        });}},
+        {name:TR('Зафиксировать скорость: ')+(Cheat_Menu.speed_unlocked?TR('ВЫКЛ'):TR('ВКЛ')),run:function(){Cheat_Menu.toggle_lock_player_speed();self.sectionWorld(true);}}
+    ],replace);
+};
+Scene_UniversalControl.prototype.sectionProgress=function(replace){
+    var self=this;
+    this.showPage(TR('Прогресс игры'),[
+        {name:TR('Золото: ')+$gameParty.gold(),run:function(){self.askNumber(TR('Установить золото'),$gameParty.gold(),0,999999999,function(n){$gameParty.gainGold(n-$gameParty.gold());self.sectionProgress(true);self.notice(TR('Золото: ')+$gameParty.gold());});}},
         {name:TR('Игровые переключатели'),run:function(){self.extraSwitches('');}},
         {name:TR('Игровые переменные'),run:function(){self.extraVariables('');}}
-    );
-    if (!battle) {
-        var through=$gamePlayer.isThrough&&$gamePlayer.isThrough()?TR('ВКЛ'):TR('ВЫКЛ');
-        var speed=$gamePlayer.moveSpeed?$gamePlayer.moveSpeed():$gamePlayer._moveSpeed;
-        rows.push(
-            {name:TR('Проход сквозь стены: ')+through,run:function(){$gamePlayer.setThrough(!$gamePlayer.isThrough());self.main();}},
-            {name:TR('Скорость движения: ')+speed,run:function(){self.ask(TR('Скорость (0.5–6.0, шаг 0.5)'),String(speed),function(v){
-                var n=Number(v);if(!isFinite(n)||n<0.5||n>6||Math.round(n*2)!==n*2){self.notice(TR('Введите число от 0.5 до 6.0, шаг 0.5.'));return;}
-                if(Cheat_Menu.speed_initialized && !Cheat_Menu.speed_unlocked) Cheat_Menu.speed_unlocked=true;
-                $gamePlayer.setMoveSpeed(n);self.main();
-            });}},
-            {name:TR('Зафиксировать скорость: ')+(Cheat_Menu.speed_unlocked?TR('ВЫКЛ'):TR('ВКЛ')),run:function(){Cheat_Menu.toggle_lock_player_speed();self.main();}},
-            {name:$gameSystem._universalControlDisabled?TR('Вернуть предмет в инвентарь'):TR('Подготовить удаление мода'),run:function(){
-                if ($gameSystem._universalControlDisabled){$gameSystem._universalControlDisabled=false;ensureItem();self.main();return;}
-                self.confirm(TR('Удалить служебный предмет?'),TR('Перед удалением верни лимит предметов к обычному и сохрани игру в другой слот.'),function(){delete $gameParty._items[ITEM_ID];$gameSystem._universalControlDisabled=true;$gameSystem._universalControlItemCap=0;delete $gameSystem._universalControlReturn;self.close();});
-            }}
-        );
-    }
-
-    rows.push({
-        name:TR('Язык меню: ')+swfLanguageLabel(),
-        help:TR('Язык интерфейса меню не меняет названия предметов, карт и навыков, заданные самой игрой.'),
-        run:function(){
+    ],replace);
+};
+Scene_UniversalControl.prototype.sectionBattle=function(){
+    if(!this._battleMode)return;
+    var self=this;
+    this.showPage(TR('Бой'),[
+        {name:TR('Противники: установить HP = 1'),run:function(){Cheat_Menu.set_enemy_hp(1,true);self.notice(TR('У живых противников осталось 1 HP.'));}},
+        {name:TR('Победить всех противников'),help:TR('Мгновенно устанавливает HP всех живых врагов в 0 и завершает бой через штатную обработку победы.'),run:function(){
+            self.confirm(TR('Победить всех противников?'),TR('У всех оставшихся врагов будет 0 HP.'),function(){self.close();Cheat_Menu.set_enemy_hp(0,true);});
+        }}
+    ]);
+};
+Scene_UniversalControl.prototype.sectionSettings=function(replace){
+    var self=this;
+    this.showPage(TR('Настройки'),[
+        {name:TR('Язык меню: ')+swfLanguageLabel(),help:TR('Язык интерфейса меню не меняет названия предметов, карт и навыков, заданные самой игрой.'),run:function(){
             self.showPage(TR('Выбор языка'),[
                 {name:TR('Автоматически (по языку игры или системы)'),run:function(){swfSetLanguage('auto');self._pages=[];self.main();}},
                 {name:'Русский',run:function(){swfSetLanguage('ru');self._pages=[];self.main();}},
                 {name:'English',run:function(){swfSetLanguage('en');self._pages=[];self.main();}}
             ]);
-        }
+        }},
+        {name:$gameSystem._universalControlDisabled?TR('Вернуть предмет в инвентарь'):TR('Подготовить удаление мода'),run:function(){
+            if($gameSystem._universalControlDisabled){$gameSystem._universalControlDisabled=false;ensureItem();self.sectionSettings(true);return;}
+            self.confirm(TR('Удалить служебный предмет?'),TR('Перед удалением верни лимит предметов к обычному и сохрани игру в другой слот.'),function(){
+                delete $gameParty._items[ITEM_ID];$gameSystem._universalControlDisabled=true;$gameSystem._universalControlItemCap=0;delete $gameSystem._universalControlReturn;self.close();
+            });
+        }}
+    ],replace);
+};
+Scene_UniversalControl.prototype.favorites=function(){
+    var self=this,battle=!!this._battleMode;
+    var categories=[
+        {kind:'items',name:TR('Предметы'),go:function(){self.items('items','all','');}},
+        {kind:'weapons',name:TR('Оружие'),go:function(){self.items('weapons','normal','');}},
+        {kind:'armors',name:TR('Броня и аксессуары'),go:function(){self.items('armors','normal','');}},
+        {kind:'skills',name:TR('Навыки'),go:function(){self.favoriteSkillActors();}},
+        {kind:'switches',name:TR('Переключатели'),go:function(){self.extraSwitches('');}},
+        {kind:'variables',name:TR('Переменные'),go:function(){self.extraVariables('');}}
+    ];
+    if(!battle)categories.push({kind:'maps',name:TR('Карты'),go:function(){self.maps(false,'');}});
+    var rows=categories.map(function(c){return {
+        name:c.name+' ★ '+swfFavoriteCount(c.kind),
+        help:TR('Избранное хранится в текущем сохранении игры.'),
+        run:function(){self._swfOnlyFavorites=self._swfOnlyFavorites||{};self._swfOnlyFavorites[c.kind]=true;self._swfEditingFavorites[c.kind]=false;c.go();}
+    };});
+    this.showPage(TR('Избранное'),rows);
+};
+Scene_UniversalControl.prototype.favoriteSkillActors=function(){
+    var self=this,rows=$gameParty.allMembers().filter(function(a){return !!a;}).map(function(a){
+        return {name:clean(a.name()),run:function(){self.skills(a,false,'');}};
     });
-    rows.push({name:battle?TR('Закрыть меню и продолжить бой'):TR('Закрыть меню'),run:function(){self.close();}});
-    this.showPage(TR('Меню управления · ')+(IS_MZ?'MZ':'MV')+(battle?TR(' · БОЙ'):''),rows,true);
+    if(!rows.length)rows.push({name:TR('В отряде нет персонажей'),enabled:false});
+    this.showPage(TR('Выбери персонажа для навыков'),rows);
 };
 Scene_UniversalControl.prototype.savedPositions=function(replace){
     var self=this,rows=[];
