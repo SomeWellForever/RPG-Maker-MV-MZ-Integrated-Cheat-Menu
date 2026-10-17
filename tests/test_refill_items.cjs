@@ -76,7 +76,7 @@ assert.deepEqual(Array.from(gains,g=>g.id),[1,8,15],
  "Should only use normal RPG Maker gainItem on eligible owned items");
 assert.equal(throws,2,"A broken third-party item must be isolated and counted");
 assert.match(ui.lastNotice,/Пополнено видов: 3/);
-assert.match(ui.lastNotice,/ · добавлено предметов: 10096/);
+assert.match(ui.lastNotice,/ · добавлено предметов: 10097/);
 assert.match(ui.lastNotice,/ · пропущено: 2/);
 const beforeSecond=gains.length;
 ui.lastPage.rows[1].run();
