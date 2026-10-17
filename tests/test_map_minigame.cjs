@@ -21,6 +21,8 @@ for(const mz of [false,true]){
     function Scene_Battle(){}
     function Scene_UniversalControl(){}
     Scene_UniversalControl.prototype.main=function(){this.mainOpened=(this.mainOpened||0)+1;};
+    Scene_UniversalControl.prototype.choose=function(){};
+    Scene_UniversalControl.prototype.back=function(){};
     const oldChoice={active:true,deactivate(){this.active=false;},activate(){this.active=true;}};
     const oldMessage={active:true,deactivate(){this.active=false;},activate(){this.active=true;}};
     counts.initChoice=1; // Window_ChoiceList was created when the map started.
