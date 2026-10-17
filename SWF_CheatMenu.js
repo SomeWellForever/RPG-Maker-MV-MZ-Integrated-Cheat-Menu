@@ -1669,9 +1669,37 @@ Cheat_Menu.key_listeners = {};
 
 Cheat_Menu.close_overlay = function() {
     Cheat_Menu.cheat_menu_open = false;
+    Cheat_Menu.overlay_scene = null;
     if (Cheat_Menu.overlay_box.parentNode) Cheat_Menu.overlay_box.parentNode.removeChild(Cheat_Menu.overlay_box);
     if (Cheat_Menu.overlay.parentNode) Cheat_Menu.overlay.parentNode.removeChild(Cheat_Menu.overlay);
 };
+// Games with customized #GameCanvas stacking can place the legacy menu
+// (z-index 1000) BEHIND their canvas. Force it into the browser's top layer.
+Cheat_Menu.open_overlay = function() {
+    var box = Cheat_Menu.overlay_box, table = Cheat_Menu.overlay;
+    [box, table].forEach(function(element, i) {
+        element.style.setProperty('position', 'fixed', 'important');
+        element.style.setProperty('z-index', i ? '2147483646' : '2147483645', 'important');
+        element.style.setProperty('display', i ? 'table' : 'block', 'important');
+        element.style.setProperty('visibility', 'visible', 'important');
+        element.style.setProperty('pointer-events', i ? 'auto' : 'none', 'important');
+    });
+    if (box.parentNode !== document.body) document.body.appendChild(box);
+    if (table.parentNode !== document.body) document.body.appendChild(table);
+    Cheat_Menu.cheat_menu_open = true;
+    Cheat_Menu.overlay_scene = SceneManager._scene;
+    Cheat_Menu.update_menu();
+};
+// Dismiss orphaned HTML overlays during map/menu/battle scene changes.
+var swfPreviousOnSceneStart = SceneManager.onSceneStart;
+if (typeof swfPreviousOnSceneStart === 'function') {
+    SceneManager.onSceneStart = function() {
+        if (Cheat_Menu.cheat_menu_open && Cheat_Menu.overlay_scene !== this._scene) {
+            Cheat_Menu.close_overlay();
+        }
+        return swfPreviousOnSceneStart.apply(this, arguments);
+    };
+}
 
 Cheat_Menu.prepare = function() {
 	if (!Cheat_Menu.initialized) {
@@ -1705,6 +1733,16 @@ Cheat_Menu.prepare = function() {
 	}
 };
 window.addEventListener("keydown", function(event) {
+    // Allow closing from any scene even if a custom menu replaces Scene_Map.
+    var quickKey = event.keyCode === Cheat_Menu.keyCodes.KEYCODE_1.keyCode;
+    var plainKey = !event.repeat && !event.ctrlKey && !event.altKey &&
+                   !event.shiftKey && !/^(INPUT|TEXTAREA)$/.test((event.target && event.target.tagName) || "");
+    if (quickKey && plainKey && Cheat_Menu.cheat_menu_open) {
+        Cheat_Menu.close_overlay();
+        if (event.preventDefault) event.preventDefault();
+        SoundManager.playSystemSound(2);
+        return;
+    }
     // Some games bypass DataManager.loadGame/setupNewGame when restoring a save.
     // F7 can still work in that case, but the legacy overlay never becomes openable.
     // Activate it lazily when Digit1 is pressed during a playable map or battle.
@@ -1731,24 +1769,13 @@ window.addEventListener("keydown", function(event) {
 		}, 100);
 	}
 	else if (Cheat_Menu.overlay_openable && (SceneManager._scene instanceof Scene_Map || SceneManager._scene instanceof Scene_Battle) && !(SceneManager._scene instanceof Scene_Battle && SceneManager._scene._universalControlBattle) && !event.altKey && !event.ctrlKey && !event.shiftKey && !event.repeat && !/^(INPUT|TEXTAREA)$/.test((event.target && event.target.tagName) || "")) {
-		// open and close menu
-		if (event.keyCode == Cheat_Menu.keyCodes.KEYCODE_1.keyCode) {
-			Cheat_Menu.prepare();
-
-			// open menu
-			if (!Cheat_Menu.cheat_menu_open) {
-				Cheat_Menu.cheat_menu_open = true;
-				document.body.appendChild(Cheat_Menu.overlay_box);
-				document.body.appendChild(Cheat_Menu.overlay);
-				Cheat_Menu.update_menu();
-				SoundManager.playSystemSound(1);
-			}
-			// close menu
-			else {
-                Cheat_Menu.close_overlay();
-                SoundManager.playSystemSound(2);
-			}
-		}
+		// open menu (closing was already handled before the scene guard)
+        if (quickKey && plainKey) {
+            if (event.preventDefault) event.preventDefault();
+            Cheat_Menu.prepare();
+            Cheat_Menu.open_overlay();
+            SoundManager.playSystemSound(1);
+        }
 
 		// navigate and activate cheats
 		else if (Cheat_Menu.cheat_menu_open) {
