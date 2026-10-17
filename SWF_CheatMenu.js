@@ -1,6 +1,6 @@
 /*:
  * @target MV MZ
- * @plugindesc SWF Cheat Menu Integrated 2.6.1: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @plugindesc SWF Cheat Menu Integrated 2.6.2: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help F7 or the 'Control Menu' / 'Меню управления' key item opens the full menu,
  * including during battle. Choose Auto / Русский / English / Español inside that menu.
@@ -1816,7 +1816,7 @@ DataManager.saveGame = function(savefileId) {
 
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
- * @plugindesc SWF Cheat Menu Integrated v2.6.1 — teleport, levels, skills, items and stack limits.
+ * @plugindesc SWF Cheat Menu Integrated v2.6.2 — teleport, levels, skills, items and stack limits.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help Use F7 or the Control Menu / Меню управления key item on the map or in battle.
  * Auto / Русский / English / Español changes both menus (including the quick overlay on 1).
@@ -2049,7 +2049,13 @@ var SWF_EN_STRINGS = {
     'Скрытые предметы A': 'Hidden items A',
     'Скрытые предметы B': 'Hidden items B',
     'Другой тип': 'Other type',
-    'Категории определяются по базе данных игры.': 'Categories are defined by the game database.'
+    'Категории определяются по базе данных игры.': 'Categories are defined by the game database.',
+    "Поиск переменных: название / ID, =125, >100, <50, =true или =quest_started.": "Search variables by name / ID, =125, >100, <50, =true or =quest_started.",
+    "Поиск переключателей: название / ID или состояние ON / OFF (=true / =false).": "Search switches by name / ID or ON / OFF state (=true / =false).",
+    "Имя / ID или значение (=125, >100, <50, =true, =text)": "Name / ID or value (=125, >100, <50, =true, =text)",
+    "Имя / ID или ON / OFF": "Name / ID or ON / OFF",
+    "Поиск: название / ID / значение": "Search: name / ID / value",
+    "Поиск: название / ID / состояние": "Search: name / ID / state"
 };
 var SWF_ES_STRINGS = {
     'стандартный': "predeterminado",
@@ -2269,7 +2275,13 @@ var SWF_ES_STRINGS = {
     'Скрытые предметы A': "Objetos ocultos A",
     'Скрытые предметы B': "Objetos ocultos B",
     'Другой тип': "Otro tipo",
-    'Категории определяются по базе данных игры.': "Las categorías se definen en la base de datos del juego."
+    'Категории определяются по базе данных игры.': "Las categorías se definen en la base de datos del juego.",
+    "Поиск переменных: название / ID, =125, >100, <50, =true или =quest_started.": "Buscar variables por nombre / ID, =125, >100, <50, =true o =quest_started.",
+    "Поиск переключателей: название / ID или состояние ON / OFF (=true / =false).": "Buscar interruptores por nombre / ID o estado ON / OFF (=true / =false).",
+    "Имя / ID или значение (=125, >100, <50, =true, =text)": "Nombre / ID o valor (=125, >100, <50, =true, =text)",
+    "Имя / ID или ON / OFF": "Nombre / ID u ON / OFF",
+    "Поиск: название / ID / значение": "Buscar: nombre / ID / valor",
+    "Поиск: название / ID / состояние": "Buscar: nombre / ID / estado"
 };
 var SWF_LANG_KEY = 'SWF_CheatMenu.menuLanguage';
 var swfLanguageSetting = 'auto';
@@ -2761,7 +2773,10 @@ Scene_UniversalControl.prototype._swfCatalogTools=function(kind,query,refresh){
     this._swfOnlyFavorites=this._swfOnlyFavorites||{};
     this._swfEditingFavorites=this._swfEditingFavorites||{};
     return [
-        {_swfTool:true,name:TR('Поиск по названию / ID')+(query?' — '+query:''),help:TR('Поиск по названию или числовому идентификатору.'),run:function(){self.ask(TR('Название или ID (пусто — все)'),query,function(v){refresh(v);});}},
+        {_swfTool:true,name:(kind==='variables'?TR('Поиск: название / ID / значение'):kind==='switches'?TR('Поиск: название / ID / состояние'):TR('Поиск по названию / ID'))+(query?' — '+query:''),help:kind==='variables'?TR('Поиск переменных: название / ID, =125, >100, <50, =true или =quest_started.'):kind==='switches'?TR('Поиск переключателей: название / ID или состояние ON / OFF (=true / =false).'):TR('Поиск по названию или числовому идентификатору.'),run:function(){
+            var hint=kind==='variables'?TR('Имя / ID или значение (=125, >100, <50, =true, =text)'):kind==='switches'?TR('Имя / ID или ON / OFF'):TR('Название или ID (пусто — все)');
+            self.ask(hint,query,function(v){refresh(v);});
+        }},
         {_swfTool:true,name:TR('Сортировка: ')+swfSortLabel(kind),help:TR(swfHasCategories(kind)?'Переключить: по ID, по названию, по категориям или избранное сверху.':'Переключить: по ID, по названию или избранное сверху.'),run:function(){swfCycleSort(kind);self._swfRefreshCatalog(function(){refresh(query);});}},
         {_swfTool:true,name:TR('Только избранное: ')+(this._swfOnlyFavorites[kind]?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Показать только записи, отмеченные звёздочкой.'),run:function(){self._swfOnlyFavorites[kind]=!self._swfOnlyFavorites[kind];self._swfRefreshCatalog(function(){refresh(query);});}},
         {_swfTool:true,name:TR('Редактирование ★: ')+(this._swfEditingFavorites[kind]?TR('ВКЛ'):TR('ВЫКЛ')),help:TR('Когда включено, выбор записи меняет ★ вместо выполнения действия.'),run:function(){self._swfEditingFavorites[kind]=!self._swfEditingFavorites[kind];self._swfRefreshCatalog(function(){refresh(query);});}}
@@ -3176,10 +3191,54 @@ Scene_UniversalControl.prototype.extraStats=function(a,replace){
     }};});
     this.showPage(TR('Бонусы · ')+clean(a.name()),rows,replace);
 };
+// Search operators apply ONLY to variable values and switch states.
+// Plain queries still match name or ID exactly as in earlier releases.
+function swfPlainSearch(id,name,query){
+    return (String(id)+' '+String(name)).toLowerCase().indexOf(query)>=0;
+}
+function swfNumericSearchValue(raw){
+    if(!/^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(raw))return null;
+    var n=Number(raw);
+    return isFinite(n)?n:null;
+}
+function swfVariableSearch(id,name,value,query){
+    var q=String(query||'').trim(),match=q.match(/^(>=|<=|>|<|=)\s*(.*)$/);
+    if(!match)return !q||swfPlainSearch(id,name,q.toLowerCase());
+    var op=match[1],term=match[2].trim(),number=swfNumericSearchValue(term);
+    if(!term)return false;
+    if(op==='='&&/^(true|false)$/i.test(term))
+        return typeof value==='boolean'&&value===(term.toLowerCase()==='true');
+    if(number!==null){
+        // Strict numeric comparison: a string or boolean is not an RPG
+        // Maker numeric variable even if JS would coerce it to a number.
+        if(typeof value!=='number'||!isFinite(value))return false;
+        if(op==='=')return value===number;
+        if(op==='>')return value>number;
+        if(op==='<')return value<number;
+        if(op==='>=')return value>=number;
+        if(op==='<=')return value<=number;
+    }
+    // String values support exact-match equality only; no unsafe eval.
+    return op==='='&&typeof value==='string'&&value.trim().toLowerCase()===term.toLowerCase();
+}
+function swfSwitchSearch(id,name,isOn,query){
+    var q=String(query||'').trim().toLowerCase();
+    if(!q)return true;
+    var state=q.charAt(0)==='='?q.slice(1).trim():q;
+    // Spanish accents, Russian names, and the stable English tokens work
+    // regardless of the currently selected interface language.
+    var explicit=q.charAt(0)==='=';
+    var on=explicit?['on','true','1','вкл','sí','si','activado']:['on','вкл','sí','si','activado'];
+    var off=explicit?['off','false','0','выкл','no','desactivado']:['off','выкл','no','desactivado'];
+    if(on.indexOf(state)>=0)return !!isOn;
+    if(off.indexOf(state)>=0)return !isOn;
+    if(explicit)return false;
+    return swfPlainSearch(id,name,q);
+}
 Scene_UniversalControl.prototype.extraSwitches=function(query,replace){
-    var self=this,q=String(query||'').trim().toLowerCase(),names=$dataSystem.switches||[];
+    var self=this,q=String(query||'').trim(),names=$dataSystem.switches||[];
     var data=[];
-    names.forEach(function(name,i){if(i>0&&name&&(!q||(String(i)+' '+name).toLowerCase().indexOf(q)>=0))data.push({id:i,name:name});});
+    names.forEach(function(name,i){if(i>0&&name&&swfSwitchSearch(i,name,$gameSwitches.value(i),q))data.push({id:i,name:name});});
     var rows=this._swfCatalogRows('switches',data,function(entry){
         return {name:'#'+entry.id+' '+clean(entry.name)+' · '+($gameSwitches.value(entry.id)?TR('ВКЛ'):TR('ВЫКЛ')),run:function(){
             $gameSwitches.setValue(entry.id,!$gameSwitches.value(entry.id));self._swfRefreshCatalog(function(){self.extraSwitches(query,true);});
@@ -3188,9 +3247,16 @@ Scene_UniversalControl.prototype.extraSwitches=function(query,replace){
     this.showPage(TR('Переключатели · ')+(swfCatalogResultCount(rows)),rows,replace);
 };
 Scene_UniversalControl.prototype.extraVariables=function(query,replace){
-    var self=this,q=String(query||'').trim().toLowerCase(),names=$dataSystem.variables||[];
+    var self=this,q=String(query||'').trim(),names=$dataSystem.variables||[];
     var data=[];
-    names.forEach(function(name,i){if(i>0&&name&&(!q||(String(i)+' '+name).toLowerCase().indexOf(q)>=0))data.push({id:i,name:name});});
+    names.forEach(function(name,i){
+        if(i<=0||!name)return;
+        // RPG Maker's public getter returns 0 for stored boolean false.
+        // Preserve that actual boolean type for =false searches only.
+        var value=$gameVariables.value(i);
+        if($gameVariables._data&&$gameVariables._data[i]===false)value=false;
+        if(swfVariableSearch(i,name,value,q))data.push({id:i,name:name});
+    });
     var rows=this._swfCatalogRows('variables',data,function(entry){
         return {name:'#'+entry.id+' '+clean(entry.name)+' · '+String($gameVariables.value(entry.id)).slice(0,28),run:function(){
             var value=$gameVariables.value(entry.id);
