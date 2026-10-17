@@ -2443,7 +2443,14 @@ Scene_UniversalControl.prototype._swfCatalogRows=function(kind,data,renderRow,re
     });
     return tools;
 };
-Scene_UniversalControl.prototype.back=function(){if(this._pages.length){this._page=this._pages.pop();this.renderPage();}else this.close();};
+Scene_UniversalControl.prototype.back=function(){
+    if(!this._pages.length){this.close();return;}
+    this._page=this._pages.pop();
+    if(this._page.favoriteRoot){
+        this._swfKeepIndex=this._page.index;
+        this.favorites(true);
+    }else this.renderPage();
+};
 Scene_UniversalControl.prototype.close=function(){
     if (this._battleMode && this._battleScene) this._battleScene.closeUniversalControl();
     else SceneManager.pop();
@@ -2494,7 +2501,7 @@ Scene_UniversalControl.prototype.main=function(){
     this.showPage(TR('SWF Cheat Menu · ')+(IS_MZ?'MZ':'MV')+(battle?TR(' · БОЙ'):''),rows,true,true);
 };
 Scene_UniversalControl.prototype.sectionActors=function(){
-    var self=this;
+    var self=this;this._swfOnlyFavorites.skills=false;this._swfEditingFavorites.skills=false;
     this.showPage(TR('Персонажи и отряд'),[
         {name:TR('Список персонажей'),run:function(){self.actors();}},
         {name:TR('HP / MP / TP всей группы'),help:TR('Пополнить ресурсы, обнулить их или снять все состояния.'),run:function(){self.partyResources();}}
@@ -2502,6 +2509,7 @@ Scene_UniversalControl.prototype.sectionActors=function(){
 };
 Scene_UniversalControl.prototype.sectionInventory=function(){
     var self=this;
+    ['items','weapons','armors'].forEach(function(kind){self._swfOnlyFavorites[kind]=false;self._swfEditingFavorites[kind]=false;});
     this.showPage(TR('Инвентарь'),[
         {name:TR('Предметы, оружие и броня'),run:function(){self.itemCategories();}},
         {name:TR('Лимит предметов: ')+stackLimitLabel(),run:function(){self.stackLimits();}}
@@ -2510,6 +2518,7 @@ Scene_UniversalControl.prototype.sectionInventory=function(){
 Scene_UniversalControl.prototype.sectionWorld=function(replace){
     if(this._battleMode)return;
     var self=this,ret=$gameSystem._universalControlReturn;
+    if(!replace){this._swfOnlyFavorites.maps=false;this._swfEditingFavorites.maps=false;}
     var through=$gamePlayer.isThrough&&$gamePlayer.isThrough()?TR('ВКЛ'):TR('ВЫКЛ');
     var speed=$gamePlayer.moveSpeed?$gamePlayer.moveSpeed():$gamePlayer._moveSpeed;
     this.showPage(TR('Мир и перемещение'),[
@@ -2528,6 +2537,7 @@ Scene_UniversalControl.prototype.sectionWorld=function(replace){
 };
 Scene_UniversalControl.prototype.sectionProgress=function(replace){
     var self=this;
+    if(!replace)['switches','variables'].forEach(function(kind){self._swfOnlyFavorites[kind]=false;self._swfEditingFavorites[kind]=false;});
     this.showPage(TR('Прогресс игры'),[
         {name:TR('Золото: ')+$gameParty.gold(),run:function(){self.askNumber(TR('Установить золото'),$gameParty.gold(),0,999999999,function(n){$gameParty.gainGold(n-$gameParty.gold());self.sectionProgress(true);self.notice(TR('Золото: ')+$gameParty.gold());});}},
         {name:TR('Игровые переключатели'),run:function(){self.extraSwitches('');}},
@@ -2562,7 +2572,7 @@ Scene_UniversalControl.prototype.sectionSettings=function(replace){
         }}
     ],replace);
 };
-Scene_UniversalControl.prototype.favorites=function(){
+Scene_UniversalControl.prototype.favorites=function(replace){
     var self=this,battle=!!this._battleMode;
     var categories=[
         {kind:'items',name:TR('Предметы'),go:function(){self.items('items','all','');}},
@@ -2578,7 +2588,8 @@ Scene_UniversalControl.prototype.favorites=function(){
         help:TR('Избранное хранится в текущем сохранении игры.'),
         run:function(){self._swfOnlyFavorites=self._swfOnlyFavorites||{};self._swfOnlyFavorites[c.kind]=true;self._swfEditingFavorites[c.kind]=false;c.go();}
     };});
-    this.showPage(TR('Избранное'),rows);
+    this.showPage(TR('Избранное'),rows,replace);
+    this._page.favoriteRoot=true;
 };
 Scene_UniversalControl.prototype.favoriteSkillActors=function(){
     var self=this,rows=$gameParty.allMembers().filter(function(a){return !!a;}).map(function(a){
