@@ -2053,7 +2053,9 @@ var SWF_EN_STRINGS = {
     "Поиск переменных: название / ID, =125, >100, <50, =true или =quest_started.": "Search variables by name / ID, =125, >100, <50, =true or =quest_started.",
     "Поиск переключателей: название / ID или состояние ON / OFF (=true / =false).": "Search switches by name / ID or ON / OFF state (=true / =false).",
     "Имя / ID или значение (=125, >100, <50, =true, =text)": "Name / ID or value (=125, >100, <50, =true, =text)",
-    "Имя / ID или ON / OFF": "Name / ID or ON / OFF"
+    "Имя / ID или ON / OFF": "Name / ID or ON / OFF",
+    "Поиск: название / ID / значение": "Search: name / ID / value",
+    "Поиск: название / ID / состояние": "Search: name / ID / state"
 };
 var SWF_ES_STRINGS = {
     'стандартный': "predeterminado",
@@ -2277,7 +2279,9 @@ var SWF_ES_STRINGS = {
     "Поиск переменных: название / ID, =125, >100, <50, =true или =quest_started.": "Buscar variables por nombre / ID, =125, >100, <50, =true o =quest_started.",
     "Поиск переключателей: название / ID или состояние ON / OFF (=true / =false).": "Buscar interruptores por nombre / ID o estado ON / OFF (=true / =false).",
     "Имя / ID или значение (=125, >100, <50, =true, =text)": "Nombre / ID o valor (=125, >100, <50, =true, =text)",
-    "Имя / ID или ON / OFF": "Nombre / ID u ON / OFF"
+    "Имя / ID или ON / OFF": "Nombre / ID u ON / OFF",
+    "Поиск: название / ID / значение": "Buscar: nombre / ID / valor",
+    "Поиск: название / ID / состояние": "Buscar: nombre / ID / estado"
 };
 var SWF_LANG_KEY = 'SWF_CheatMenu.menuLanguage';
 var swfLanguageSetting = 'auto';
@@ -2769,7 +2773,7 @@ Scene_UniversalControl.prototype._swfCatalogTools=function(kind,query,refresh){
     this._swfOnlyFavorites=this._swfOnlyFavorites||{};
     this._swfEditingFavorites=this._swfEditingFavorites||{};
     return [
-        {_swfTool:true,name:TR('Поиск по названию / ID')+(query?' — '+query:''),help:kind==='variables'?TR('Поиск переменных: название / ID, =125, >100, <50, =true или =quest_started.'):kind==='switches'?TR('Поиск переключателей: название / ID или состояние ON / OFF (=true / =false).'):TR('Поиск по названию или числовому идентификатору.'),run:function(){
+        {_swfTool:true,name:(kind==='variables'?TR('Поиск: название / ID / значение'):kind==='switches'?TR('Поиск: название / ID / состояние'):TR('Поиск по названию / ID'))+(query?' — '+query:''),help:kind==='variables'?TR('Поиск переменных: название / ID, =125, >100, <50, =true или =quest_started.'):kind==='switches'?TR('Поиск переключателей: название / ID или состояние ON / OFF (=true / =false).'):TR('Поиск по названию или числовому идентификатору.'),run:function(){
             var hint=kind==='variables'?TR('Имя / ID или значение (=125, >100, <50, =true, =text)'):kind==='switches'?TR('Имя / ID или ON / OFF'):TR('Название или ID (пусто — все)');
             self.ask(hint,query,function(v){refresh(v);});
         }},
