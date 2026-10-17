@@ -1,11 +1,11 @@
 # SWF Cheat Menu — RPG Maker MV/MZ
 
 **[Русский](#-русский) · [English](#-english) · [Español](#-español)**  
-**Version 2.6.0 · RPG Maker MV / MZ · Windows / Linux**
+**Version 2.6.1 · RPG Maker MV / MZ · Windows / Linux**
 
-[![Release](https://img.shields.io/github/v/release/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu?label=Release)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/tag/v2.6.0) [![Platform](https://img.shields.io/badge/RPG%20Maker-MV%20%2F%20MZ-blue)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu) [![Issues](https://img.shields.io/github/issues/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/issues)
+[![Release](https://img.shields.io/github/v/release/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu?label=Release)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/tag/v2.6.1) [![Platform](https://img.shields.io/badge/RPG%20Maker-MV%20%2F%20MZ-blue)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu) [![Issues](https://img.shields.io/github/issues/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu)](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/issues)
 
- > **Latest release / Последняя версия:** [v2.6.0 — Download ZIP / Скачать ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.0/SWF_CheatMenu_MV_MZ_v2.6.0.zip).
+ > **Latest release / Последняя версия:** [v2.6.1 — Download ZIP / Скачать ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.1/SWF_CheatMenu_MV_MZ_v2.6.1.zip).
 
 > An integrated cheat menu for single-player games made with RPG Maker MV and MZ. One JavaScript plugin, one in-game key item, and a quick overlay accessible in and out of battle.
 >
@@ -31,7 +31,7 @@
 | Главное меню | Шесть крупных плиток в сетке 2×3; во время боя раздел «Мир» заменяется разделом «Бой» |
 | Избранное и сортировка | Звёздочки в каталогах и общий раздел «Избранное»; сортировка по ID, названию, категориям или избранному |
 
-В отличие от оригинального Cheat Menu, эта версия дополнена полноценным меню управления с удобным интерфейсом, расширенными настройками инвентаря и дополнительными возможностями в бою. Классическое быстрое меню по клавише `1` при этом сохранено. Во время боя телепортация и настройки перемещения недоступны, чтобы не нарушать игровую сцену.
+В отличие от оригинального Cheat Menu, эта версия дополнена полноценным меню управления с удобным интерфейсом, расширенными настройками инвентаря и дополнительными возможностями в бою. Классическое быстрое меню по клавише `1` при этом сохранено. Во время боя телепортация и настройки перемещения недоступны, чтобы не нарушать игровую сцену. При вызове через `F7` меню открывается поверх сцены карты, не пересоздавая окна активных событий и мини-игр; выполнение карты временно приостанавливается.
 
 ### Управление
 
@@ -46,11 +46,11 @@
 
 ### Установка
 
-1. Закройте игру и распакуйте [архив v2.6.0](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.0/SWF_CheatMenu_MV_MZ_v2.6.0.zip) **прямо в папку игры**.
+1. Закройте игру и распакуйте [архив v2.6.1](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.1/SWF_CheatMenu_MV_MZ_v2.6.1.zip) **прямо в папку игры**.
 2. Запустите `Install_Windows.cmd` (Windows) или `bash Install_Linux.sh` (Linux). Установщик **сам найдёт игру** и установит или обновит мод — выбирать папку не нужно.
 3. Запустите игру. Меню открывается клавишей `F7` или через предмет «Меню управления», а быстрое меню — клавишей `1`.
 
-**[Дополнительный архив без установщика](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.0/SWF_CheatMenu_plugin_only_v2.6.0.zip):** для уже установленного SWF Cheat Menu доступен ZIP только с `SWF_CheatMenu.js`. Закройте игру, сохраните копию старого `www/js/plugins/SWF_CheatMenu.js` (или `js/plugins/SWF_CheatMenu.js`) и замените его файлом из архива. Такой архив не предназначен для первоначальной установки. Если защитник Windows обнаруживает угрозу, не отключайте защиту и не добавляйте файлы в исключения: отправьте обнаружение на проверку Microsoft.
+**[Дополнительный архив без установщика](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.1/SWF_CheatMenu_plugin_only_v2.6.1.zip):** для уже установленного SWF Cheat Menu доступен ZIP только с `SWF_CheatMenu.js`. Закройте игру, сохраните копию старого `www/js/plugins/SWF_CheatMenu.js` (или `js/plugins/SWF_CheatMenu.js`) и замените его файлом из архива. Такой архив не предназначен для первоначальной установки. Если защитник Windows обнаруживает угрозу, не отключайте защиту и не добавляйте файлы в исключения: отправьте обнаружение на проверку Microsoft.
 
 **Если архив распакован в другую папку**, запустите установщик оттуда и выберите папку игры. Устанавливать Python или Go не требуется.
 
@@ -87,7 +87,7 @@
 | Main menu | Large two-column grid (2×3) with six sections; Battle replaces World while fighting |
 | Favorites and sorting | Star entries and a dedicated Favorites section; sort by ID, name, category, or favorites first |
 
-Unlike the original Cheat Menu, this edition adds a full control interface, expanded inventory settings, and additional battle features while keeping the classic quick overlay on `1`. Teleportation and movement controls are disabled during battle to avoid disrupting the game.
+Unlike the original Cheat Menu, this edition adds a full control interface, expanded inventory settings, and additional battle features while keeping the classic quick overlay on `1`. Teleportation and movement controls are disabled during battle to avoid disrupting the game. F7 opens the control UI on top of the current map scene without recreating active message/choice windows; map events and mini-game scripts are paused until it closes.
 
 ### Controls
 
@@ -102,11 +102,11 @@ The six-section main menu uses a two-column grid: Characters & party, Inventory,
 
 ### Installation
 
-1. Close the game and extract the [v2.6.0 ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.0/SWF_CheatMenu_MV_MZ_v2.6.0.zip) **directly into the game folder**.
+1. Close the game and extract the [v2.6.1 ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.1/SWF_CheatMenu_MV_MZ_v2.6.1.zip) **directly into the game folder**.
 2. Run `Install_Windows.cmd` (Windows) or `bash Install_Linux.sh` (Linux). The installer **detects the game automatically** and installs or updates the mod without asking you to choose a folder.
 3. Launch the game. Open the full menu with `F7` or the Control Menu item; press `1` for the quick overlay.
 
-**[Plugin-only alternative](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.0/SWF_CheatMenu_plugin_only_v2.6.0.zip):** users with an existing SWF Cheat Menu installation may use the ZIP containing only `SWF_CheatMenu.js`. Close the game, back up the existing `www/js/plugins/SWF_CheatMenu.js` (or `js/plugins/SWF_CheatMenu.js`) and replace it. This package is not intended for first-time installation. If Windows Defender detects a threat, do not disable protection or allowlist the file; submit the detection to Microsoft for review.
+**[Plugin-only alternative](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.1/SWF_CheatMenu_plugin_only_v2.6.1.zip):** users with an existing SWF Cheat Menu installation may use the ZIP containing only `SWF_CheatMenu.js`. Close the game, back up the existing `www/js/plugins/SWF_CheatMenu.js` (or `js/plugins/SWF_CheatMenu.js`) and replace it. This package is not intended for first-time installation. If Windows Defender detects a threat, do not disable protection or allowlist the file; submit the detection to Microsoft for review.
 
 **If you extracted the ZIP somewhere else**, run the installer there and select the game folder when prompted. Neither Python nor Go is required.
 
@@ -147,6 +147,6 @@ Based on the original Cheat Menu by [emerladCoder](https://github.com/emerladCod
 
 **Idioma:** ve a **Ajustes → Idioma del menú** y selecciona `Español`, `Русский`, `English` o `Auto`. Ambos menús cambian a la vez. El modo automático detecta el idioma del juego cuando está disponible o utiliza el idioma del sistema. Los nombres de personajes, objetos, mapas y habilidades definidos por el juego no se traducen.
 
-**Instalación:** cierra el juego, extrae [la versión 2.6.0](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.0/SWF_CheatMenu_MV_MZ_v2.6.0.zip) directamente en la carpeta del juego y ejecuta `Install_Windows.cmd` (Windows) o `bash Install_Linux.sh` (Linux). El instalador detectará el juego automáticamente. Si ya instalaste el mod, puedes [actualizar solo el plugin JavaScript](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.0/SWF_CheatMenu_plugin_only_v2.6.0.zip) siguiendo las instrucciones incluidas. Haz una copia de seguridad de tus partidas antes de modificar el juego.
+**Instalación:** cierra el juego, extrae [la versión 2.6.1](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.1/SWF_CheatMenu_MV_MZ_v2.6.1.zip) directamente en la carpeta del juego y ejecuta `Install_Windows.cmd` (Windows) o `bash Install_Linux.sh` (Linux). El instalador detectará el juego automáticamente. Si ya instalaste el mod, puedes [actualizar solo el plugin JavaScript](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.6.1/SWF_CheatMenu_plugin_only_v2.6.1.zip) siguiendo las instrucciones incluidas. Haz una copia de seguridad de tus partidas antes de modificar el juego.
 
-**Notas:** el menú rápido conserva sus teclas y funciones originales. Algunos plugins personalizados pueden requerir adaptaciones. El teletransporte y la edición de interruptores pueden afectar al progreso de la historia.
+**Notas:** el menú rápido conserva sus teclas y funciones originales. Durante los minijuegos, F7 muestra el menú sobre la escena actual sin recrear las ventanas de diálogo ni de elección; los eventos del mapa se pausan hasta cerrar el menú. Algunos plugins personalizados pueden requerir adaptaciones. El teletransporte y la edición de interruptores pueden afectar al progreso de la historia.
