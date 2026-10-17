@@ -14,21 +14,29 @@ for language in ("Русский", "English"):
     assert language in readme, f"Missing language instructions: {language}"
 assert "v2.3.0" in readme
 assert "SWF_CheatMenu_MV_MZ_v2.3.0.zip" in readme
-assert "www/js/plugins/" in readme and "js/plugins/" in readme
-assert "plugins.js" in readme
-assert "bin" in readme
-assert "Python и Go устанавливать не нужно" in readme
-assert "Python and Go are not required" in readme
+assert "**прямо в папку игры**" in readme
+assert "**directly into the game folder**" in readme
+assert "**сам найдёт игру**" in readme
+assert "**detects the game automatically**" in readme
+assert "Если архив распакован в другую папку" in readme
+assert "If you extracted the ZIP somewhere else" in readme
+assert "Устанавливать Python или Go не требуется" in readme
+assert "Neither Python nor Go is required" in readme
 assert "требуется Python 3" not in readme
 assert "Python 3 is required" not in readme
-assert "macOS is not supported" in readme and "macOS не поддерживается" in readme
+assert "установщик для Mac исключён" not in readme
+assert "installer was removed" not in readme
+assert "Mac and Xenolauncher:" in readme
+assert "Mac и Xenolauncher:" in readme
 
 # Xenolauncher is a separate, optional macOS game launcher, never a dependency.
 assert "github.com/m5kro/Xenolauncher" in readme
-assert "Xenolauncher is not required" in readme
-assert "Xenolauncher не требуется" in readme
-assert "Optional compatibility" in workflow
-assert "Только для пользователей Xenolauncher" in workflow
+assert "already patched on Windows or Linux" in readme
+assert "уже пропатченную на Windows или Linux" in readme
+assert "Game compatibility varies" in workflow
+assert "Совместимость зависит от игры" in workflow
+assert "installer was withdrawn" not in workflow
+assert "Установщик macOS удалён" not in workflow
 assert "Xenolauncher" not in installer, "Do not show irrelevant Mac-specific warnings to every installer user"
 
 # The quick overlay remains English; the language switch controls only the full menu.
@@ -38,4 +46,6 @@ assert "Key 1 opens the legacy English quick overlay" in plugin
 assert "F7 or the 'Control Menu'" in plugin
 assert "Operating system / Операционная система" in issues
 assert "emerladCoder" in credits and "NamelessMagician" in credits
-print("Documentation checks passed: platforms, install paths, language scope, credits, optional launcher, bug report.")
+assert "extract the ZIP **directly into the game folder**" in workflow
+assert "распакуйте ZIP **прямо в папку игры**" in workflow
+print("Documentation checks passed: game-root auto-install, external path, RU/EN, Xenolauncher transfer, credits, bug report.")

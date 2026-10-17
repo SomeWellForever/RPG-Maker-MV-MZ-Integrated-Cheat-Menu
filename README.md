@@ -38,19 +38,16 @@
 
 ### Установка
 
-1. **Закройте игру и создайте резервную копию сохранений.**
-2. Скачайте и **полностью распакуйте** [архив версии 2.3.0](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.3.0/SWF_CheatMenu_MV_MZ_v2.3.0.zip). Не удаляйте и не переносите папку `bin` отдельно: в ней находятся готовые установочные программы.
-3. В Windows запустите `Install_Windows.cmd`; в Linux — `bash Install_Linux.sh`. Выберите папку игры: в Windows откроется окно выбора папки, в Linux — Zenity/KDialog (если доступны) или запрос пути в терминале. Можно также передать путь к игре аргументом. **Python и Go устанавливать не нужно:** установщики используют готовые программы из папки `bin`.
-4. Выбирайте **корневую папку игры**, а не подпапку `js`: в MV обычно есть `www/` (часто рядом с `Game.exe`), в MZ — `js/`. Установщик помещает файл в `www/js/plugins/` (MV) или `js/plugins/` (MZ) и создаёт **одну** запись `SWF_CheatMenu` в соответствующем `plugins.js`.
-5. Запустите игру и проверьте меню на отдельном сохранении.
+1. Закройте игру и распакуйте [архив v2.3.0](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.3.0/SWF_CheatMenu_MV_MZ_v2.3.0.zip) **прямо в папку игры**.
+2. Запустите `Install_Windows.cmd` (Windows) или `bash Install_Linux.sh` (Linux). Установщик **сам найдёт игру** и установит или обновит мод — выбирать папку не нужно.
+3. Запустите игру. Меню открывается клавишей `F7` или через предмет «Меню управления», а быстрое меню — клавишей `1`.
 
-**macOS не поддерживается в v2.3.0:** установщик для Mac исключён из-за нерешённых проблем с запуском.
+**Если архив распакован в другую папку**, запустите установщик оттуда и выберите папку игры. Устанавливать Python или Go не требуется.
 
-**Обновление поверх старой версии:** просто повторно запустите установщик. Он распознаёт предыдущие установки и обновляет подключение без дубликатов. Изменяемые существующие файлы заранее копируются в `SWF_CheatMenu_Backup/` в папке игры.
+**Обновление:** повторно запустите установщик. Перед изменениями сохраняются резервные копии файлов в `SWF_CheatMenu_Backup/`. Для удаления используйте `Remove_Windows.cmd` или `bash Remove_Linux.sh`. Перед первым использованием рекомендуется сделать копию сохранений.
 
-**Необязательное примечание для пользователей Xenolauncher.** [Xenolauncher](https://github.com/m5kro/Xenolauncher) — **отдельный сторонний лаунчер для macOS**, который может запускать игры RPG Maker. **Только если вы уже им пользуетесь** и включили его опцию `Enable Cheat Menu`, отключите её: два чит-меню могут конфликтовать. **Xenolauncher не требуется для установки этого мода.** Примечание не означает поддержку macOS в текущем релизе.
+**Mac и Xenolauncher:** уже пропатченную на Windows или Linux игру можно перенести на Mac и попробовать запустить через [Xenolauncher](https://github.com/m5kro/Xenolauncher) — сторонний лаунчер для macOS. Если в нём включено `Enable Cheat Menu`, отключите эту опцию во избежание конфликта с модом. Работа зависит от совместимости конкретной игры.
 
-**Удаление:** закройте игру и запустите `Remove_Windows.cmd` или `bash Remove_Linux.sh`. Удаление не требует исходного файла плагина рядом с установщиком. Сохранения игры не удаляются.
 
 ### Ошибки и предложения
 
@@ -87,19 +84,16 @@ The integrated menu combines features without a duplicate "extra cheats" section
 
 ### Installation
 
-1. **Close the game and back up your save files.**
-2. Download and **fully extract** the [v2.3.0 release ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.3.0/SWF_CheatMenu_MV_MZ_v2.3.0.zip). Keep the `bin` folder beside the installers; it contains the precompiled executables.
-3. Run `Install_Windows.cmd` on Windows or `bash Install_Linux.sh` on Linux. Choose the game folder: Windows opens a folder chooser, while Linux uses Zenity/KDialog when available or asks for a folder path in the terminal. You can also supply the game folder as an argument. **Python and Go are not required:** the installers use precompiled programs from the `bin` folder.
-4. Select the **game root folder**, not the `js` subfolder: MV usually contains `www/` (often beside `Game.exe`), while MZ contains `js/`. The installer copies the file to `www/js/plugins/` (MV) or `js/plugins/` (MZ) and adds **one** `SWF_CheatMenu` entry to the corresponding `plugins.js`.
-5. Launch the game and test with a separate save slot.
+1. Close the game and extract the [v2.3.0 ZIP](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases/download/v2.3.0/SWF_CheatMenu_MV_MZ_v2.3.0.zip) **directly into the game folder**.
+2. Run `Install_Windows.cmd` (Windows) or `bash Install_Linux.sh` (Linux). The installer **detects the game automatically** and installs or updates the mod without asking you to choose a folder.
+3. Launch the game. Open the full menu with `F7` or the Control Menu item; press `1` for the quick overlay.
 
-**macOS is not supported in v2.3.0:** the installer was removed because of unresolved launch issues.
+**If you extracted the ZIP somewhere else**, run the installer there and select the game folder when prompted. Neither Python nor Go is required.
 
-**Updating an existing installation:** simply run the installer again. It recognizes previous integrated-menu installations and avoids duplicate registrations. Changed existing game files are backed up in `SWF_CheatMenu_Backup/` inside the game directory.
+**Updating:** run the installer again. Modified files are backed up to `SWF_CheatMenu_Backup/`. To uninstall, use `Remove_Windows.cmd` or `bash Remove_Linux.sh`. Back up your save files before first use.
 
-**Optional note for Xenolauncher users only.** [Xenolauncher](https://github.com/m5kro/Xenolauncher) is a **separate third-party macOS game launcher** that can launch RPG Maker games. **Only if you already use it** and have its `Enable Cheat Menu` option enabled, turn that option off to avoid conflicting cheat menus. **Xenolauncher is not required to install this mod.** This note does not imply support for macOS in the current release.
+**Mac and Xenolauncher:** you can copy a game already patched on Windows or Linux to a Mac and try running it with [Xenolauncher](https://github.com/m5kro/Xenolauncher), a third-party macOS game launcher. If its `Enable Cheat Menu` option is on, turn it off to avoid conflicts with this mod. Compatibility depends on the game.
 
-**Uninstall:** close the game and run `Remove_Windows.cmd` or `bash Remove_Linux.sh`. The original plugin file is not required next to the removal launcher. Game saves are not deleted.
 
 ### Bug reports and suggestions
 
