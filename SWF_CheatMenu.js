@@ -1,6 +1,6 @@
 /*:
  * @target MV MZ
- * @plugindesc SWF Cheat Menu Integrated 2.7.1: legacy overlay (1) + one universal control item (F7), MV/MZ.
+ * @plugindesc SWF Cheat Menu Integrated 2.8.0: legacy overlay (1) + one universal control item (F7), MV/MZ.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help F7 or the 'Control Menu' / 'Меню управления' key item opens the full menu,
  * including during battle. Choose Auto / Русский / English / Español inside that menu.
@@ -45,7 +45,27 @@ Cheat_Menu.move_amount_index = 1;
 Cheat_Menu.variable_selection = 1;
 Cheat_Menu.switch_selection = 1;
 
-Cheat_Menu.saved_positions = [{m: -1, x: -1, y: -1}, {m: -1, x: -1, y: -1}, {m: -1, x: -1, y: -1}];
+// Ten positions shared between the quick overlay and full menu.
+Cheat_Menu.positionSlotCount = 10;
+Cheat_Menu.blankPositions = function(){
+    var result=[];
+    for(var i=0;i<Cheat_Menu.positionSlotCount;i++)result.push({m:-1,x:-1,y:-1});
+    return result;
+};
+Cheat_Menu.ensureSavedPositions = function(){
+    if(!Array.isArray(Cheat_Menu.saved_positions))Cheat_Menu.saved_positions=[];
+    for(var i=0;i<Cheat_Menu.positionSlotCount;i++){
+        var pos=Cheat_Menu.saved_positions[i];
+        if(!pos||typeof pos!=='object')Cheat_Menu.saved_positions[i]={m:-1,x:-1,y:-1};
+    }
+    if(Cheat_Menu.saved_positions.length>Cheat_Menu.positionSlotCount)
+        Cheat_Menu.saved_positions.length=Cheat_Menu.positionSlotCount;
+    var page=Number(Cheat_Menu.saved_position_page);
+    Cheat_Menu.saved_position_page=isFinite(page)&&page>=0&&Math.floor(page)===page?Math.min(3,page):0;
+    return Cheat_Menu.saved_positions;
+};
+Cheat_Menu.saved_positions = Cheat_Menu.blankPositions();
+Cheat_Menu.saved_position_page=0;
 
 Cheat_Menu.teleport_location = {m: 1, x: 0, y: 0};
 
@@ -77,7 +97,8 @@ Cheat_Menu.initial_values.armor_selection = 1;
 Cheat_Menu.initial_values.move_amount_index = 1;
 Cheat_Menu.initial_values.variable_selection = 1;
 Cheat_Menu.initial_values.switch_selection = 1;
-Cheat_Menu.initial_values.saved_positions = [{m: -1, x: -1, y: -1}, {m: -1, x: -1, y: -1}, {m: -1, x: -1, y: -1}];
+Cheat_Menu.initial_values.saved_positions = Cheat_Menu.blankPositions();
+Cheat_Menu.initial_values.saved_position_page=0;
 Cheat_Menu.initial_values.teleport_location = {m: 1, x: 0, y: 0};
 Cheat_Menu.initial_values.speed = null;
 Cheat_Menu.initial_values.speed_unlocked = true;
@@ -1374,7 +1395,15 @@ Cheat_Menu.recall_position = function(pos_num, event) {
 
 // The keys are already supplied as arguments. Avoid eval() and guard missing
 // map records or malformed position slots loaded from third-party game saves.
+Cheat_Menu.scroll_saved_position_page=function(direction){
+    Cheat_Menu.ensureSavedPositions();
+    var pages=Math.ceil(Cheat_Menu.positionSlotCount/3);
+    Cheat_Menu.saved_position_page=(Cheat_Menu.saved_position_page+(direction==='left'?pages-1:1))%pages;
+    SoundManager.playSystemSound(0);
+    Cheat_Menu.update_menu();
+};
 Cheat_Menu.append_save_recall = function(key1,key2,key3,key4,key5,key6) {
+    var slots=Cheat_Menu.ensureSavedPositions();
     Cheat_Menu.append_title("Current Position: ");
     var currentInfo=$dataMapInfos&&$dataMapInfos[$gameMap.mapId()];
     if(currentInfo&&currentInfo.name){
@@ -1382,17 +1411,22 @@ Cheat_Menu.append_save_recall = function(key1,key2,key3,key4,key5,key6) {
         Cheat_Menu.append_description("(" + $gamePlayer.x + ", " + $gamePlayer.y + ")");
     }else Cheat_Menu.append_description("NULL");
 
+    // Keep 1 for opening/closing the overlay, 2/3 for switching its
+    // main pages, and 4-9 for save/recall. Use 0 and minus for slot pages.
+    var first=Cheat_Menu.saved_position_page*3,last=Math.min(first+3,slots.length);
+    Cheat_Menu.append_scroll_selector("Slots "+(first+1)+"–"+last+" / "+slots.length,
+        0,'-',Cheat_Menu.scroll_saved_position_page);
     var hotkeys=[key1,key2,key3,key4,key5,key6];
-    var slots=Array.isArray(Cheat_Menu.saved_positions)?Cheat_Menu.saved_positions:[];
-    for(var i=0;i<Math.min(3,slots.length);i++){
+    for(var i=first;i<last;i++){
         Cheat_Menu.append_title("Position "+(i+1));
         var slot=slots[i];
         var info=slot&&$dataMapInfos&&$dataMapInfos[slot.m];
         var valid=!!(slot&&slot.m>0&&info);
         var mapText=valid?String(slot.m)+": "+(info.name||"NULL"):"NULL";
         var posText=valid?"("+slot.x+", "+slot.y+")":"NULL";
-        Cheat_Menu.append_cheat("Save:",mapText,hotkeys[i*2],Cheat_Menu.save_position.bind(null,i));
-        Cheat_Menu.append_cheat("Recall:",posText,hotkeys[i*2+1],Cheat_Menu.recall_position.bind(null,i));
+        var index=i-first;
+        Cheat_Menu.append_cheat("Save:",mapText,hotkeys[index*2],Cheat_Menu.save_position.bind(null,i));
+        Cheat_Menu.append_cheat("Recall:",posText,hotkeys[index*2+1],Cheat_Menu.recall_position.bind(null,i));
     }
 };
 
@@ -1692,6 +1726,8 @@ Cheat_Menu.prepare = function() {
 		// only do this once per load or new game
 		Cheat_Menu.initialized = true;
 	}
+    // Old game saves contain only three positions; retain them and add seven.
+    Cheat_Menu.ensureSavedPositions();
 };
 window.addEventListener("keydown", function(event) {
 	if (false && !event.ctrlKey && !event.altKey && (event.keyCode === 119) && $gameTemp && !$gameTemp.isPlaytest()) {
@@ -1805,7 +1841,7 @@ DataManager.saveGame = function(savefileId) {
 
 // Integrated universal in-engine menu (no additional plugin file).
 /*:
- * @plugindesc SWF Cheat Menu Integrated v2.7.1 — teleport, levels, skills, items and stack limits.
+ * @plugindesc SWF Cheat Menu Integrated v2.8.0 — teleport, levels, skills, items and stack limits.
  * @author emerladCoder, NamelessMagician; integrated edition: SomeWellForever
  * @help Use F7 or the Control Menu / Меню управления key item on the map or in battle.
  * Auto / Русский / English / Español changes both menus (including the quick overlay on 1).
@@ -1821,6 +1857,7 @@ var mapCache = {};
 var IS_MZ = Utils.RPGMAKER_NAME === 'MZ';
 
 var SWF_EN_STRINGS = {
+    "Slots ": "Slots ",
     'стандартный': "default",
     'Меню управления': "Control Menu",
     'Управление персонажами, инвентарём и игрой. Доступен в бою.\nF7 — полное меню, 1 — быстрые читы.': "Manage characters, inventory, and game settings. Available in battle.\nF7 — full menu, 1 — quick cheats.",
@@ -1842,7 +1879,7 @@ var SWF_EN_STRINGS = {
     'Точка возврата пока не записана.': "No return position has been recorded.",
     'Возврат': "Return",
     'Сюжетные события не откатываются.': "Story events are not reversed.",
-    'Точки быстрого перемещения (3 слота)': "Fast travel points (3 slots)",
+    'Точки быстрого перемещения (10 слотов)': "Fast travel points (10 slots)",
     'Противники: установить HP = 1': "Enemies: set HP to 1",
     'У живых противников осталось 1 HP.': "Living enemies now have 1 HP.",
     'Победить всех противников': "Defeat all enemies",
@@ -2049,9 +2086,13 @@ var SWF_EN_STRINGS = {
     "Одним нажатием доводит уже имеющиеся обычные предметы до индивидуального лимита. Не создаёт новые виды, не трогает оружие, броню, ключевые предметы и уникальные экземпляры.": "Fill currently owned normal items to each item's maximum with one action. Does not create new item types or change weapons, armor, key items, or unique instances.",
     "Пополнено видов: ": "Item types refilled: ",
     " · добавлено предметов: ": " · items added: ",
-    " · пропущено: ": " · skipped: "
+    " · пропущено: ": " · skipped: ",
+    "Нет уже имеющихся складываемых обычных предметов.": "No owned stackable normal items were found.",
+    "Все подходящие предметы уже достигли лимита: ": "All eligible items are already at their cap: ",
+    "Система инвентаря не позволила увеличить количество; возможно, нужен патч под игру.": "The game's inventory system did not increase item counts; a game-specific patch may be required."
 };
 var SWF_ES_STRINGS = {
+    "Slots ": "Ranuras ",
     'стандартный': "predeterminado",
     'Меню управления': "Menú de control",
     'Управление персонажами, инвентарём и игрой. Доступен в бою.\nF7 — полное меню, 1 — быстрые читы.': "Gestiona personajes, inventario y ajustes del juego. Disponible en combate.\nF7 — menú completo, 1 — trucos rápidos.",
@@ -2073,7 +2114,7 @@ var SWF_ES_STRINGS = {
     'Точка возврата пока не записана.': "Aún no se ha registrado un punto de retorno.",
     'Возврат': "Volver",
     'Сюжетные события не откатываются.': "Los eventos de la historia no se revierten.",
-    'Точки быстрого перемещения (3 слота)': "Puntos de viaje rápido (3 ranuras)",
+    'Точки быстрого перемещения (10 слотов)': "Puntos de viaje rápido (10 ranuras)",
     'Противники: установить HP = 1': "Enemigos: establecer PV en 1",
     'У живых противников осталось 1 HP.': "Los enemigos vivos tienen ahora 1 PV.",
     'Победить всех противников': "Derrotar a todos los enemigos",
@@ -2280,7 +2321,10 @@ var SWF_ES_STRINGS = {
     "Одним нажатием доводит уже имеющиеся обычные предметы до индивидуального лимита. Не создаёт новые виды, не трогает оружие, броню, ключевые предметы и уникальные экземпляры.": "Rellena con una acción los objetos normales que ya tienes hasta su límite individual. No crea objetos nuevos ni modifica armas, armaduras, objetos clave o ejemplares únicos.",
     "Пополнено видов: ": "Tipos rellenados: ",
     " · добавлено предметов: ": " · objetos añadidos: ",
-    " · пропущено: ": " · omitidos: "
+    " · пропущено: ": " · omitidos: ",
+    "Нет уже имеющихся складываемых обычных предметов.": "No se encontraron objetos normales acumulables que ya tengas.",
+    "Все подходящие предметы уже достигли лимита: ": "Todos los objetos aptos ya alcanzaron el límite: ",
+    "Система инвентаря не позволила увеличить количество; возможно, нужен патч под игру.": "El inventario del juego no permitió aumentar las cantidades; quizá necesite una adaptación específica."
 };
 var SWF_LANG_KEY = 'SWF_CheatMenu.menuLanguage';
 var swfLanguageSetting = 'auto';
@@ -2322,6 +2366,7 @@ function swfSetLanguage(lang) {
 // All game-provided names (actors, items, weapons, maps, switches) stay untouched.
 var SWF_QUICK_TRANSLATIONS = {
     ru: {
+        'Slots ': 'Слоты ',
         'Cheat':'Читы','Actor':'Персонаж','Status:':'Состояние:','Alive':'Живые','All':'Все',
         'Enemy HP to 0':'HP врагов = 0','Enemy HP to 1':'HP врагов = 1',
         'Party HP to 0':'HP группы = 0','Party HP to 1':'HP группы = 1','Party Full HP':'HP группы макс.',
@@ -2341,6 +2386,7 @@ var SWF_QUICK_TRANSLATIONS = {
         'Activate':'Применить','on':'вкл','off':'выкл','true':'да','false':'нет','NULL':'—'
     },
     es: {
+        'Slots ': 'Ranuras ',
         'Cheat':'Trucos','Actor':'Personaje','Status:':'Estado:','Alive':'Vivos','All':'Todos',
         'Enemy HP to 0':'PV enemigos = 0','Enemy HP to 1':'PV enemigos = 1',
         'Party HP to 0':'PV grupo = 0','Party HP to 1':'PV grupo = 1','Party Full HP':'PV grupo máx.',
@@ -2365,11 +2411,13 @@ function swfQuickText(text){
     if(!dict||typeof text!=='string')return text;
     if(Object.prototype.hasOwnProperty.call(dict,text))return dict[text];
     if(/^Position \d+$/.test(text))return dict['Position ']+text.slice(9);
+    if(/^Slots \d+/.test(text))return (dict['Slots ']||'Slots ')+text.slice(6);
     return text;
 }
 Cheat_Menu.quickText=swfQuickText;
 Cheat_Menu.quickNull=function(text){
-    // Preserve database text, actor names and all other dynamic selector values.
+    // Preserve game data; translate only our own slot paginator and NULL.
+    if(typeof text==='string'&&/^Slots \d+/.test(text))return swfQuickText(text);
     if(text==='NULL')return swfQuickText('NULL');
     if(typeof text==='string'&&/^<font\b[^>]*>NULL<\/font>$/i.test(text))
         return text.replace('NULL',swfQuickText('NULL'));
@@ -2408,8 +2456,15 @@ function eligibleForStackLimit(item) {
     if (typeof DataManager.isIndependent === 'function' && DataManager.isIndependent(item)) return false;
     if (item.meta && (item.meta.IndependentItem || item.meta.Independent || item.meta.NoStack || item.meta.NoStacking)) return false;
     var note = String(item.note || '');
-    if (/<\s*(?:max\s*items?|item\s*max(?:imum)?|stack\s*(?:limit|max)|max\s*stack|itemmaxnum)\s*:\s*\d+\s*>/i.test(note)) return false;
-    if (/(?:^|\n)\s*itemMaxNum\s*:\s*\d+/i.test(note)) return false;
+    // Ordinary RPG Maker items may have note-defined stack caps such as
+    // itemMaxNum:5. These are the very limits a user explicitly chooses to
+    // override with 99/999/9999. Preserve them in default mode, and keep
+    // equipment/special-item caps protected even in increased-limit mode.
+    var isNormal=DataManager.isItem(item)&&item.itypeId===1;
+    if(!isNormal){
+        if (/<\s*(?:max\s*items?|item\s*max(?:imum)?|stack\s*(?:limit|max)|max\s*stack|itemmaxnum)\s*:\s*\d+\s*>/i.test(note))return false;
+        if (/(?:^|\n)\s*itemMaxNum\s*:\s*\d+/i.test(note))return false;
+    }
     return true;
 }
 // Call the game's previous implementation first, so other inventory plugins
@@ -2892,7 +2947,7 @@ function swfRefillableItem(item){
     return true;
 }
 function swfRefillOwnedNormalItems(){
-    var result={types:0,added:0,skipped:0};
+    var result={types:0,added:0,skipped:0,ownedNormal:0,alreadyFull:0};
     if(!$gameParty||typeof $gameParty.items!=='function'||typeof $gameParty.numItems!=='function'||
        typeof $gameParty.maxItems!=='function'||typeof $gameParty.gainItem!=='function')return result;
     var owned;
@@ -2909,6 +2964,7 @@ function swfRefillOwnedNormalItems(){
         try{
             if(!swfRefillableItem(item)||seen[item.id])return;
             seen[item.id]=true;
+            result.ownedNormal++;
             var before=$gameParty.numItems(item),max=$gameParty.maxItems(item);
             if(typeof before!=='number'||!isFinite(before)||before<1||Math.floor(before)!==before||
                typeof max!=='number'||!isFinite(max)||max<0){result.skipped++;return;}
@@ -2916,7 +2972,7 @@ function swfRefillOwnedNormalItems(){
             // advertises a very large maximum.
             max=Math.min(9999,Math.floor(max));
             var amount=max-before;
-            if(amount<1)return;
+            if(amount<1){result.alreadyFull++;return;}
             $gameParty.gainItem(item,amount,false);
             var after=$gameParty.numItems(item);
             var gained=typeof after==='number'&&isFinite(after)?Math.max(0,after-before):0;
@@ -2936,8 +2992,14 @@ Scene_UniversalControl.prototype.sectionInventory=function(){
         {name:TR('Предметы, оружие и броня'),run:function(){self.itemCategories();}},
         {name:TR('Пополнить имеющиеся обычные предметы'),help:TR('Одним нажатием доводит уже имеющиеся обычные предметы до индивидуального лимита. Не создаёт новые виды, не трогает оружие, броню, ключевые предметы и уникальные экземпляры.'),run:function(){
             var result=swfRefillOwnedNormalItems();
-            self.notice(TR('Пополнено видов: ')+result.types+TR(' · добавлено предметов: ')+result.added+
-                (result.skipped?TR(' · пропущено: ')+result.skipped:''));
+            var message=TR('Пополнено видов: ')+result.types+TR(' · добавлено предметов: ')+result.added+
+                (result.skipped?TR(' · пропущено: ')+result.skipped:'');
+            if(!result.types){
+                message+='\n'+(!result.ownedNormal?TR('Нет уже имеющихся складываемых обычных предметов.'):
+                    result.alreadyFull?TR('Все подходящие предметы уже достигли лимита: ')+stackLimitLabel():
+                    TR('Система инвентаря не позволила увеличить количество; возможно, нужен патч под игру.'));
+            }
+            self.notice(message);
         }},
         {name:TR('Лимит предметов: ')+stackLimitLabel(),run:function(){self.stackLimits();}}
     ]);
@@ -2952,7 +3014,7 @@ Scene_UniversalControl.prototype.sectionWorld=function(replace){
         {name:TR('Телепорт: посещённые карты'),help:TR('Телепортация не выполняет сюжетные события.'),run:function(){self.maps(true,'');}},
         {name:TR('Телепорт: все карты игры'),help:TR('Включая тестовые и служебные карты. Сохрани игру отдельно.'),run:function(){self.maps(false,'');}},
         {name:TR('Возврат после телепорта'),enabled:!!ret,help:ret?TR('Карта #')+ret.mapId+' · '+ret.x+', '+ret.y:TR('Точка возврата пока не записана.'),run:function(){self.confirm(TR('Возврат'),TR('Сюжетные события не откатываются.'),function(){self.teleport(ret.mapId,ret.x,ret.y,ret.direction,false,false);});}},
-        {name:TR('Точки быстрого перемещения (3 слота)'),run:function(){self.savedPositions();}},
+        {name:TR('Точки быстрого перемещения (10 слотов)'),run:function(){self.savedPositions();}},
         {name:TR('Проход сквозь стены: ')+through,run:function(){$gamePlayer.setThrough(!$gamePlayer.isThrough());self.sectionWorld(true);}},
         {name:TR('Скорость движения: ')+speed,run:function(){self.ask(TR('Скорость (0.5–6.0, шаг 0.5)'),String(speed),function(v){
             var n=Number(v);if(!isFinite(n)||n<0.5||n>6||Math.round(n*2)!==n*2){self.notice(TR('Введите число от 0.5 до 6.0, шаг 0.5.'));return;}
@@ -3029,8 +3091,8 @@ Scene_UniversalControl.prototype.favoriteSkillActors=function(){
 Scene_UniversalControl.prototype.savedPositions=function(replace){
     var self=this,rows=[];
     Cheat_Menu.prepare();
-    Cheat_Menu.saved_positions.forEach(function(p,i){
-        var name=TR('Слот ')+(i+1),filled=p&&p.m>0;
+    Cheat_Menu.ensureSavedPositions().forEach(function(p,i){
+        var name=TR('Слот ')+(i+1),filled=!!(p&&p.m>0&&$dataMapInfos&&$dataMapInfos[p.m]);
         var info=filled?TR('Карта #')+p.m+' ('+p.x+', '+p.y+')':TR('пусто');
         rows.push({name:name+TR(' · сохранить текущую точку'),help:TR('Перезапишет слот. ')+info,run:function(){
             Cheat_Menu.saved_positions[i]={m:$gameMap.mapId(),x:$gamePlayer.x,y:$gamePlayer.y};
