@@ -55,6 +55,9 @@ assert "v2.4.1" in (root / "installer/README.md").read_text(encoding="utf-8")
 assert "CHANGELOG.md" in readme
 assert "Поиск и прокрутка" in readme
 assert "Search and scrolling" in readme
+assert "SWF_CheatMenu_plugin_only_v2.4.1.zip" in readme
+assert "SWF_CheatMenu_plugin_only_v2.4.1.zip" in workflow
+assert "2147483000" not in plugin  # Persistent 2.4.0 search overlay must not return.
 assert "без установщика" in readme
 assert "Plugin-only alternative" in readme
 assert (root / "README_PLUGIN_ONLY.txt").exists()
