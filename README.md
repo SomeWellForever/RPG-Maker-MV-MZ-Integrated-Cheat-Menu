@@ -34,7 +34,7 @@
 - `1` — оригинальное быстрое меню на карте или во время боя. **Оно остаётся на английском языке**, независимо от настройки языка основного меню.
 - `F7` — основное меню на карте или в бою.
 - **Язык:** пункт «Язык меню» в основном меню — `Auto`, `Русский`, `English`. Автоматический выбор использует языковую настройку игры, если она доступна, иначе язык системы. Выбор сохраняется для этой игры. Названия игровых предметов, навыков и карт остаются на языке самой игры.
-- **«Меню управления» / «Control Menu»** — ключевой предмет для открытия меню, включая боевой инвентарь; не расходуется и не должен отнимать ход.
+- **«Меню управления» / «Control Menu»** — нерасходуемый ключевой предмет, открывающий основное меню через инвентарь, в том числе во время боя.
 
 ### Установка
 
@@ -46,7 +46,7 @@
 
 **Обновление:** повторно запустите установщик. Начиная с 2.3.1 установщик отключает конфликтующую старую запись `Cheat_Menu` без описания в `plugins.js`, сохраняя её параметры. Перед изменениями сохраняются резервные копии файлов в `SWF_CheatMenu_Backup/`. Для удаления используйте `Remove_Windows.cmd` или `bash Remove_Linux.sh`. Перед первым использованием рекомендуется сделать копию сохранений.
 
-**Mac и Xenolauncher:** уже пропатченную на Windows или Linux игру можно перенести на Mac и попробовать запустить через [Xenolauncher](https://github.com/m5kro/Xenolauncher) — сторонний лаунчер для macOS. Если в нём включено `Enable Cheat Menu`, отключите эту опцию во избежание конфликта с модом. Работа зависит от совместимости конкретной игры.
+**Mac и Xenolauncher:** уже пропатченную на Windows или Linux игру можно перенести на Mac и попробовать запустить через [Xenolauncher](https://github.com/m5kro/Xenolauncher) — сторонний лаунчер для macOS. Если в нём включено `Enable Cheat Menu`, отключите эту опцию во избежание конфликта с модом. Совместимость зависит от игры и её плагинов.
 
 
 ### Ошибки и предложения
@@ -55,7 +55,7 @@
 
 ### Ограничения
 
-Совместимость зависит от дополнительных плагинов конкретной игры. Для зашифрованных сборок и изменённых систем боёв, предметов и интерфейса может понадобиться отдельная адаптация. Системные переключатели и телепортация могут нарушить сюжетные события. Проверяйте мод на копии сохранения. Проверки выполнялись на тестовых моделях MV/MZ; универсальная работоспособность во всех играх **не гарантируется**.
+Совместимость зависит от дополнительных плагинов конкретной игры. Для зашифрованных сборок и изменённых систем боёв, предметов и интерфейса может понадобиться отдельная адаптация. Системные переключатели и телепортация могут нарушить сюжетные события. Проверяйте мод на копии сохранения. Автоматически проверяются сборка, установка, синтаксис и часть функций плагина. Совместимость со всеми играми MV/MZ **не гарантируется**.
 
 ---
 
@@ -80,7 +80,7 @@ The integrated menu combines features without a duplicate "extra cheats" section
 - `1` — open the original quick overlay on the map or during battle. **This legacy menu remains in English**, regardless of your language setting for the main menu.
 - `F7` — open the integrated main menu on the map or during battle.
 - **Language:** choose `Auto`, `Русский`, or `English` under **Menu language** in the main menu. Auto uses the game's locale when available, otherwise the system language. The choice is saved per game. Item, skill, and map names remain in the game's own language.
-- **Control Menu** (`Меню управления`) — a non-consumable key item usable from the inventory, including in battle, without intentionally spending a turn.
+- **Control Menu** (`Меню управления`) — a reusable key item that opens the full menu from the inventory, including during battle.
 
 ### Installation
 
@@ -92,7 +92,7 @@ The integrated menu combines features without a duplicate "extra cheats" section
 
 **Updating:** run the installer again. Starting in 2.3.1, the installer disables conflicting legacy `Cheat_Menu` entries with an empty description in `plugins.js`, preserving their settings. Modified files are backed up to `SWF_CheatMenu_Backup/`. To uninstall, use `Remove_Windows.cmd` or `bash Remove_Linux.sh`. Back up your save files before first use.
 
-**Mac and Xenolauncher:** you can copy a game already patched on Windows or Linux to a Mac and try running it with [Xenolauncher](https://github.com/m5kro/Xenolauncher), a third-party macOS game launcher. If its `Enable Cheat Menu` option is on, turn it off to avoid conflicts with this mod. Compatibility depends on the game.
+**Mac and Xenolauncher:** you can copy a game already patched on Windows or Linux to a Mac and try running it with [Xenolauncher](https://github.com/m5kro/Xenolauncher), a third-party macOS game launcher. If its `Enable Cheat Menu` option is on, turn it off to avoid conflicts with this mod. Compatibility depends on the game and its plugins.
 
 
 ### Bug reports and suggestions
@@ -101,7 +101,7 @@ If the mod fails in a specific game, [open an Issue](https://github.com/SomeWell
 
 ### Compatibility and caveats
 
-Compatibility varies across game-specific plugins. Encrypted games or heavily modified battle, inventory, and UI systems may require custom fixes. Teleporting and changing progression switches can break scripted events; keep backups. Syntax and test-scene checks were performed for MV/MZ, but support for every game **is not guaranteed**.
+Compatibility varies across game-specific plugins. Encrypted games or heavily modified battle, inventory, and UI systems may require custom fixes. Teleporting and changing progression switches can break scripted events; keep backups. Automated checks cover builds, installation, syntax, and selected plugin behavior. Compatibility with every MV/MZ game **is not guaranteed**.
 
 ---
 
@@ -110,6 +110,7 @@ Compatibility varies across game-specific plugins. Encrypted games or heavily mo
 - [`SWF_CheatMenu.js`](SWF_CheatMenu.js) — combined plugin / объединённый плагин.
 - [Releases](https://github.com/SomeWellForever/RPG-Maker-MV-MZ-Integrated-Cheat-Menu/releases) — downloadable ZIP / архив для скачивания.
 - [`CREDITS.md`](CREDITS.md) — authorship and redistribution notes / авторство и условия распространения.
+- [`CHANGELOG.md`](CHANGELOG.md) — release history / история версий.
 
 ### Credits / Благодарности
 
