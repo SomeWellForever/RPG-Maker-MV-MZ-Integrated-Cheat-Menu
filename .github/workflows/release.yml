@@ -125,11 +125,11 @@ jobs:
           - **No Python required:** native Windows and Linux installers. End users do not need Python or Go installed.
           - **Reliable upgrades:** supported updates from recognized older Integrated Cheat Menu versions, repeated installation without duplicate plugin registrations, automatic backups, and safe removal.
           - The macOS installer was withdrawn following launch/permissions issues.
-          - Keep Xenolauncher's built-in **Enable Cheat Menu** disabled.
+          - **Optional compatibility:** [Xenolauncher](https://github.com/m5kro/Xenolauncher) is a separate macOS game launcher. Only if you already use it, disable its **Enable Cheat Menu** option to avoid conflicts. Xenolauncher is not required for this mod, and macOS is not supported by this release.
           - Upstream authors and redistribution notes: CREDITS.md.
 
           ### How to install
-          Extract the entire ZIP. On Windows run Install_Windows.cmd; on Linux run Install_Linux.sh. Select the RPG Maker MV/MZ game folder. Keep a separate save backup while testing.
+          Extract the **entire ZIP**, keeping the bin folder beside the installers. On Windows run Install_Windows.cmd; on Linux run bash Install_Linux.sh. Select the **game root** (containing www/js for MV or js for MZ), not the js directory itself. Back up your saves first.
 
           ---
           ## SWF Cheat Menu v2.3.0 — русский
@@ -139,9 +139,9 @@ jobs:
           - **Русский и английский:** переключатель Auto / Русский / English внутри меню F7; выбор сохраняется. Быстрое меню на 1 осталось английским, а названия предметов/карт/навыков берутся из игры.
           - **Python не нужен:** готовые установщики Windows и Linux; Go устанавливать тоже не требуется.
           - **Обновление поверх старых версий:** миграция распознаваемых предыдущих установок, резервные копии, повторная установка без дублирования и удаление.
-          - В Xenolauncher отключите встроенное Enable Cheat Menu.
+          - **Только для пользователей Xenolauncher:** это отдельный сторонний лаунчер для macOS. Если вы уже им пользуетесь, отключите его **Enable Cheat Menu**, чтобы два чит-меню не конфликтовали. Устанавливать Xenolauncher не нужно; macOS в этом релизе не поддерживается.
 
-          Распакуйте весь ZIP. В Windows запустите Install_Windows.cmd; в Linux — Install_Linux.sh. Выберите папку игры RPG Maker MV/MZ.
+          Полностью распакуйте ZIP, оставив папку bin рядом с установщиками. В Windows запустите Install_Windows.cmd; в Linux — bash Install_Linux.sh. Выберите корневую папку игры (MV: www/js, MZ: js), а не папку js. Предварительно сохраните резервную копию игровых сохранений.
           EOF
           if gh release view v2.3.0 >/dev/null 2>&1; then
             gh release edit v2.3.0 --title "SWF Cheat Menu v2.3.0" --notes-file release-notes.md --latest

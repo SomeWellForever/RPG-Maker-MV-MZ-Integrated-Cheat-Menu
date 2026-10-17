@@ -116,7 +116,6 @@ func run(args []string, output io.Writer) error {
     if !oldIsOurs && bytes.Contains(registryOriginal, []byte("Cheat_Menu")) {
         fmt.Fprintln(output, "An unrelated or unrecognized Cheat_Menu entry was preserved.")
     }
-    fmt.Fprintln(output, "Keep Xenolauncher's built-in Cheat Menu disabled.")
     return nil
 }
 

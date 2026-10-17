@@ -15,6 +15,16 @@ body:
     validations:
       required: true
   - type: dropdown
+    id: platform
+    attributes:
+      label: Operating system / Операционная система
+      options:
+        - Windows
+        - Linux
+        - Other (unsupported) / Другая (не поддерживается)
+    validations:
+      required: true
+  - type: dropdown
     id: engine
     attributes:
       label: Engine / Движок
